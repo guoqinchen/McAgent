@@ -1,5 +1,5 @@
 /**
- * macOS-specific tools for the MacOSAgent.
+ * McAgent — macOS-specific tools.
  *
  * Each tool exports an object matching the `Tool` interface (name, description,
  * parameters as JSON Schema, execute function).

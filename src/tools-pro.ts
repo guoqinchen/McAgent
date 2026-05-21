@@ -1,5 +1,5 @@
 /**
- * Pro/Advanced macOS diagnostic tools for McAgent.
+ * McAgent — pro/advanced macOS diagnostic tools.
  *
  * These tools provide deeper system introspection capabilities:
  * network diagnostics, process sampling, security auditing,

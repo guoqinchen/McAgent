@@ -2,6 +2,7 @@
 /**
  * McAgent — Headless CLI
  *
+ * Usage:
  *   DEEPSEEK_API_KEY=sk-... npx tsx src/headless.ts
  */
 

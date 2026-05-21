@@ -1,5 +1,5 @@
 /**
- * Context window management for the macOS Agent.
+ * Context window management for McAgent.
  *
  * Provides token estimation and message eviction to prevent the conversation
  * history from exceeding the model's context window limit.

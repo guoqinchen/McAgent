@@ -1,5 +1,5 @@
 /**
- * Extended macOS tools for McAgent.
+ * McAgent — extended macOS tools.
  *
  * Add these alongside the default tools for expanded capability.
  *

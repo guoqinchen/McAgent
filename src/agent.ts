@@ -74,7 +74,7 @@ const DEEPSEEK_MODEL = 'deepseek-chat';
 // ─── Agent class ─────────────────────────────────────────────────────────────
 
 /**
- * macOS Expert Agent — standalone AI agent using DeepSeek.
+ * McAgent — standalone macOS AI agent using DeepSeek.
  *
  * Emits typed events so any UI (Ink TUI, HTTP, Discord) can subscribe
  * without coupling to the agent internals.

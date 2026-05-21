@@ -35,15 +35,27 @@ export type { Message, McAgentEvents as MacOSAgentEvents } from './types/events.
 
 
 
+let enableStrictMode = false;
+
+export function setToolStrictMode(strict: boolean): void {
+  enableStrictMode = strict;
+}
+
 function toolToOpenAI(t: Tool): ChatCompletionTool {
-  return {
+  const tool: ChatCompletionTool = {
     type: 'function',
     function: {
       name: t.name,
       description: t.description,
-      parameters: t.parameters,
+      parameters: t.parameters as Record<string, unknown>,
     },
-  } as ChatCompletionTool;
+  };
+  // Strict mode (Beta): model output strictly follows JSON Schema
+  if (enableStrictMode) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (tool.function as any).strict = true;
+  }
+  return tool;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -67,9 +79,11 @@ function hasReasoning(input: unknown): input is { reasoning_content: string } {
 
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
+// DeepSeek-V4: https://api-docs.deepseek.com/zh-cn/
 
-const DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1';
-const DEEPSEEK_MODEL = 'deepseek-chat';
+const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';       // OpenAI-compatible
+const DEEPSEEK_BETA_URL  = 'https://api.deepseek.com/beta';   // Beta features (strict mode)
+const DEEPSEEK_MODEL = 'deepseek-v4-flash';                   // Default: fast/economical
 
 // ─── Agent class ─────────────────────────────────────────────────────────────
 
@@ -88,6 +102,10 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     maxContextTokens: number;
     permissionMode: PermissionMode;
     autoAllowlist: string[];
+    thinkingEnabled: boolean;
+    reasoningEffort: 'high' | 'max';
+    toolStrictMode: boolean;
+    useBetaEndpoint: boolean;
   };
   private toolsByName = new Map<string, Tool>();
   /** Prevents concurrent send()/sendSync() calls from interleaving message history */
@@ -98,29 +116,40 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
   constructor(config: MacOSAgentConfig) {
     super();
 
+    // Resolve base URL: beta endpoint for strict mode, otherwise custom or default
+    const baseURL = config.baseURL ?? (config.useBetaEndpoint ? DEEPSEEK_BETA_URL : DEEPSEEK_BASE_URL);
+    const model = config.model ?? DEEPSEEK_MODEL;
+    const thinkingEnabled = config.thinkingEnabled ?? true;
+
     this.config = {
       apiKey: config.apiKey,
-      baseURL: config.baseURL ?? DEEPSEEK_BASE_URL,
-      model: config.model ?? DEEPSEEK_MODEL,
+      baseURL,
+      model,
       instructions:
         config.instructions ??
-        `You are a macOS expert assistant. You help the user operate their Mac ` +
-          `efficiently using CLI commands, system utilities, and automation. ` +
-          `When the user asks you to do something, use the available tools to ` +
-          `execute commands, inspect the system, and provide clear explanations. ` +
-          `Always explain what a command will do before running it, especially ` +
-          `commands that modify the system. Prefer safe, read-only operations ` +
-          `unless the user explicitly asks for changes.`,
+        `You are a macOS expert assistant running DeepSeek-V4. ` +
+          `Help the user operate their Mac efficiently using CLI commands, ` +
+          `system utilities, and automation. When the user asks you to do ` +
+          `something, use the available tools to execute commands, inspect ` +
+          `the system, and provide clear explanations. Always explain what ` +
+          `a command will do before running it, especially commands that ` +
+          `modify the system. Prefer safe, read-only operations unless the ` +
+          `user explicitly asks for changes.`,
       tools: config.tools ?? [],
       maxToolRounds: config.maxToolRounds ?? 10,
       maxContextTokens: config.maxContextTokens ?? DEFAULT_MAX_CONTEXT_TOKENS,
       permissionMode: config.permissionMode ?? 'approve',
       autoAllowlist: config.autoAllowlist ?? ['git', 'npm', 'brew', 'ls', 'cat', 'echo', 'mkdir', 'touch'],
+      thinkingEnabled,
+      reasoningEffort: config.reasoningEffort ?? (thinkingEnabled ? 'high' : 'max'),
+      toolStrictMode: config.toolStrictMode ?? false,
+      useBetaEndpoint: config.useBetaEndpoint ?? false,
     };
 
-    // Sync allowlist and mode to tools module
+    // Sync allowlist, mode, and strict mode to tools module
     setCommandAllowlist(this.config.autoAllowlist);
     setSkipDangerousCheck(this.config.permissionMode === 'auto');
+    setToolStrictMode(this.config.toolStrictMode);
 
     this.client = new OpenAI({
       apiKey: this.config.apiKey,
@@ -278,12 +307,19 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
         this.config.maxContextTokens
       );
 
+      // Build common API params with thinking mode
+      // DeepSeek-V4: thinking via extra_body (OpenAI SDK compat)
+      const thinkingBody = this.config.thinkingEnabled ? { thinking: { type: 'enabled' as const } } : undefined;
+
       if (sync) {
         // ── Non-streaming call ─────────────────────────────────────────────
-        const response = await this.client.chat.completions.create({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const response = await (this.client.chat.completions.create as any)({
           model: this.config.model,
           messages,
           tools: tools.length > 0 ? tools : undefined,
+          reasoning_effort: this.config.reasoningEffort,
+          extra_body: thinkingBody,
           stream: false,
         });
 
@@ -320,10 +356,13 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
         return fullText;
       } else {
         // ── Streaming call ─────────────────────────────────────────────────
-        const stream = await this.client.chat.completions.create({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const stream = await (this.client.chat.completions.create as any)({
           model: this.config.model,
           messages,
           tools: tools.length > 0 ? tools : undefined,
+          reasoning_effort: this.config.reasoningEffort,
+          extra_body: thinkingBody,
           stream: true,
         });
 

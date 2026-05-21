@@ -24,7 +24,10 @@ if (!apiKey) {
 
 const agent = createMacOSAgent({
   apiKey,
-  model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+  model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
+  thinkingEnabled: process.env.DEEPSEEK_THINKING_ENABLED !== 'false',
+  reasoningEffort: (process.env.DEEPSEEK_REASONING_EFFORT as 'high' | 'max') || 'high',
+  maxContextTokens: Number(process.env.DEEPSEEK_MAX_TOKENS) || undefined,
   instructions: [
     `You are a macOS expert assistant. Help the user operate their Mac efficiently `,
     `using CLI commands, system utilities, and automation.`,

@@ -11,6 +11,8 @@
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest"
   },

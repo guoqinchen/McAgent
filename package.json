@@ -1,0 +1,44 @@
+{
+  "name": "mcagent",
+  "version": "2.0.0",
+  "description": "McAgent — CLI-first macOS AI assistant powered by DeepSeek",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/cli.tsx",
+    "start:headless": "tsx src/headless.ts",
+    "dev": "tsx watch src/cli.tsx",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "macos",
+    "agent",
+    "deepseek",
+    "cli"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "eventemitter3": "^5.0.1",
+    "openai": "^6.38.0"
+  },
+  "optionalDependencies": {
+    "ink": "^5.0.0",
+    "react": "^18.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.9.1",
+    "@types/react": "^18.3.0",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.59.4",
+    "vitest": "^4.1.7"
+  }
+}

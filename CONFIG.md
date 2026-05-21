@@ -14,13 +14,26 @@ McAgent is configured primarily through environment variables:
 | `DEEPSEEK_API_KEY` | **Yes** | — | DeepSeek API key from [platform.deepseek.com](https://platform.deepseek.com/api-docs) |
 | `DEEPSEEK_MODEL` | No | `deepseek-v4-flash` | Model ID (e.g., `deepseek-v4-flash`, `deepseek-v4-pro`) |
 | `DEEPSEEK_BASE_URL` | No | `https://api.deepseek.com` | API base URL (for self-hosted / proxies) |
+| `DEEPSEEK_THINKING_ENABLED` | No | `true` | Enable thinking mode for better reasoning |
+| `DEEPSEEK_REASONING_EFFORT` | No | `high` | Reasoning effort level (`low`, `medium`, `high`, `max`) |
+| `DEEPSEEK_MAX_TOKENS` | No | `1048576` | Maximum tokens per response |
+| `LLM_PROVIDER` | No | `deepseek` | LLM provider (`deepseek`, `openai`) |
+| `OPENAI_API_KEY` | Conditional | — | OpenAI API key (required if using `openai` provider) |
+| `OPENAI_BASE_URL` | No | `https://api.openai.com` | OpenAI API base URL |
 
 Example `.env` file:
 
 ```bash
+# DeepSeek configuration
 DEEPSEEK_API_KEY=sk-your-key-here
 DEEPSEEK_MODEL=deepseek-v4-flash
+DEEPSEEK_THINKING_ENABLED=true
+DEEPSEEK_REASONING_EFFORT=high
 # DEEPSEEK_BASE_URL=https://api.deepseek.com
+
+# Alternative provider configuration
+# LLM_PROVIDER=openai
+# OPENAI_API_KEY=sk-your-openai-key-here
 ```
 
 ### Programmatic Configuration
@@ -47,12 +60,17 @@ const agent = createMacOSAgent({
 | `apiKey` | `string` | — | DeepSeek API key (required) |
 | `baseURL` | `string` | `https://api.deepseek.com` | API base URL |
 | `model` | `string` | `deepseek-v4-flash` | OpenAI-compatible model ID |
+| `provider` | `string` | `'deepseek'` | LLM provider: `'deepseek'` / `'openai'` |
 | `instructions` | `string` | *(macOS expert prompt)* | System prompt for the agent |
 | `tools` | `Tool[]` | `[]` | Array of tool definitions |
 | `maxToolRounds` | `number` | `10` | Max tool-calling iterations per message |
 | `maxContextTokens` | `number` | `1048576` | Context window limit (0 = disabled) |
 | `permissionMode` | `string` | `'approve'` | Permission mode: `'readonly'` / `'approve'` / `'auto'` |
 | `autoAllowlist` | `string[]` | `['git','npm','brew','ls','cat','echo','mkdir','touch']` | Commands that bypass safety check in `approve` mode |
+| `thinkingEnabled` | `boolean` | `true` | Enable thinking mode for better reasoning |
+| `reasoningEffort` | `string` | `'high'` | Reasoning effort level |
+| `streamingEnabled` | `boolean` | `true` | Enable streaming output |
+| `logLevel` | `string` | `'info'` | Log level: `'trace'` / `'debug'` / `'info'` / `'warn'` / `'error'` |
 
 ### Runtime Configuration
 
@@ -104,6 +122,12 @@ McAgent 主要通过环境变量配置：
 | `DEEPSEEK_API_KEY` | **是** | — | 来自 [platform.deepseek.com](https://platform.deepseek.com/api-docs) 的 API 密钥 |
 | `DEEPSEEK_MODEL` | 否 | `deepseek-v4-flash` | 模型 ID（如 `deepseek-v4-flash`、`deepseek-v4-pro`） |
 | `DEEPSEEK_BASE_URL` | 否 | `https://api.deepseek.com` | API 基础 URL（自托管/代理时使用） |
+| `DEEPSEEK_THINKING_ENABLED` | 否 | `true` | 启用思考模式以获得更好的推理 |
+| `DEEPSEEK_REASONING_EFFORT` | 否 | `high` | 推理努力级别（`low`、`medium`、`high`、`max`） |
+| `DEEPSEEK_MAX_TOKENS` | 否 | `1048576` | 最大响应令牌数 |
+| `LLM_PROVIDER` | 否 | `deepseek` | LLM 提供商（`deepseek`、`openai`） |
+| `OPENAI_API_KEY` | 条件 | — | OpenAI API 密钥（使用 `openai` 提供商时必填） |
+| `OPENAI_BASE_URL` | 否 | `https://api.openai.com` | OpenAI API 基础 URL |
 
 `.env` 文件示例：
 
@@ -137,12 +161,17 @@ const agent = createMacOSAgent({
 | `apiKey` | `string` | — | DeepSeek API 密钥（必填） |
 | `baseURL` | `string` | `https://api.deepseek.com` | API 基础 URL |
 | `model` | `string` | `deepseek-v4-flash` | OpenAI 兼容的模型 ID |
+| `provider` | `string` | `'deepseek'` | LLM 提供商：`'deepseek'` / `'openai'` |
 | `instructions` | `string` | *(macOS expert prompt)* | 系统提示词 |
 | `tools` | `Tool[]` | `[]` | 工具定义数组 |
 | `maxToolRounds` | `number` | `10` | 每条消息最大工具调用轮次 |
 | `maxContextTokens` | `number` | `1048576` | 上下文窗口限制（0 = 禁用） |
 | `permissionMode` | `string` | `'approve'` | 权限模式：`'readonly'` / `'approve'` / `'auto'` |
 | `autoAllowlist` | `string[]` | `['git','npm','brew','ls','cat','echo','mkdir','touch']` | 允许绕过安全检查的命令前缀 |
+| `thinkingEnabled` | `boolean` | `true` | 启用思考模式以获得更好的推理 |
+| `reasoningEffort` | `string` | `'high'` | 推理努力级别 |
+| `streamingEnabled` | `boolean` | `true` | 启用流式输出 |
+| `logLevel` | `string` | `'info'` | 日志级别：`'trace'` / `'debug'` / `'info'` / `'warn'` / `'error'` |
 
 ### 运行时配置
 

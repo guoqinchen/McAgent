@@ -56,7 +56,15 @@ cp .env.example .env
 npm test
 ```
 
-Expected output: `99 passed` across 4 test files.
+Expected output: `100 passed` across 4 test files.
+
+**5. Build / 编译**
+
+```bash
+npm run build
+```
+
+Verifies TypeScript compilation succeeds.
 
 ### Run for the First Time / 首次运行
 
@@ -124,7 +132,15 @@ cp .env.example .env
 npm test
 ```
 
-预期输出：4 个测试文件全部通过（`99 passed`）。
+预期输出：4 个测试文件全部通过（`100 passed`）。
+
+**5. 编译**
+
+```bash
+npm run build
+```
+
+验证 TypeScript 编译是否成功。
 
 ### 首次运行
 

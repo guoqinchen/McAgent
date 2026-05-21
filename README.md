@@ -5,7 +5,8 @@
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License">
     <img src="https://img.shields.io/badge/macOS-13.0%2B-brightgreen" alt="macOS 13.0+">
     <img src="https://img.shields.io/badge/TypeScript-5.6%2B-3178C6" alt="TypeScript">
-    <img src="https://img.shields.io/badge/tests-99%20passed-brightgreen" alt="99 tests">
+    <img src="https://img.shields.io/badge/tests-100%20passed-brightgreen" alt="100 tests">
+    <img src="https://img.shields.io/badge/version-2.0.0-blue" alt="Version 2.0.0">
   </p>
   <p>
     <a href="#english">English</a> ·
@@ -120,14 +121,38 @@ npm run format      # Prettier / 格式化
 
 ```
 src/
-├── agent.ts              # Core — conversation loop + tool execution
-├── tools.ts              # 8 base macOS tools (run_command, system_info, etc.)
-├── tools-extended.ts     # 8 extended tools (write_file, clipboard, etc.)
-├── tools-pro.ts          # 4 pro diagnostic tools (network, security, etc.)
-├── context-manager.ts    # Context window management (token estimation + eviction)
-├── cli.tsx               # Ink/React TUI
-├── headless.ts           # Readline headless CLI
-└── __tests__/            # Vitest tests
+├── agent.ts                 # Core — conversation loop + tool execution
+├── tools.ts                 # 8 base macOS tools (run_command, system_info, etc.)
+├── tools-extended.ts        # 8 extended tools (write_file, clipboard, etc.)
+├── tools-pro.ts             # 4 pro diagnostic tools (network, security, etc.)
+├── context-manager.ts       # Context window management (token estimation + eviction)
+├── cli.tsx                  # Ink/React TUI
+├── headless.ts              # Readline headless CLI
+├── types/
+│   └── llm-provider.ts      # LLM Provider abstraction layer
+├── providers/
+│   ├── deepseek-provider.ts # DeepSeek API provider
+│   ├── openai-provider.ts   # OpenAI API provider
+│   └── provider-factory.ts  # Provider factory
+├── tools/
+│   ├── tool-registry.ts     # Tool registration & categorization
+│   └── enhanced-tool-executor.ts # Tool execution with caching & rate limiting
+├── engine/
+│   ├── reasoning-engine.ts  # Adaptive reasoning strategies
+│   └── error-recovery-engine.ts # Error recovery mechanisms
+├── session/
+│   └── session-manager.ts   # Persistent session management
+├── ui/
+│   ├── streaming-optimizer.ts # Streaming output optimization
+│   └── markdown-renderer.ts   # Markdown rendering
+├── logging/
+│   └── structured-logger.ts # Multi-handler logging system
+├── monitoring/
+│   ├── metrics-collector.ts # Performance metrics collection
+│   └── performance-reporter.ts # Performance reporting
+├── security/
+│   └── permission-manager.ts # Fine-grained permission system
+└── __tests__/               # Vitest tests (100 tests)
 ```
 
 ---

@@ -13,6 +13,7 @@ import { render, Box, Text, useInput, useApp } from 'ink';
 import { createMacOSAgent } from './agent.js';
 import type { Message } from './types/events.js';
 import { macOSDefaultTools } from './tools.js';
+import { logger } from './logging/structured-logger.js';
 
 // ─── Agent ───────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,12 @@ if (!apiKey) {
   console.error('❌  DEEPSEEK_API_KEY environment variable is required.');
   process.exit(1);
 }
+
+logger.info('TUI starting', {
+  model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
+  thinkingEnabled: process.env.DEEPSEEK_THINKING_ENABLED !== 'false',
+  logDir: `${process.env.HOME}/.mcagent/logs/`,
+});
 
 const agent = createMacOSAgent({
   apiKey,
@@ -194,13 +201,20 @@ function App() {
     agent.on('error', onError);
     agent.on('reasoning:delta', onReasoningDelta);
 
+    const onErrorWithLog = (err: Error) => {
+      logger.error('Agent error in TUI', err);
+      onError();
+    };
+    agent.off('error', onError);
+    agent.on('error', onErrorWithLog);
+
     return () => {
       agent.off('thinking:start', onThinkingStart);
       agent.off('stream:delta', onStreamDelta);
       agent.off('stream:end', onStreamEnd);
       agent.off('tool:call', onToolCall);
       agent.off('message:assistant', onMessageAssistant);
-      agent.off('error', onError);
+      agent.off('error', onErrorWithLog);
       agent.off('reasoning:delta', onReasoningDelta);
     };
   }, []);

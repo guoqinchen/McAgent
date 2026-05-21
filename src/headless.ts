@@ -10,6 +10,7 @@ import { createMacOSAgent } from './agent.js';
 
 import { macOSDefaultTools } from './tools.js';
 import { createInterface } from 'node:readline';
+import { logger } from './logging/structured-logger.js';
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
@@ -21,6 +22,12 @@ if (!apiKey) {
 }
 
 // ─── Agent setup ─────────────────────────────────────────────────────────────
+
+logger.info('Headless CLI starting', {
+  model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
+  thinkingEnabled: process.env.DEEPSEEK_THINKING_ENABLED !== 'false',
+  logDir: `${process.env.HOME}/.mcagent/logs/`,
+});
 
 const agent = createMacOSAgent({
   apiKey,
@@ -78,6 +85,7 @@ agent.on('reasoning:delta', function onReasoningDelta(text) {
 });
 
 agent.on('error', function onError(err) {
+  logger.error('Agent error in headless CLI', err);
   console.error(`\n${color.red}❌  Error:${color.reset} ${err.message}`);
 });
 
@@ -98,6 +106,7 @@ ${color.gray}Type your macOS question or 'exit' to quit.${color.reset}
 `;
 
 console.log(welcome);
+console.log(`${color.gray}Logs: ~/.mcagent/logs/${color.reset}`);
 
 function prompt(): void {
   rl.question(`${color.cyan}macOS>${color.reset} `, async (input) => {

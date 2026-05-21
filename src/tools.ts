@@ -11,7 +11,7 @@ import { defaultExecutor } from './shell/executor.js';
 // ─── Helper: safe shell execution ───────────────────────────────────────────
 
 /** @deprecated Use defaultExecutor.run() instead. */
-const run = (cmd: string, timeout?: number) => defaultExecutor.run(cmd, timeout);
+const run = (cmd: string, timeout?: number): Promise<string> => defaultExecutor.run(cmd, timeout);
 
 // ─── Tool: execute a shell command ──────────────────────────────────────────
 
@@ -138,7 +138,7 @@ export const runCommandTool: Tool = {
       const t = typeof timeout === 'number' ? timeout : undefined;
       return {
         exitCode: 0,
-        stdout: run(cmd, t),
+        stdout: await run(cmd, t),
         command: cmd,
         mode: 'auto',
       };
@@ -165,7 +165,7 @@ export const runCommandTool: Tool = {
     const t = typeof timeout === 'number' ? timeout : undefined;
     return {
       exitCode: 0,
-      stdout: run(cmd, t),
+      stdout: await run(cmd, t),
       command: cmd,
     };
   },
@@ -193,28 +193,28 @@ export const systemInfoTool: Tool = {
     const info: Record<string, string> = {};
 
     if (!cat || cat === 'overview' || cat === 'all') {
-      info.osVersion = run('sw_vers -productVersion');
-      info.build = run('sw_vers -buildVersion');
-      info.hostname = run('scutil --get ComputerName');
-      info.kernel = run('uname -a');
-      info.uptime = run('uptime');
+      info.osVersion = await run('sw_vers -productVersion');
+      info.build = await run('sw_vers -buildVersion');
+      info.hostname = await run('scutil --get ComputerName');
+      info.kernel = await run('uname -a');
+      info.uptime = await run('uptime');
     }
 
     if (cat === 'hardware' || cat === 'all') {
-      info.chip = run('sysctl -n machdep.cpu.brand_string');
-      info.cores = run('sysctl -n hw.ncpu');
-      info.ram = run('sysctl -n hw.memsize 2>/dev/null');
+      info.chip = await run('sysctl -n machdep.cpu.brand_string');
+      info.cores = await run('sysctl -n hw.ncpu');
+      info.ram = await run('sysctl -n hw.memsize 2>/dev/null');
       if (info.ram) {
         info.ram = `${(Number(info.ram) / 1024 ** 3).toFixed(1)} GB`;
       }
     }
 
     if (cat === 'memory' || cat === 'all') {
-      info.memoryPressure = run('memory_pressure 2>/dev/null | head -5');
+      info.memoryPressure = await run('memory_pressure 2>/dev/null | head -5');
     }
 
     if (cat === 'disk' || cat === 'all') {
-      info.diskUsage = run('df -h /');
+      info.diskUsage = await run('df -h /');
     }
 
     return info;
@@ -264,7 +264,7 @@ export const processListTool: Tool = {
       cmd = `ps -eo pid=,comm=,%cpu=,%mem=,user= -k comm | head -${lim}`;
     }
 
-    const raw = run(cmd);
+    const raw = await run(cmd);
 
     if (f) {
       const lines = raw.split('\n').filter((l) => l.toLowerCase().includes(f.toLowerCase()));
@@ -285,7 +285,7 @@ export const processListTool: Tool = {
         const topPid = parseInt(topParts[0], 10);
         const topName = topParts[1];
         if (topPid && !isNaN(topPid)) {
-          const sampleOut = run(`sample ${topPid} ${sam} 2>&1 | head -60`, sam * 2000 + 10_000);
+          const sampleOut = await run(`sample ${topPid} ${sam} 2>&1 | head -60`, sam * 2000 + 10_000);
           const sampleLines = sampleOut.split('\n').filter(Boolean);
           return {
             count: lines.length,
@@ -329,13 +329,13 @@ export const diskUsageTool: Tool = {
     const p = String(path ?? '/');
     const d = typeof depth === 'number' ? Math.min(depth, 3) : 1;
 
-    const volumes = run('df -h | head -20');
-    const usage = run(`du -shx "${p}" 2>/dev/null || echo "permission denied"`);
+    const volumes = await run('df -h | head -20');
+    const usage = await run(`du -shx "${p}" 2>/dev/null || echo "permission denied"`);
 
     let topDirs = '';
     if (d > 0) {
       const n = Math.min(15, Math.max(5, 30 / d));
-      topDirs = run(
+      topDirs = await run(
         `du -shx "${p}"/* 2>/dev/null | sort -rh | head -${n} || echo "permission denied"`
       );
     }
@@ -365,26 +365,26 @@ export const networkInfoTool: Tool = {
     const info: Record<string, string> = {};
 
     if (d === 'interfaces' || d === 'all') {
-      info.interfaces = run('ifconfig -l');
-      info.ip = run(
+      info.interfaces = await run('ifconfig -l');
+      info.ip = await run(
         "ifconfig en0 2>/dev/null | grep 'inet ' | awk '{print $2}' || ifconfig en1 2>/dev/null | grep 'inet ' | awk '{print $2}' || echo 'not connected'"
       );
     }
 
     if (d === 'wifi' || d === 'all') {
-      info.wifiStatus = run(
+      info.wifiStatus = await run(
         "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I 2>/dev/null | head -10 || networksetup -getairportnetwork en0 2>/dev/null || echo 'Wi-Fi info unavailable'"
       );
     }
 
     if (d === 'connections' || d === 'all') {
-      info.listenPorts = run(
+      info.listenPorts = await run(
         "lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | head -30 || echo 'permission denied'"
       );
     }
 
     if (d === 'dns' || d === 'all') {
-      info.dns = run('scutil --dns | head -20');
+      info.dns = await run('scutil --dns | head -20');
     }
 
     return info;
@@ -429,9 +429,9 @@ export const fileSearchTool: Tool = {
 
     let output: string;
     if (uf) {
-      output = run(`find "${p}" -maxdepth 5 -iname "*${q}*" 2>/dev/null | head -${lim}`);
+      output = await run(`find "${p}" -maxdepth 5 -iname "*${q}*" 2>/dev/null | head -${lim}`);
     } else {
-      output = run(`mdfind -onlyin "${p}" "${q}" 2>/dev/null | head -${lim}`);
+      output = await run(`mdfind -onlyin "${p}" "${q}" 2>/dev/null | head -${lim}`);
     }
 
     const lines = output.split('\n').filter(Boolean);
@@ -465,15 +465,15 @@ export const readFileTool: Tool = {
     const p = String(path ?? '');
     const l = typeof lines === 'number' ? lines : undefined;
 
-    const exists = run(`test -f "${p}" && echo 'yes' || echo 'no'`);
+    const exists = await run(`test -f "${p}" && echo 'yes' || echo 'no'`);
     if (exists !== 'yes') {
       return { error: `File not found: ${p}` };
     }
 
     const cmd = l ? `tail -n ${l} "${p}"` : `cat "${p}"`;
-    const content = run(cmd, 10_000);
-    const byteCount = run(`wc -c < "${p}"`);
-    const lineCount = run(`wc -l < "${p}"`);
+    const content = await run(cmd, 10_000);
+    const byteCount = await run(`wc -c < "${p}"`);
+    const lineCount = await run(`wc -l < "${p}"`);
 
     return {
       path: p,
@@ -565,7 +565,7 @@ export const systemLogsTool: Tool = {
     // Limit output
     if (!str) cmd += ' | head -200';
 
-    const output = run(cmd, str ? 5_000 : 15_000);
+    const output = await run(cmd, str ? 5_000 : 15_000);
 
     const lines = output.split('\n').filter(Boolean);
     return {

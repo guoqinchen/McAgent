@@ -17,7 +17,7 @@ import { defaultExecutor } from './shell/executor.js';
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
 /** @deprecated Use defaultExecutor.run() instead. */
-const run = (cmd: string, timeout?: number) => defaultExecutor.run(cmd, timeout);
+const run = (cmd: string, timeout?: number): Promise<string> => defaultExecutor.run(cmd, timeout);
 
 // (removed escapeSed — edit_file now uses Node.js native replaceAll instead of sed)
 
@@ -138,7 +138,7 @@ export const openAppTool: Tool = {
   },
   execute: async ({ app }) => {
     const name = String(app ?? '');
-    const out = run(`open -a "${name}" 2>&1`);
+    const out = await run(`open -a "${name}" 2>&1`);
     return { success: !out, app: name, error: out || null };
   },
 };
@@ -166,12 +166,19 @@ export const clipboardTool: Tool = {
   },
   execute: async ({ action, text }) => {
     if (action === 'read') {
-      const content = run('pbpaste 2>/dev/null');
+      const content = await run('pbpaste 2>/dev/null');
       return { action: 'read', content, length: content.length };
     }
     const t = String(text ?? '');
-    const { execSync } = await import('node:child_process');
-    execSync('pbcopy', { input: t });
+    // Use a short-lived child process to feed pbcopy via stdin
+    const { spawn } = await import('node:child_process');
+    await new Promise<void>((resolve) => {
+      const proc = spawn('pbcopy', [], { stdio: ['pipe', 'ignore', 'ignore'] });
+      proc.stdin!.write(t);
+      proc.stdin!.end();
+      proc.on('close', () => resolve());
+      proc.on('error', () => resolve()); // non-fatal
+    });
     return { action: 'write', success: true, length: t.length };
   },
 };
@@ -201,17 +208,17 @@ export const brewInfoTool: Tool = {
   execute: async ({ action, formula }) => {
     const a = String(action ?? 'list');
     if (a === 'list') {
-      const list = run('brew list --versions 2>/dev/null | head -100');
+      const list = await run('brew list --versions 2>/dev/null | head -100');
       return { action: 'list', packages: list };
     }
     if (a === 'info') {
       const f = String(formula ?? '');
       if (!f) return { error: 'formula name required for "info" action' };
-      const info = run(`brew info "${f}" 2>/dev/null`);
+      const info = await run(`brew info "${f}" 2>/dev/null`);
       return { action: 'info', formula: f, info };
     }
     if (a === 'outdated') {
-      const outdated = run('brew outdated 2>/dev/null');
+      const outdated = await run('brew outdated 2>/dev/null');
       return { action: 'outdated', packages: outdated || 'none' };
     }
     return { error: `Unknown action: ${a}` };
@@ -237,10 +244,10 @@ export const softwareUpdateTool: Tool = {
   execute: async ({ check }) => {
     const c = String(check ?? 'list');
     if (c === 'history') {
-      const history = run('softwareupdate --history 2>/dev/null | head -30');
+      const history = await run('softwareupdate --history 2>/dev/null | head -30');
       return { action: 'history', history };
     }
-    const list = run('softwareupdate -l 2>/dev/null | head -30');
+    const list = await run('softwareupdate -l 2>/dev/null | head -30');
     return { action: 'list', updates: list };
   },
 };
@@ -253,8 +260,8 @@ export const batteryTool: Tool = {
   description: 'Get macOS battery and power status.',
   parameters: { type: 'object', properties: {} },
   execute: async () => {
-    const batt = run('pmset -g batt 2>/dev/null');
-    const ps = run('pmset -g ps 2>/dev/null');
+    const batt = await run('pmset -g batt 2>/dev/null');
+    const ps = await run('pmset -g ps 2>/dev/null');
 
     // Parse percentage from "NN%" pattern
     const pctMatch = batt.match(/(\d+)%/);
@@ -268,7 +275,7 @@ export const batteryTool: Tool = {
     else if (discharging) status = 'discharging';
 
     // Fetch cycle count and health from system_profiler
-    const powerData = run(
+    const powerData = await run(
       'system_profiler SPPowerDataType 2>/dev/null | grep -E "Cycle Count|Condition|Maximum Capacity|Temperature" | head -5'
     );
     const cycleMatch = powerData.match(/Cycle Count:\s*(\d+)/);
@@ -325,9 +332,9 @@ export const screenshotTool: Tool = {
     };
     const flag = flags[t] ?? '';
 
-    run(`screencapture ${flag} "${p}" 2>/dev/null`);
-    const exists = run(`test -f "${p}" && echo yes || echo no`);
-    const size = exists === 'yes' ? run(`wc -c < "${p}"`) : '0';
+    await run(`screencapture ${flag} "${p}" 2>/dev/null`);
+    const exists = await run(`test -f "${p}" && echo yes || echo no`);
+    const size = exists === 'yes' ? await run(`wc -c < "${p}"`) : '0';
 
     return {
       success: exists === 'yes',

@@ -17,6 +17,7 @@ import { EventEmitter } from 'eventemitter3';
 import { setCommandAllowlist, setSkipDangerousCheck } from './tools.js';
 import { ConversationHistory } from './agent/conversation.js';
 import { DEFAULT_MAX_CONTEXT_TOKENS } from './context-manager.js';
+import { logger } from './logging/structured-logger.js';
 
 // ─── Internal type imports ─────────────────────────────────────────────────
 
@@ -154,6 +155,14 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     this.client = new OpenAI({
       apiKey: this.config.apiKey,
       baseURL: this.config.baseURL,
+      timeout: 60_000,       // 60s — prevent indefinite hang on API calls
+      maxRetries: 1,         // single retry to avoid long retry chains
+    });
+
+    logger.info('McAgent initialized', {
+      model: this.config.model,
+      baseURL: this.config.baseURL,
+      tools: this.config.tools.length,
     });
 
     for (const t of this.config.tools) {
@@ -240,12 +249,15 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     this.conversation.addUserMessage(content);
     this.emit('message:user', { role: 'user', content });
     this.emit('thinking:start');
+    logger.info('send() started', { content: content.slice(0, 80) });
 
     try {
       const fullText = await this.runLoop();
+      logger.info('send() completed', { responseLen: fullText.length });
       return fullText;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('send() failed', error);
       this.emit('error', error);
       throw error;
     } finally {
@@ -265,12 +277,15 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
     this.conversation.addUserMessage(content);
     this.emit('message:user', { role: 'user', content });
+    logger.info('sendSync() started', { content: content.slice(0, 80) });
 
     try {
       const fullText = await this.runLoop(true);
+      logger.info('sendSync() completed', { responseLen: fullText.length });
       return fullText;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('sendSync() failed', error);
       this.emit('error', error);
       throw error;
     } finally {
@@ -308,8 +323,10 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
       );
 
       // Build common API params with thinking mode
-      // DeepSeek-V4: thinking via extra_body (OpenAI SDK compat)
-      const thinkingBody = this.config.thinkingEnabled ? { thinking: { type: 'enabled' as const } } : undefined;
+      // DeepSeek-V4: thinking + reasoning_effort via extra_body (OpenAI SDK compat)
+      const thinkingBody = this.config.thinkingEnabled
+        ? { thinking: { type: 'enabled' as const }, reasoning_effort: this.config.reasoningEffort }
+        : { reasoning_effort: this.config.reasoningEffort };
 
       if (sync) {
         // ── Non-streaming call ─────────────────────────────────────────────
@@ -318,7 +335,6 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
           model: this.config.model,
           messages,
           tools: tools.length > 0 ? tools : undefined,
-          reasoning_effort: this.config.reasoningEffort,
           extra_body: thinkingBody,
           stream: false,
         });
@@ -356,14 +372,22 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
         return fullText;
       } else {
         // ── Streaming call ─────────────────────────────────────────────────
+        // AbortController guards against streaming hangs (server stops
+        // sending data without closing the connection).
+        const streamAbort = new AbortController();
+        const streamTimeout = setTimeout(
+          () => streamAbort.abort(),
+          120_000, // 2 min overall streaming timeout
+        );
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const stream = await (this.client.chat.completions.create as any)({
           model: this.config.model,
           messages,
           tools: tools.length > 0 ? tools : undefined,
-          reasoning_effort: this.config.reasoningEffort,
           extra_body: thinkingBody,
           stream: true,
+          signal: streamAbort.signal,
         });
 
         // Accumulate tool calls across chunks by index
@@ -374,75 +398,80 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
         let streamingContent = fullText;
         let finished = false;
 
-        for await (const chunk of stream) {
-          const delta = chunk.choices[0]?.delta;
-          const finishReason = chunk.choices[0]?.finish_reason;
+        try {
+          for await (const chunk of stream) {
+            const delta = chunk.choices[0]?.delta;
+            const finishReason = chunk.choices[0]?.finish_reason;
 
-          if (!delta) continue;
+            if (!delta) continue;
 
-          // Text content
-          if (delta.content) {
-            streamingContent += delta.content;
-            this.emit('stream:delta', delta.content, streamingContent);
-          }
-
-          // DeepSeek-specific: reasoning_content in delta
-          if (hasReasoning(delta)) {
-            this.emit('reasoning:delta', delta.reasoning_content);
-          }
-
-          // Tool calls (accumulate by index — Delta.ToolCall has function)
-          if (delta.tool_calls) {
-            for (const tc of delta.tool_calls) {
-              const idx = tc.index;
-              if (!toolCallAccumulators.has(idx)) {
-                toolCallAccumulators.set(idx, {
-                  id: '',
-                  name: '',
-                  arguments: '',
-                });
-              }
-              const acc = toolCallAccumulators.get(idx)!;
-              if (tc.id) acc.id = tc.id;
-              if (tc.function?.name) acc.name = tc.function.name;
-              if (tc.function?.arguments) acc.arguments += tc.function.arguments;
+            // Text content
+            if (delta.content) {
+              streamingContent += delta.content;
+              this.emit('stream:delta', delta.content, streamingContent);
             }
-          }
 
-          if (finishReason === 'tool_calls' || finishReason === 'stop' || finishReason === 'length') {
-            if (toolCallAccumulators.size > 0) {
-              // Add assistant message with tool calls to history
-              this.conversation.addAssistantMessage(
-                streamingContent.slice(fullText.length) || null,
-                Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
-                  id: acc.id,
-                  type: 'function' as const,
-                  function: { name: acc.name, arguments: acc.arguments },
-                }))
-              );
-              fullText = streamingContent;
+            // DeepSeek-specific: reasoning_content in delta
+            if (hasReasoning(delta)) {
+              this.emit('reasoning:delta', delta.reasoning_content);
+            }
 
-              // All accumulated calls are 'function' type (checked during accumulation)
-              const accumulatedCalls: ChatCompletionMessageFunctionToolCall[] =
-                Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
-                  id: acc.id,
-                  type: 'function' as const,
-                  function: { name: acc.name, arguments: acc.arguments },
-                }));
-              await this.executeToolCalls(accumulatedCalls);
+            // Tool calls (accumulate by index — Delta.ToolCall has function)
+            if (delta.tool_calls) {
+              for (const tc of delta.tool_calls) {
+                const idx = tc.index;
+                if (!toolCallAccumulators.has(idx)) {
+                  toolCallAccumulators.set(idx, {
+                    id: '',
+                    name: '',
+                    arguments: '',
+                  });
+                }
+                const acc = toolCallAccumulators.get(idx)!;
+                if (tc.id) acc.id = tc.id;
+                if (tc.function?.name) acc.name = tc.function.name;
+                if (tc.function?.arguments) acc.arguments += tc.function.arguments;
+              }
+            }
 
-              // If the response was truncated, warn the model
-              if (finishReason === 'length') {
-                this.conversation.addToolWarning(
-                  toolCallAccumulators.values().next().value?.id || 'n/a',
-                  'Response was truncated due to context length limit. Tool calls may have been cut off.'
+            if (finishReason === 'tool_calls' || finishReason === 'stop' || finishReason === 'length') {
+              if (toolCallAccumulators.size > 0) {
+                // Add assistant message with tool calls to history
+                this.conversation.addAssistantMessage(
+                  streamingContent.slice(fullText.length) || null,
+                  Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
+                    id: acc.id,
+                    type: 'function' as const,
+                    function: { name: acc.name, arguments: acc.arguments },
+                  }))
                 );
-              }
+                fullText = streamingContent;
 
-              finished = true;
+                // All accumulated calls are 'function' type (checked during accumulation)
+                const accumulatedCalls: ChatCompletionMessageFunctionToolCall[] =
+                  Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
+                    id: acc.id,
+                    type: 'function' as const,
+                    function: { name: acc.name, arguments: acc.arguments },
+                  }));
+                clearTimeout(streamTimeout);
+                await this.executeToolCalls(accumulatedCalls);
+
+                // If the response was truncated, warn the model
+                if (finishReason === 'length') {
+                  this.conversation.addToolWarning(
+                    toolCallAccumulators.values().next().value?.id || 'n/a',
+                    'Response was truncated due to context length limit. Tool calls may have been cut off.'
+                  );
+                }
+
+                finished = true;
+              }
+              break; // exit for-await loop
             }
-            break; // exit for-await loop
           }
+        } finally {
+          clearTimeout(streamTimeout);
         }
 
         if (!finished) {

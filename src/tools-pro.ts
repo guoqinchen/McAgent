@@ -20,7 +20,7 @@ import { defaultExecutor } from './shell/executor.js';
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
 /** @deprecated Use defaultExecutor.run() instead. */
-const run = (cmd: string, timeout?: number) => defaultExecutor.run(cmd, timeout);
+const run = (cmd: string, timeout?: number): Promise<string> => defaultExecutor.run(cmd, timeout);
 
 // ─── Tool 1: network_diagnostics ──────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ export const networkDiagnosticsTool: Tool = {
     switch (a) {
       case 'ping': {
         const pingCmd = `ping -c ${c} -t 5 "${t}" 2>&1`;
-        const pingOut = run(pingCmd, 15_000);
+        const pingOut = await run(pingCmd, 15_000);
         // Parse summary line
         const summary = pingOut.split('\n').filter(l => l.includes('round-trip'));
         const stats = pingOut.split('\n').filter(l => l.includes('packets'));
@@ -81,7 +81,7 @@ export const networkDiagnosticsTool: Tool = {
       }
       case 'traceroute': {
         const traceCmd = `traceroute -m 15 -q 1 "${t}" 2>&1 | head -20`;
-        const traceOut = run(traceCmd, 30_000);
+        const traceOut = await run(traceCmd, 30_000);
         const hops = traceOut.split('\n').filter(Boolean);
         return {
           action: 'traceroute',
@@ -93,10 +93,10 @@ export const networkDiagnosticsTool: Tool = {
       case 'dns': {
         // Try dig first, fall back to host
         const cmd = `dig +short "${t}" 2>/dev/null || host "${t}" 2>/dev/null || echo 'DNS resolution failed'`;
-        const output = run(cmd, 10_000);
+        const output = await run(cmd, 10_000);
         const results = output.split('\n').filter(Boolean);
         // Also show system DNS config
-        const dnsConfig = run('scutil --dns | head -10');
+        const dnsConfig = await run('scutil --dns | head -10');
         return {
           action: 'dns',
           target: t,
@@ -106,7 +106,7 @@ export const networkDiagnosticsTool: Tool = {
       }
       case 'port': {
         const cmd = `nc -zv -w 3 "${t}" ${p} 2>&1`;
-        const output = run(cmd, 10_000);
+        const output = await run(cmd, 10_000);
         const succeeded = output.includes('succeeded') || !output.includes('refused') && !output.includes('failed');
         return {
           action: 'port',
@@ -118,7 +118,7 @@ export const networkDiagnosticsTool: Tool = {
       }
       case 'quality': {
         const cmd = 'networkQuality -v 2>/dev/null | head -20';
-        const output = run(cmd, 60_000);
+        const output = await run(cmd, 60_000);
         const lines = output.split('\n').filter(Boolean);
         return {
           action: 'quality',
@@ -176,12 +176,12 @@ export const systemDiagnosticsTool: Tool = {
       case 'sample': {
         let targetPid = typeof pid === 'number' ? pid : 0;
         if (!targetPid && processName) {
-          const pidStr = run(`pgrep -x "${processName}" | head -1`);
+          const pidStr = await run(`pgrep -x "${processName}" | head -1`);
           targetPid = parseInt(pidStr, 10) || 0;
         }
         if (!targetPid) return { error: 'No process specified: provide pid or processName' };
         const cmd = `sample ${targetPid} ${dur} 2>&1 | head -100`;
-        const output = run(cmd, dur * 2000 + 10_000);
+        const output = await run(cmd, dur * 2000 + 10_000);
         const lines = output.split('\n').filter(Boolean);
         // Parse the top call weight
         const heavyStack = lines.filter(l => l.match(/^\s+\d+/));
@@ -196,10 +196,10 @@ export const systemDiagnosticsTool: Tool = {
       }
       case 'thermal': {
         const cmd = 'pmset -g therm 2>/dev/null';
-        const output = run(cmd);
+        const output = await run(cmd);
         const thermalPressure = output;
         // Try powermetrics for temperature (requires sudo, may fail)
-        const temp = run("sudo powermetrics --samplers smc -i 500 -n 1 2>/dev/null | grep -i 'temperature\\|fan' | head -5 || echo '(requires sudo for thermal data)'");
+        const temp = await run("sudo powermetrics --samplers smc -i 500 -n 1 2>/dev/null | grep -i 'temperature\\|fan' | head -5 || echo '(requires sudo for thermal data)'");
         return {
           action: 'thermal',
           thermalPressure: thermalPressure || 'no thermal data',
@@ -208,7 +208,7 @@ export const systemDiagnosticsTool: Tool = {
       }
       case 'disk_io': {
         const cmd = 'iostat -Id 2 2 2>/dev/null | tail -20';
-        const output = run(cmd, 5_000);
+        const output = await run(cmd, 5_000);
         const lines = output.split('\n').filter(Boolean);
         return {
           action: 'disk_io',
@@ -216,8 +216,8 @@ export const systemDiagnosticsTool: Tool = {
         };
       }
       case 'memory_pressure': {
-        const pressure = run('memory_pressure 2>/dev/null | head -10');
-        const vm = run('vm_stat 2>/dev/null | head -20');
+        const pressure = await run('memory_pressure 2>/dev/null | head -10');
+        const vm = await run('vm_stat 2>/dev/null | head -20');
         return {
           action: 'memory_pressure',
           pressure: pressure.split('\n').filter(Boolean),
@@ -226,7 +226,7 @@ export const systemDiagnosticsTool: Tool = {
       }
       case 'sysdiagnose': {
         const cmd = 'sudo sysdiagnose -f /tmp -b 2>&1 | tail -5';
-        const output = run(cmd, 120_000);
+        const output = await run(cmd, 120_000);
         return {
           action: 'sysdiagnose',
           result: output || 'sysdiagnose started — check /var/tmp for .tar.gz',
@@ -275,31 +275,31 @@ export const securityCheckTool: Tool = {
     const results: Record<string, unknown> = {};
 
     if (c === 'sip' || c === 'all') {
-      const sipStatus = run('csrutil status 2>/dev/null');
+      const sipStatus = await run('csrutil status 2>/dev/null');
       results.sip = sipStatus;
     }
 
     if (c === 'filevault' || c === 'all') {
-      const fvStatus = run('fdesetup status 2>/dev/null');
+      const fvStatus = await run('fdesetup status 2>/dev/null');
       results.fileVault = fvStatus;
       if (fvStatus.includes('On')) {
-        const fvUsers = run('fdesetup list 2>/dev/null');
+        const fvUsers = await run('fdesetup list 2>/dev/null');
         results.fileVaultUsers = fvUsers.split('\n').filter(Boolean);
       }
     }
 
     if (c === 'gatekeeper' || c === 'all') {
-      const gkStatus = run('spctl --status 2>/dev/null');
+      const gkStatus = await run('spctl --status 2>/dev/null');
       results.gatekeeper = gkStatus;
       // macOS 14+ also has
-      const gkAssess = run('spctl --global-state 2>/dev/null || echo "(not available on this version)"');
+      const gkAssess = await run('spctl --global-state 2>/dev/null || echo "(not available on this version)"');
       results.gatekeeperDetail = gkAssess;
     }
 
     if (c === 'codesign' || (c === 'all' && p)) {
       if (p) {
-        const csInfo = run(`codesign -dvvv "${p}" 2>&1 | head -20`);
-        const csValid = run(`codesign -v "${p}" 2>&1 || echo 'INVALID'`);
+        const csInfo = await run(`codesign -dvvv "${p}" 2>&1 | head -20`);
+        const csValid = await run(`codesign -v "${p}" 2>&1 || echo 'INVALID'`);
         results.codesign = {
           path: p,
           info: csInfo.split('\n').filter(Boolean),
@@ -312,15 +312,15 @@ export const securityCheckTool: Tool = {
 
     // Additional security info for 'all'
     if (c === 'all') {
-      const secureBoot = run('sysctl kern.secureboot 2>/dev/null');
+      const secureBoot = await run('sysctl kern.secureboot 2>/dev/null');
       results.secureBoot = secureBoot;
 
       // XProtect version (macOS built-in malware protection)
-      const xprotect = run('system_profiler SPInstallHistoryDataType 2>/dev/null | grep -A2 XProtect | head -5');
+      const xprotect = await run('system_profiler SPInstallHistoryDataType 2>/dev/null | grep -A2 XProtect | head -5');
       results.xprotectInfo = xprotect.split('\n').filter(Boolean);
 
       // Firewall status
-      const fw = run('/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null');
+      const fw = await run('/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null');
       results.firewall = fw;
     }
 
@@ -357,8 +357,8 @@ export const powerManagementTool: Tool = {
 
     switch (a) {
       case 'settings': {
-        const settings = run('pmset -g 2>/dev/null');
-        const custom = run('pmset -g custom 2>/dev/null');
+        const settings = await run('pmset -g 2>/dev/null');
+        const custom = await run('pmset -g custom 2>/dev/null');
         const lines = settings.split('\n').filter(Boolean);
         return {
           action: 'settings',
@@ -367,12 +367,12 @@ export const powerManagementTool: Tool = {
         };
       }
       case 'battery': {
-        const batt = run('pmset -g batt 2>/dev/null');
+        const batt = await run('pmset -g batt 2>/dev/null');
 
         // Parse percentage
         const pctMatch = batt.match(/(\d+)%/);
         // Parse cycle count from system_profiler
-        const cycleInfo = run(
+        const cycleInfo = await run(
           `system_profiler SPPowerDataType 2>/dev/null | grep -E "Cycle Count|Health Information|Condition|Temperature" | head -10`
         );
         const cycles = cycleInfo.split('\n').filter(Boolean);
@@ -391,7 +391,7 @@ export const powerManagementTool: Tool = {
         };
       }
       case 'assertions': {
-        const asserts = run('pmset -g assertions 2>/dev/null | head -40');
+        const asserts = await run('pmset -g assertions 2>/dev/null | head -40');
         const lines = asserts.split('\n').filter(Boolean);
         // Extract processes that are preventing sleep
         const preventers = lines.filter(l =>
@@ -405,7 +405,7 @@ export const powerManagementTool: Tool = {
         };
       }
       case 'log': {
-        const log = run('pmset -g log 2>/dev/null | tail -30');
+        const log = await run('pmset -g log 2>/dev/null | tail -30');
         const lines = log.split('\n').filter(Boolean);
         return {
           action: 'log',

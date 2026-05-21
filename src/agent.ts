@@ -9,39 +9,31 @@
 
 import OpenAI, { type OpenAI as OpenAIClient } from 'openai';
 import type {
-  ChatCompletionMessageParam,
   ChatCompletionTool,
   ChatCompletionMessageToolCall,
   ChatCompletionMessageFunctionToolCall,
 } from 'openai/resources/chat/completions';
 import { EventEmitter } from 'eventemitter3';
-import { writeFileSync, readFileSync, existsSync } from 'node:fs';
-import { evictMessages, DEFAULT_MAX_CONTEXT_TOKENS } from './context-manager.js';
 import { setCommandAllowlist, setSkipDangerousCheck } from './tools.js';
+import { ConversationHistory } from './agent/conversation.js';
+import { DEFAULT_MAX_CONTEXT_TOKENS } from './context-manager.js';
 
-// ─── Message types ──────────────────────────────────────────────────────────
+// ─── Internal type imports ─────────────────────────────────────────────────
 
-export interface Message {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
+import type { Tool } from './types/tool.js';
+import type { McAgentConfig as MacOSAgentConfig, PermissionMode } from './types/config.js';
+import type { Message, McAgentEvents as MacOSAgentEvents } from './types/events.js';
 
-// ─── Tool definition ────────────────────────────────────────────────────────
+// ─── Re-export types for backward compatibility ────────────────────────────
 
-/**
- * A tool the agent can use.
- * `parameters` is a JSON Schema object (OpenAI-compatible).
- * `execute` is called when the model requests this tool.
- */
-export interface Tool {
-  name: string;
-  description: string;
-  /** JSON Schema for the tool's input parameters. */
-  parameters: Record<string, unknown>;
-  execute: (args: Record<string, unknown>) => Promise<unknown>;
-  /** If true, this tool performs no destructive/write operations. In readonly mode only these tools are available. */
-  readonly?: boolean;
-}
+export type { Tool } from './types/tool.js';
+export type { McAgentConfig as MacOSAgentConfig, PermissionMode } from './types/config.js';
+export type { Message, McAgentEvents as MacOSAgentEvents } from './types/events.js';
+
+// The class uses the original names via the imported bindings
+// (McAgentConfig → MacOSAgentConfig, McAgentEvents → MacOSAgentEvents)
+
+
 
 function toolToOpenAI(t: Tool): ChatCompletionTool {
   return {
@@ -72,54 +64,7 @@ function hasReasoning(input: unknown): input is { reasoning_content: string } {
   );
 }
 
-// ─── Agent events (hooks) ───────────────────────────────────────────────────
 
-export interface MacOSAgentEvents {
-  /** User message was recorded */
-  'message:user': (message: Message) => void;
-  /** Full assistant message is complete */
-  'message:assistant': (message: Message) => void;
-  /** A text delta arrived during streaming */
-  'stream:delta': (delta: string, accumulated: string) => void;
-  /** Streaming finished */
-  'stream:end': (fullText: string) => void;
-  /** A tool was called */
-  'tool:call': (name: string, args: unknown) => void;
-  /** A tool returned a result */
-  'tool:result': (name: string, result: unknown) => void;
-  /** The model produced reasoning / thinking text (from DeepSeek's reasoning_content) */
-  'reasoning:delta': (text: string) => void;
-  /** Agent started processing */
-  'thinking:start': () => void;
-  /** Agent finished processing */
-  'thinking:end': () => void;
-  /** Error occurred */
-  error: (error: Error) => void;
-}
-
-// ─── Configuration ───────────────────────────────────────────────────────────
-
-/** Permission mode for tool execution:
- * - "readonly": Only tools marked with readonly:true are available. Destructive tools (write, execute) are hidden.
- * - "approve": Default. Dangerous commands require user approval (current behavior via checkCommand).
- * - "auto": Automatically execute all commands without safety gate (for trusted environments).
- */
-export type PermissionMode = 'readonly' | 'approve' | 'auto';
-
-export interface MacOSAgentConfig {
-  apiKey: string;
-  baseURL?: string;
-  model?: string;
-  instructions?: string;
-  tools?: Tool[];
-  maxToolRounds?: number;
-  /** Maximum approximate tokens in context window before eviction (default 96000). 0 disables eviction. */
-  maxContextTokens?: number;
-  /** Permission mode: 'readonly' | 'approve' | 'auto'. Default: 'approve'. */
-  permissionMode?: PermissionMode;
-  /** In 'auto' mode, these command prefixes bypass the dangerous pattern check. Default: ['git', 'npm', 'brew', 'ls', 'cat', 'echo']. */
-  autoAllowlist?: string[];
-}
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
 
@@ -136,7 +81,7 @@ const DEEPSEEK_MODEL = 'deepseek-chat';
  */
 export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
   private client: OpenAIClient;
-  private messages: ChatCompletionMessageParam[] = [];
+  private conversation = new ConversationHistory();
   private config: Required<Omit<MacOSAgentConfig, 'apiKey' | 'baseURL'>> & {
     apiKey: string;
     baseURL: string;
@@ -196,20 +141,12 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
   /** Return a copy of the conversation history (as plain Message objects). */
   getMessages(): Message[] {
-    return this.messages.map((m) => ({
-      role: m.role as 'user' | 'assistant' | 'system',
-      content:
-        typeof m.content === 'string'
-          ? m.content
-          : Array.isArray(m.content)
-            ? m.content.map((c) => ('text' in c ? c.text : '')).join('')
-            : '',
-    }));
+    return this.conversation.toPlainMessages();
   }
 
   /** Clear all conversation history. */
   clearHistory(): void {
-    this.messages = [];
+    this.conversation.clear();
   }
 
   /** Replace the system instructions. */
@@ -247,7 +184,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
   /** Serialize conversation history to a JSON file. */
   saveSession(path: string): void {
-    writeFileSync(path, JSON.stringify(this.messages, null, 2), 'utf-8');
+    this.conversation.save(path);
   }
 
   /**
@@ -255,12 +192,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
    * If the file does not exist, clears history silently.
    */
   loadSession(path: string): void {
-    if (existsSync(path)) {
-      const raw = readFileSync(path, 'utf-8');
-      this.messages = JSON.parse(raw);
-    } else {
-      this.messages = [];
-    }
+    this.conversation.load(path);
   }
 
   // ── Send (streaming + automatic tool execution) ────────────────────────────
@@ -276,11 +208,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     this.busy = true;
     this.consecutiveErrors = 0;
 
-    const userMessage: ChatCompletionMessageParam = {
-      role: 'user',
-      content,
-    };
-    this.messages.push(userMessage);
+    this.conversation.addUserMessage(content);
     this.emit('message:user', { role: 'user', content });
     this.emit('thinking:start');
 
@@ -306,11 +234,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     this.busy = true;
     this.consecutiveErrors = 0;
 
-    const userMessage: ChatCompletionMessageParam = {
-      role: 'user',
-      content,
-    };
-    this.messages.push(userMessage);
+    this.conversation.addUserMessage(content);
     this.emit('message:user', { role: 'user', content });
 
     try {
@@ -348,20 +272,11 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
         break;
       }
 
-      // Build the message list with system prompt
-      let messages: ChatCompletionMessageParam[] = [
-        { role: 'system', content: this.config.instructions },
-        ...this.messages,
-      ];
-
-      // Evict old messages if context window is getting full
-      if (this.config.maxContextTokens > 0) {
-        const evicted = evictMessages(messages, this.config.maxContextTokens);
-        if (evicted.length < messages.length) {
-          this.messages = evicted.length > 1 ? evicted.slice(1) : [];
-          messages = evicted; // use the evicted array for this round's API call
-        }
-      }
+      // Build messages with system prompt + auto-eviction
+      const messages = this.conversation.getMessagesWithSystem(
+        this.config.instructions,
+        this.config.maxContextTokens
+      );
 
       if (sync) {
         // ── Non-streaming call ─────────────────────────────────────────────
@@ -392,11 +307,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
           if (functionCalls.length > 0) {
             this.emit('stream:delta', msg.content || '', fullText);
             // Push assistant message with tool calls before executing tools
-            this.messages.push({
-              role: 'assistant',
-              content: msg.content || null,
-              tool_calls: msg.tool_calls,
-            });
+            this.conversation.addAssistantMessage(msg.content, functionCalls);
             await this.executeToolCalls(functionCalls);
             continue;
           }
@@ -404,11 +315,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
         // No tool calls → done
         this.emit('stream:end', fullText);
-        const assistantMsg: ChatCompletionMessageParam = {
-          role: 'assistant',
-          content: msg.content,
-        };
-        this.messages.push(assistantMsg);
+        this.conversation.addAssistantMessage(msg.content);
         this.emit('message:assistant', { role: 'assistant', content: fullText });
         return fullText;
       } else {
@@ -466,16 +373,14 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
           if (finishReason === 'tool_calls' || finishReason === 'stop' || finishReason === 'length') {
             if (toolCallAccumulators.size > 0) {
               // Add assistant message with tool calls to history
-              const assistantMsg: ChatCompletionMessageParam = {
-                role: 'assistant',
-                content: streamingContent.slice(fullText.length) || null,
-                tool_calls: Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
+              this.conversation.addAssistantMessage(
+                streamingContent.slice(fullText.length) || null,
+                Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
                   id: acc.id,
                   type: 'function' as const,
                   function: { name: acc.name, arguments: acc.arguments },
-                })),
-              };
-              this.messages.push(assistantMsg);
+                }))
+              );
               fullText = streamingContent;
 
               // All accumulated calls are 'function' type (checked during accumulation)
@@ -489,13 +394,10 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
               // If the response was truncated, warn the model
               if (finishReason === 'length') {
-                this.messages.push({
-                  role: 'tool',
-                  tool_call_id: toolCallAccumulators.values().next().value?.id || 'n/a',
-                  content: JSON.stringify({
-                    warning: 'Response was truncated due to context length limit. Tool calls may have been cut off.',
-                  }),
-                });
+                this.conversation.addToolWarning(
+                  toolCallAccumulators.values().next().value?.id || 'n/a',
+                  'Response was truncated due to context length limit. Tool calls may have been cut off.'
+                );
               }
 
               finished = true;
@@ -508,7 +410,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
           // No tool calls — assistant is done
           fullText = streamingContent;
           this.emit('stream:end', fullText);
-          this.messages.push({ role: 'assistant', content: streamingContent });
+          this.conversation.addAssistantMessage(streamingContent);
           this.emit('message:assistant', {
             role: 'assistant',
             content: fullText,
@@ -522,7 +424,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     // Max rounds reached
     this.emit('stream:end', fullText);
     if (fullText) {
-      this.messages.push({ role: 'assistant', content: fullText });
+      this.conversation.addAssistantMessage(fullText);
       this.emit('message:assistant', { role: 'assistant', content: fullText });
     }
     return fullText;
@@ -537,13 +439,9 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     for (const tc of toolCalls) {
       const tool = this.toolsByName.get(tc.function.name);
       if (!tool) {
-        this.messages.push({
-          role: 'tool',
-          tool_call_id: tc.id,
-          content: JSON.stringify({
-            error: `Unknown tool: ${tc.function.name}`,
-          }),
-        });
+        this.conversation.addToolResult(tc.id, JSON.stringify({
+          error: `Unknown tool: ${tc.function.name}`,
+        }));
         continue;
       }
 
@@ -559,22 +457,14 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
         const result = await tool.execute(args);
         this.consecutiveErrors = 0;
         this.emit('tool:result', tc.function.name, result);
-        this.messages.push({
-          role: 'tool',
-          tool_call_id: tc.id,
-          content: JSON.stringify(result),
-        });
+        this.conversation.addToolResult(tc.id, JSON.stringify(result));
       } catch (err) {
         this.consecutiveErrors++;
         const errMsg = err instanceof Error ? err.message : String(err);
         this.emit('error', new Error(`Tool ${tc.function.name} failed: ${errMsg}`));
-        this.messages.push({
-          role: 'tool',
-          tool_call_id: tc.id,
-          content: JSON.stringify({
-            error: `Tool execution failed: ${errMsg}`,
-          }),
-        });
+        this.conversation.addToolResult(tc.id, JSON.stringify({
+          error: `Tool execution failed: ${errMsg}`,
+        }));
       }
     }
   }

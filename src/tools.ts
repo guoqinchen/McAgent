@@ -5,36 +5,13 @@
  * parameters as JSON Schema, execute function).
  */
 
-import { execSync } from 'node:child_process';
-import type { Tool } from './agent.js';
+import type { Tool } from './types/tool.js';
+import { defaultExecutor } from './shell/executor.js';
 
 // ─── Helper: safe shell execution ───────────────────────────────────────────
 
-interface ExecError {
-  stderr?: string;
-  stdout?: string;
-  message?: string;
-}
-
-function isExecError(err: unknown): err is ExecError {
-  return typeof err === 'object' && err !== null;
-}
-
-function run(cmd: string, timeout = 30_000): string {
-  try {
-    const out = execSync(cmd, {
-      encoding: 'utf-8',
-      timeout,
-      maxBuffer: 1024 * 1024, // 1 MB
-    });
-    return out.trim();
-  } catch (err: unknown) {
-    if (isExecError(err)) {
-      return err.stderr?.trim() || err.stdout?.trim() || err.message || String(err);
-    }
-    return String(err);
-  }
-}
+/** @deprecated Use defaultExecutor.run() instead. */
+const run = (cmd: string, timeout?: number) => defaultExecutor.run(cmd, timeout);
 
 // ─── Tool: execute a shell command ──────────────────────────────────────────
 

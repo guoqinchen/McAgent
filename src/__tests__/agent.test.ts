@@ -145,7 +145,7 @@ describe('MacOSAgent', () => {
       const agent = createTestAgent();
       // Push a message manually via reflection
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (agent as any).messages.push({ role: 'user', content: 'hello' });
+      (agent as any).conversation.addUserMessage('hello');
       agent.clearHistory();
       expect(agent.getMessages()).toEqual([]);
     });
@@ -179,7 +179,7 @@ describe('MacOSAgent', () => {
 
       const agent = createTestAgent();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (agent as any).messages.push({ role: 'user', content: 'old' });
+      (agent as any).conversation.addUserMessage('old');
       agent.loadSession('/nonexistent/session.json');
       expect(agent.getMessages()).toEqual([]);
     });
@@ -338,10 +338,9 @@ describe('MacOSAgent', () => {
       // Push many long messages to exceed the tiny token limit
       for (let i = 0; i < 10; i++) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (agent as any).messages.push(
-          { role: 'user', content: `Message number ${i} `.repeat(20) },
-          { role: 'assistant', content: `Response ${i}` }
-        );
+        (agent as any).conversation.addUserMessage(`Message number ${i} `.repeat(20));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (agent as any).conversation.addAssistantMessage(`Response ${i}`);
       }
 
       // Verify that many messages were added
@@ -569,7 +568,7 @@ describe('MacOSAgent', () => {
 
       const agent = createTestAgent();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (agent as any).messages.push({ role: 'user', content: 'preserved' });
+      (agent as any).conversation.addUserMessage('preserved');
 
       expect(() => agent.loadSession('/tmp/bad.json')).toThrow();
     });

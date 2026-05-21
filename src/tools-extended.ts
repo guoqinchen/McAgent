@@ -8,39 +8,16 @@
  *   const agent = createMacOSAgent({ ..., tools: [...macOSDefaultTools, ...macOSExtendedTools] });
  */
 
-import { execSync } from 'node:child_process';
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { resolve, normalize, dirname } from 'node:path';
 import { homedir } from 'node:os';
-import type { Tool } from './agent.js';
+import type { Tool } from './types/tool.js';
+import { defaultExecutor } from './shell/executor.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
-interface ExecError {
-  stderr?: string;
-  stdout?: string;
-  message?: string;
-}
-
-function isExecError(err: unknown): err is ExecError {
-  return typeof err === 'object' && err !== null;
-}
-
-function run(cmd: string, timeout = 30_000): string {
-  try {
-    const out = execSync(cmd, {
-      encoding: 'utf-8',
-      timeout,
-      maxBuffer: 1024 * 1024,
-    });
-    return out.trim();
-  } catch (err: unknown) {
-    if (isExecError(err)) {
-      return err.stderr?.trim() || err.stdout?.trim() || err.message || String(err);
-    }
-    return String(err);
-  }
-}
+/** @deprecated Use defaultExecutor.run() instead. */
+const run = (cmd: string, timeout?: number) => defaultExecutor.run(cmd, timeout);
 
 // (removed escapeSed — edit_file now uses Node.js native replaceAll instead of sed)
 
@@ -193,6 +170,7 @@ export const clipboardTool: Tool = {
       return { action: 'read', content, length: content.length };
     }
     const t = String(text ?? '');
+    const { execSync } = await import('node:child_process');
     execSync('pbcopy', { input: t });
     return { action: 'write', success: true, length: t.length };
   },

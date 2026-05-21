@@ -6,6 +6,7 @@
  */
 
 import { createMacOSAgent } from './agent.js';
+
 import { macOSDefaultTools } from './tools.js';
 import { createInterface } from 'node:readline';
 

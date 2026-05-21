@@ -10,7 +10,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { render, Box, Text, useInput, useApp } from 'ink';
-import { createMacOSAgent, type Message } from './agent.js';
+import { createMacOSAgent } from './agent.js';
+import type { Message } from './types/events.js';
 import { macOSDefaultTools } from './tools.js';
 
 // ─── Agent ───────────────────────────────────────────────────────────────────

@@ -12,15 +12,15 @@ McAgent is configured primarily through environment variables:
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `DEEPSEEK_API_KEY` | **Yes** | — | DeepSeek API key from [platform.deepseek.com](https://platform.deepseek.com/api-docs) |
-| `DEEPSEEK_MODEL` | No | `deepseek-chat` | Model ID (e.g., `deepseek-chat`, `deepseek-reasoner`) |
-| `DEEPSEEK_BASE_URL` | No | `https://api.deepseek.com/v1` | API base URL (for self-hosted / proxies) |
+| `DEEPSEEK_MODEL` | No | `deepseek-v4-flash` | Model ID (e.g., `deepseek-v4-flash`, `deepseek-v4-pro`) |
+| `DEEPSEEK_BASE_URL` | No | `https://api.deepseek.com` | API base URL (for self-hosted / proxies) |
 
 Example `.env` file:
 
 ```bash
 DEEPSEEK_API_KEY=sk-your-key-here
-DEEPSEEK_MODEL=deepseek-chat
-# DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_MODEL=deepseek-v4-flash
+# DEEPSEEK_BASE_URL=https://api.deepseek.com
 ```
 
 ### Programmatic Configuration
@@ -30,11 +30,11 @@ When creating an agent instance, pass a `MacOSAgentConfig` object:
 ```typescript
 const agent = createMacOSAgent({
   apiKey: 'sk-...',
-  model: 'deepseek-chat',
+  model: 'deepseek-v4-flash',
   instructions: 'You are a macOS expert...',
   tools: [...macOSDefaultTools, ...macOSExtendedTools],
   maxToolRounds: 10,
-  maxContextTokens: 96000,
+  maxContextTokens: 1048576,
   permissionMode: 'approve',
   autoAllowlist: ['git', 'brew', 'npm', 'ls', 'cat', 'echo'],
 });
@@ -45,12 +45,12 @@ const agent = createMacOSAgent({
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `apiKey` | `string` | — | DeepSeek API key (required) |
-| `baseURL` | `string` | `https://api.deepseek.com/v1` | API base URL |
-| `model` | `string` | `deepseek-chat` | OpenAI-compatible model ID |
+| `baseURL` | `string` | `https://api.deepseek.com` | API base URL |
+| `model` | `string` | `deepseek-v4-flash` | OpenAI-compatible model ID |
 | `instructions` | `string` | *(macOS expert prompt)* | System prompt for the agent |
 | `tools` | `Tool[]` | `[]` | Array of tool definitions |
 | `maxToolRounds` | `number` | `10` | Max tool-calling iterations per message |
-| `maxContextTokens` | `number` | `96000` | Context window limit (0 = disabled) |
+| `maxContextTokens` | `number` | `1048576` | Context window limit (0 = disabled) |
 | `permissionMode` | `string` | `'approve'` | Permission mode: `'readonly'` / `'approve'` / `'auto'` |
 | `autoAllowlist` | `string[]` | `['git','npm','brew','ls','cat','echo','mkdir','touch']` | Commands that bypass safety check in `approve` mode |
 
@@ -68,7 +68,7 @@ agent.setPermissionMode('approve');   // restore default safety
 agent.setAllowlist(['git', 'npm', 'brew', 'rsync']);
 
 // Switch model
-agent.setModel('deepseek-reasoner');
+agent.setModel('deepseek-v4-pro');
 
 // Change system instructions
 agent.setInstructions('You are a macOS security expert...');
@@ -102,15 +102,15 @@ McAgent 主要通过环境变量配置：
 | 变量 | 必填 | 默认值 | 说明 |
 |------|------|--------|------|
 | `DEEPSEEK_API_KEY` | **是** | — | 来自 [platform.deepseek.com](https://platform.deepseek.com/api-docs) 的 API 密钥 |
-| `DEEPSEEK_MODEL` | 否 | `deepseek-chat` | 模型 ID（如 `deepseek-chat`、`deepseek-reasoner`） |
-| `DEEPSEEK_BASE_URL` | 否 | `https://api.deepseek.com/v1` | API 基础 URL（自托管/代理时使用） |
+| `DEEPSEEK_MODEL` | 否 | `deepseek-v4-flash` | 模型 ID（如 `deepseek-v4-flash`、`deepseek-v4-pro`） |
+| `DEEPSEEK_BASE_URL` | 否 | `https://api.deepseek.com` | API 基础 URL（自托管/代理时使用） |
 
 `.env` 文件示例：
 
 ```bash
 DEEPSEEK_API_KEY=sk-your-key-here
-DEEPSEEK_MODEL=deepseek-chat
-# DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_MODEL=deepseek-v4-flash
+# DEEPSEEK_BASE_URL=https://api.deepseek.com
 ```
 
 ### 编程配置
@@ -120,11 +120,11 @@ DEEPSEEK_MODEL=deepseek-chat
 ```typescript
 const agent = createMacOSAgent({
   apiKey: 'sk-...',
-  model: 'deepseek-chat',
+  model: 'deepseek-v4-flash',
   instructions: 'You are a macOS expert...',
   tools: [...macOSDefaultTools, ...macOSExtendedTools],
   maxToolRounds: 10,
-  maxContextTokens: 96000,
+  maxContextTokens: 1048576,
   permissionMode: 'approve',
   autoAllowlist: ['git', 'brew', 'npm', 'ls', 'cat', 'echo'],
 });
@@ -135,12 +135,12 @@ const agent = createMacOSAgent({
 | 选项 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `apiKey` | `string` | — | DeepSeek API 密钥（必填） |
-| `baseURL` | `string` | `https://api.deepseek.com/v1` | API 基础 URL |
-| `model` | `string` | `deepseek-chat` | OpenAI 兼容的模型 ID |
+| `baseURL` | `string` | `https://api.deepseek.com` | API 基础 URL |
+| `model` | `string` | `deepseek-v4-flash` | OpenAI 兼容的模型 ID |
 | `instructions` | `string` | *(macOS expert prompt)* | 系统提示词 |
 | `tools` | `Tool[]` | `[]` | 工具定义数组 |
 | `maxToolRounds` | `number` | `10` | 每条消息最大工具调用轮次 |
-| `maxContextTokens` | `number` | `96000` | 上下文窗口限制（0 = 禁用） |
+| `maxContextTokens` | `number` | `1048576` | 上下文窗口限制（0 = 禁用） |
 | `permissionMode` | `string` | `'approve'` | 权限模式：`'readonly'` / `'approve'` / `'auto'` |
 | `autoAllowlist` | `string[]` | `['git','npm','brew','ls','cat','echo','mkdir','touch']` | 允许绕过安全检查的命令前缀 |
 
@@ -158,7 +158,7 @@ agent.setPermissionMode('approve');   // 恢复默认安全模式
 agent.setAllowlist(['git', 'npm', 'brew', 'rsync']);
 
 // 切换模型
-agent.setModel('deepseek-reasoner');
+agent.setModel('deepseek-v4-pro');
 
 // 更改系统指令
 agent.setInstructions('You are a macOS security expert...');

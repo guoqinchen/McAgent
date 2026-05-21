@@ -470,14 +470,14 @@ agent.loadSession('./sessions/debug-session.json');
 
 ### Context Window
 
-McAgent automatically manages context with a 96K token limit (leaving headroom for DeepSeek's 128K context). When approaching the limit, the system removes the oldest user/assistant exchanges first. You can adjust this:
+McAgent automatically manages context with a 1M token limit (leaving headroom for DeepSeek-V4's 1M context). When approaching the limit, the system removes the oldest user/assistant exchanges first. You can adjust this:
 
 ```typescript
 // Disable automatic eviction
 const agent = createMacOSAgent({ maxContextTokens: 0 });
 
 // Or set a custom limit
-const agent = createMacOSAgent({ maxContextTokens: 64000 });
+const agent = createMacOSAgent({ maxContextTokens: 524288 });
 
 // Clear history manually
 agent.clearHistory();

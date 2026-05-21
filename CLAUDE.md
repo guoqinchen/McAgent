@@ -64,8 +64,11 @@ npm run format         # Prettier
 ## Environment
 
 - `DEEPSEEK_API_KEY` (required)
-- `DEEPSEEK_MODEL` (default: `deepseek-chat`)
-- `DEEPSEEK_BASE_URL` (default: `https://api.deepseek.com/v1`)
+- `DEEPSEEK_MODEL` (default: `deepseek-v4-flash`)
+- `DEEPSEEK_BASE_URL` (default: `https://api.deepseek.com`)
+- `DEEPSEEK_THINKING_ENABLED` (default: `true`)
+- `DEEPSEEK_REASONING_EFFORT` (default: `high`; for complex tasks: `max`)
+- `DEEPSEEK_MAX_TOKENS` (default: `1048576`)
 
 ## Conventions
 

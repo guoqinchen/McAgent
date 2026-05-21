@@ -348,6 +348,41 @@ describe('command allowlist', () => {
   });
 });
 
+describe('processListTool sampling', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sample parameter triggers macOS sample command on top process', async () => {
+    const { execSync } = await import('node:child_process');
+    const mock = vi.mocked(execSync);
+    // First call: headerless ps output (PID, COMM, %CPU, %MEM, USER)
+    mock.mockReturnValueOnce(
+      '9876 Chrome 12.5 3.2 alice\n' +
+      '5432 Terminal 2.1 1.5 alice\n'
+    );
+    // Second call: sample output
+    mock.mockReturnValueOnce(
+      'Call graph:\n' +
+      '    1234 start (1234) 1\n' +
+      '      5678 main (libxul) 1\n'
+    );
+
+    const { processListTool } = await import('../tools.js');
+    const result = await processListTool.execute({ sample: 3 }) as { processes: string[]; sampled?: { pid: number; name: string } };
+
+    // The sample should have found PID 9876 (Chrome) as the top CPU process
+    expect(result.sampled).toBeDefined();
+    expect(result.sampled?.pid).toBe(9876);
+    expect(result.sampled?.name).toBe('Chrome');
+
+    // Verify the sample command was called
+    const sampleCall = mock.mock.calls.find(c => String(c[0]).includes('sample'));
+    expect(sampleCall).toBeDefined();
+    expect(String(sampleCall?.[0])).toContain('9876');
+  });
+});
+
 describe('runCommandTool allowlist integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();

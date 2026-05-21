@@ -300,7 +300,8 @@ export const processListTool: Tool = {
     const sam = typeof sample === 'number' ? Math.min(Math.max(sample, 1), 10) : 0;
     if (sam > 0 && lines.length > 1) {
       // The first data line (after potential header) has the highest CPU process
-      const topLine = lines.find(l => l.trim().length > 0 && !l.startsWith('#') && isNaN(Number(l.trim().split(/\s+/)[0])));
+      // Headerless ps output: all lines start with a numeric PID
+      const topLine = lines.find(l => l.trim().length > 0 && !l.startsWith('#') && !isNaN(Number(l.trim().split(/\s+/)[0])));
       // Actually the headerless ps output: first line = top CPU process, format: "PID COMM %CPU %MEM USER"
       const topParts = topLine?.trim().split(/\s+/) ?? [];
       if (topParts.length >= 2) {

@@ -349,7 +349,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
       }
 
       // Build the message list with system prompt
-      const messages: ChatCompletionMessageParam[] = [
+      let messages: ChatCompletionMessageParam[] = [
         { role: 'system', content: this.config.instructions },
         ...this.messages,
       ];
@@ -359,6 +359,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
         const evicted = evictMessages(messages, this.config.maxContextTokens);
         if (evicted.length < messages.length) {
           this.messages = evicted.length > 1 ? evicted.slice(1) : [];
+          messages = evicted; // use the evicted array for this round's API call
         }
       }
 

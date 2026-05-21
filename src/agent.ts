@@ -307,7 +307,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
           if (functionCalls.length > 0) {
             this.emit('stream:delta', msg.content || '', fullText);
             // Push assistant message with tool calls before executing tools
-            this.conversation.addAssistantMessage(msg.content, functionCalls);
+            this.conversation.addAssistantMessage(msg.content ?? null, msg.tool_calls);
             await this.executeToolCalls(functionCalls);
             continue;
           }

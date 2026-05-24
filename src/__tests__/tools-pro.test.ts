@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock child_process for all execute() tests
-vi.mock('node:child_process', () => ({
-  execSync: vi.fn(),
+// Mock executor directly — all tools use defaultExecutor.run()
+vi.mock('../shell/executor.js', () => ({
+  defaultExecutor: {
+    run: vi.fn(),
+  },
 }));
 
 // ─── networkDiagnosticsTool ─────────────────────────────────────────────────
@@ -13,9 +15,9 @@ describe('networkDiagnosticsTool', () => {
   });
 
   it('ping action executes the correct command', async () => {
-    const { execSync } = await import('node:child_process');
-    const mock = vi.mocked(execSync);
-    mock.mockReturnValue(
+    const { defaultExecutor } = await import('../shell/executor.js');
+    const runMock = vi.mocked(defaultExecutor.run);
+    runMock.mockResolvedValue(
       'PING google.com (142.250.80.46): 56 data bytes\n' +
       '64 bytes from 142.250.80.46: icmp_seq=0 ttl=118 time=14.2ms\n' +
       '--- google.com ping statistics ---\n' +
@@ -31,10 +33,11 @@ describe('networkDiagnosticsTool', () => {
   });
 
   it('dns action executes dig command', async () => {
-    const { execSync } = await import('node:child_process');
-    const mock = vi.mocked(execSync);
-    mock.mockReturnValueOnce('142.250.80.46\n');
-    mock.mockReturnValueOnce('resolver #1\n  nameserver[0] : 8.8.8.8\n');
+    const { defaultExecutor } = await import('../shell/executor.js');
+    const runMock = vi.mocked(defaultExecutor.run);
+    runMock
+      .mockResolvedValueOnce('142.250.80.46')
+      .mockResolvedValueOnce('resolver #1\n  nameserver[0] : 8.8.8.8\n');
 
     const { networkDiagnosticsTool } = await import('../tools-pro.js');
     const result = await networkDiagnosticsTool.execute({ action: 'dns', target: 'google.com' }) as { action: string; addresses: string[] };
@@ -44,9 +47,9 @@ describe('networkDiagnosticsTool', () => {
   });
 
   it('port action checks TCP connectivity', async () => {
-    const { execSync } = await import('node:child_process');
-    const mock = vi.mocked(execSync);
-    mock.mockReturnValue('Connection to 8.8.8.8 port 443 [tcp/https] succeeded!');
+    const { defaultExecutor } = await import('../shell/executor.js');
+    const runMock = vi.mocked(defaultExecutor.run);
+    runMock.mockResolvedValue('Connection to 8.8.8.8 port 443 [tcp/https] succeeded!');
 
     const { networkDiagnosticsTool } = await import('../tools-pro.js');
     const result = await networkDiagnosticsTool.execute({ action: 'port', target: '8.8.8.8', port: 443 }) as { action: string; open: boolean };
@@ -64,10 +67,11 @@ describe('systemDiagnosticsTool', () => {
   });
 
   it('memory_pressure action returns vm stats', async () => {
-    const { execSync } = await import('node:child_process');
-    const mock = vi.mocked(execSync);
-    mock.mockReturnValueOnce('Memory pressure: Normal\nPages free: 50000\n');
-    mock.mockReturnValueOnce('Pages free: 50000\nPages active: 100000\n');
+    const { defaultExecutor } = await import('../shell/executor.js');
+    const runMock = vi.mocked(defaultExecutor.run);
+    runMock
+      .mockResolvedValueOnce('Memory pressure: Normal\nPages free: 50000\n')
+      .mockResolvedValueOnce('Pages free: 50000\nPages active: 100000\n');
 
     const { systemDiagnosticsTool } = await import('../tools-pro.js');
     const result = await systemDiagnosticsTool.execute({ action: 'memory_pressure' }) as { action: string; pressure: string[] };
@@ -77,9 +81,9 @@ describe('systemDiagnosticsTool', () => {
   });
 
   it('disk_io action returns iostat output', async () => {
-    const { execSync } = await import('node:child_process');
-    const mock = vi.mocked(execSync);
-    mock.mockReturnValue('disk0 10.5 20.3 30.1\ndisk1 1.2 3.4 5.6\n');
+    const { defaultExecutor } = await import('../shell/executor.js');
+    const runMock = vi.mocked(defaultExecutor.run);
+    runMock.mockResolvedValue('disk0 10.5 20.3 30.1\ndisk1 1.2 3.4 5.6\n');
 
     const { systemDiagnosticsTool } = await import('../tools-pro.js');
     const result = await systemDiagnosticsTool.execute({ action: 'disk_io' }) as { action: string; stats: string[] };
@@ -97,9 +101,9 @@ describe('securityCheckTool', () => {
   });
 
   it('sip check returns SIP status', async () => {
-    const { execSync } = await import('node:child_process');
-    const mock = vi.mocked(execSync);
-    mock.mockReturnValue('System Integrity Protection status: enabled.\n');
+    const { defaultExecutor } = await import('../shell/executor.js');
+    const runMock = vi.mocked(defaultExecutor.run);
+    runMock.mockResolvedValue('System Integrity Protection status: enabled.\n');
 
     const { securityCheckTool } = await import('../tools-pro.js');
     const result = await securityCheckTool.execute({ check: 'sip' }) as Record<string, unknown>;
@@ -108,10 +112,11 @@ describe('securityCheckTool', () => {
   });
 
   it('gatekeeper check returns assessment status', async () => {
-    const { execSync } = await import('node:child_process');
-    const mock = vi.mocked(execSync);
-    mock.mockReturnValueOnce('assessments enabled');
-    mock.mockReturnValueOnce('Global state: enabled');
+    const { defaultExecutor } = await import('../shell/executor.js');
+    const runMock = vi.mocked(defaultExecutor.run);
+    runMock
+      .mockResolvedValueOnce('assessments enabled')
+      .mockResolvedValueOnce('Global state: enabled');
 
     const { securityCheckTool } = await import('../tools-pro.js');
     const result = await securityCheckTool.execute({ check: 'gatekeeper' }) as Record<string, unknown>;
@@ -128,10 +133,11 @@ describe('powerManagementTool', () => {
   });
 
   it('settings action returns pmset config', async () => {
-    const { execSync } = await import('node:child_process');
-    const mock = vi.mocked(execSync);
-    mock.mockReturnValueOnce('Sleep: 30\nPower: 10\n');
-    mock.mockReturnValueOnce('');
+    const { defaultExecutor } = await import('../shell/executor.js');
+    const runMock = vi.mocked(defaultExecutor.run);
+    runMock
+      .mockResolvedValueOnce('Sleep: 30\nPower: 10\n')
+      .mockResolvedValueOnce('');
 
     const { powerManagementTool } = await import('../tools-pro.js');
     const result = await powerManagementTool.execute({ action: 'settings' }) as { action: string; current: string[] };
@@ -141,9 +147,9 @@ describe('powerManagementTool', () => {
   });
 
   it('assertions action returns sleep preventers', async () => {
-    const { execSync } = await import('node:child_process');
-    const mock = vi.mocked(execSync);
-    mock.mockReturnValue(
+    const { defaultExecutor } = await import('../shell/executor.js');
+    const runMock = vi.mocked(defaultExecutor.run);
+    runMock.mockResolvedValue(
       '2025-07-17 10:00:00 +0800 ApplePushServiceTask\n' +
       '  PreventUserIdleSystemSleep: "com.apple.apsd"\n' +
       '2025-07-17 10:00:00 +0800 SomeApp\n' +

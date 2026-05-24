@@ -8,7 +8,7 @@
  *   DEEPSEEK_API_KEY=sk-... npm start
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { render, Box, Text, useInput, useApp } from 'ink';
 import { createMacOSAgent } from './agent.js';
 import type { Message } from './types/events.js';
@@ -148,6 +148,7 @@ function App() {
   const [inputHistory, setInputHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [historyDraft, setHistoryDraft] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Keyboard: Ctrl+C or Escape to quit
   useInput((input, key) => {
@@ -158,33 +159,76 @@ function App() {
 
   // Subscribe to agent events
   useEffect(() => {
+    // ── Streaming debounce ───────────────────────────────────────────────
+    // Buffer fast token-by-token emits into ~60fps React updates to prevent
+    // terminal stuttering from per-token re-renders.
+    const WRITE_INTERVAL_MS = 16; // ≈ 60 fps
+    let streamBuffer = '';
+    let streamFlushTimer: ReturnType<typeof setInterval> | null = null;
+
+    function startStreamBuffer() {
+      streamBuffer = '';
+      streamFlushTimer = setInterval(() => {
+        if (streamBuffer.length > 0) {
+          setStreamingText(streamBuffer);
+        }
+      }, WRITE_INTERVAL_MS);
+    }
+
+    function flushStreamBuffer() {
+      if (streamFlushTimer !== null) {
+        clearInterval(streamFlushTimer);
+        streamFlushTimer = null;
+      }
+      if (streamBuffer.length > 0) {
+        setStreamingText(streamBuffer);
+      }
+      streamBuffer = '';
+    }
+
     const onThinkingStart = () => {
+      flushStreamBuffer();
       setStreamingText('');
       setToolCalls([]);
       setStatus('🤔 Processing…');
+      setErrorMessage('');
     };
 
     const onStreamDelta = (_delta: string, accumulated: string) => {
-      setStreamingText(accumulated);
+      // Store latest accumulated text; the interval timer pushes it to state
+      streamBuffer = accumulated;
+      if (!streamFlushTimer) {
+        // First delta — start the periodic flush
+        streamFlushTimer = setInterval(() => {
+          if (streamBuffer.length > 0) {
+            setStreamingText(streamBuffer);
+          }
+        }, WRITE_INTERVAL_MS);
+      }
     };
 
     const onStreamEnd = (_fullText: string) => {
+      flushStreamBuffer();
       setStatus('');
       setStreamingText('');
     };
 
     const onToolCall = (name: string, args: unknown) => {
+      flushStreamBuffer();
       setToolCalls((prev) => [...prev, { name, args }]);
     };
 
     const onMessageAssistant = () => {
+      flushStreamBuffer();
       setMessages(agent.getMessages());
       setIsLoading(false);
       setStreamingText('');
       setToolCalls([]);
+      setErrorMessage('');
     };
 
     const onError = () => {
+      flushStreamBuffer();
       setIsLoading(false);
       setStatus('');
     };
@@ -203,12 +247,14 @@ function App() {
 
     const onErrorWithLog = (err: Error) => {
       logger.error('Agent error in TUI', err);
+      setErrorMessage(err.message);
       onError();
     };
     agent.off('error', onError);
     agent.on('error', onErrorWithLog);
 
     return () => {
+      flushStreamBuffer();
       agent.off('thinking:start', onThinkingStart);
       agent.off('stream:delta', onStreamDelta);
       agent.off('stream:end', onStreamEnd);
@@ -286,9 +332,17 @@ function App() {
         {streamingText && <StreamingText text={streamingText} />}
 
         {/* Status indicator */}
-        {status && !streamingText && (
+        {status && !streamingText && !errorMessage && (
           <Box>
             <Text color="gray">{status}</Text>
+          </Box>
+        )}
+
+        {/* Error indicator */}
+        {errorMessage && (
+          <Box flexDirection="column" marginTop={1}>
+            <Text bold color="red">❌ Error:</Text>
+            <Text color="red">{errorMessage}</Text>
           </Box>
         )}
       </Box>

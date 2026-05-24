@@ -16,8 +16,11 @@ import type {
 import { EventEmitter } from 'eventemitter3';
 import { setCommandAllowlist, setSkipDangerousCheck } from './tools.js';
 import { ConversationHistory } from './agent/conversation.js';
+import { LLMClient } from './agent/llm-client.js';
+import { ToolExecutor } from './agent/tool-executor.js';
 import { DEFAULT_MAX_CONTEXT_TOKENS } from './context-manager.js';
 import { logger } from './logging/structured-logger.js';
+import { metricsCollector } from './monitoring/metrics-collector.js';
 
 // ─── Internal type imports ─────────────────────────────────────────────────
 
@@ -109,10 +112,14 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     useBetaEndpoint: boolean;
   };
   private toolsByName = new Map<string, Tool>();
+  private llmClient: LLMClient;
+  private toolExecutor: ToolExecutor;
   /** Prevents concurrent send()/sendSync() calls from interleaving message history */
   private busy = false;
   /** Count of consecutive tool execution failures in the current send() call */
   private consecutiveErrors = 0;
+  /** Whether dispose() has been called; prevents further use. */
+  private disposed = false;
 
   constructor(config: MacOSAgentConfig) {
     super();
@@ -158,6 +165,9 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
       timeout: 60_000,       // 60s — prevent indefinite hang on API calls
       maxRetries: 1,         // single retry to avoid long retry chains
     });
+
+    this.llmClient = new LLMClient(this.client);
+    this.toolExecutor = new ToolExecutor(this.toolsByName);
 
     logger.info('McAgent initialized', {
       model: this.config.model,
@@ -221,16 +231,26 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
   }
 
   /** Serialize conversation history to a JSON file. */
-  saveSession(path: string): void {
-    this.conversation.save(path);
+  async saveSession(path: string): Promise<void> {
+    await this.conversation.save(path);
   }
 
   /**
    * Load conversation history from a JSON file.
    * If the file does not exist, clears history silently.
    */
-  loadSession(path: string): void {
-    this.conversation.load(path);
+  async loadSession(path: string): Promise<void> {
+    await this.conversation.load(path);
+  }
+
+  /**
+   * Release all resources. After calling this, the agent must not be used again.
+   * Removes all event listeners and marks the instance as disposed.
+   */
+  dispose(): void {
+    this.disposed = true;
+    this.removeAllListeners();
+    logger.info('Agent disposed');
   }
 
   // ── Send (streaming + automatic tool execution) ────────────────────────────
@@ -239,12 +259,15 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
    * Send a message and stream the response.
    * Handles tool calls automatically (up to maxToolRounds).
    */
-  async send(content: string): Promise<string> {
+  async send(content: string, signal?: AbortSignal): Promise<string> {
+    if (this.disposed) throw new Error('Agent has been disposed');
     if (this.busy) {
       throw new Error('Agent is already processing a request');
     }
     this.busy = true;
     this.consecutiveErrors = 0;
+    const requestId = `send-${Date.now()}`;
+    metricsCollector.startRequest(requestId);
 
     this.conversation.addUserMessage(content);
     this.emit('message:user', { role: 'user', content });
@@ -252,11 +275,16 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     logger.info('send() started', { content: content.slice(0, 80) });
 
     try {
-      const fullText = await this.runLoop();
+      const fullText = await this.runLoop(false, signal);
+      metricsCollector.endRequest(requestId, true, undefined, {
+        prompt: 0,
+        completion: fullText.length,
+      });
       logger.info('send() completed', { responseLen: fullText.length });
       return fullText;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
+      metricsCollector.endRequest(requestId, false, 'error');
       logger.error('send() failed', error);
       this.emit('error', error);
       throw error;
@@ -268,23 +296,31 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
   // ── Send (non-streaming, simpler) ─────────────────────────────────────────
 
-  async sendSync(content: string): Promise<string> {
+  async sendSync(content: string, signal?: AbortSignal): Promise<string> {
+    if (this.disposed) throw new Error('Agent has been disposed');
     if (this.busy) {
       throw new Error('Agent is already processing a request');
     }
     this.busy = true;
     this.consecutiveErrors = 0;
+    const requestId = `sendSync-${Date.now()}`;
+    metricsCollector.startRequest(requestId);
 
     this.conversation.addUserMessage(content);
     this.emit('message:user', { role: 'user', content });
     logger.info('sendSync() started', { content: content.slice(0, 80) });
 
     try {
-      const fullText = await this.runLoop(true);
+      const fullText = await this.runLoop(true, signal);
+      metricsCollector.endRequest(requestId, true, undefined, {
+        prompt: 0,
+        completion: fullText.length,
+      });
       logger.info('sendSync() completed', { responseLen: fullText.length });
       return fullText;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
+      metricsCollector.endRequest(requestId, false, 'error');
       logger.error('sendSync() failed', error);
       this.emit('error', error);
       throw error;
@@ -299,7 +335,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
    * Run the agent loop: call model → stream → execute tools → repeat.
    * `sync` mode skips streaming and uses non-streaming API.
    */
-  private async runLoop(sync = false): Promise<string> {
+  private async runLoop(sync = false, signal?: AbortSignal): Promise<string> {
     // Filter tools based on permission mode
     let activeTools = this.config.tools;
     if (this.config.permissionMode === 'readonly') {
@@ -330,22 +366,24 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
       if (sync) {
         // ── Non-streaming call ─────────────────────────────────────────────
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const response = await (this.client.chat.completions.create as any)({
-          model: this.config.model,
+        const response: any = await this.llmClient.createSync(
+          this.config.model,
           messages,
-          tools: tools.length > 0 ? tools : undefined,
-          extra_body: thinkingBody,
-          stream: false,
-        });
+          tools,
+          thinkingBody,
+          signal,
+        );
+        if (!response) break;
 
         const choice = response.choices[0];
         if (!choice) break;
 
         const msg = choice.message;
+        let reasoningContent = '';
 
         // Handle reasoning content (DeepSeek-specific)
         if (hasReasoning(msg)) {
+          reasoningContent = msg.reasoning_content;
           this.emit('reasoning:delta', msg.reasoning_content);
         }
 
@@ -359,7 +397,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
           if (functionCalls.length > 0) {
             this.emit('stream:delta', msg.content || '', fullText);
             // Push assistant message with tool calls before executing tools
-            this.conversation.addAssistantMessage(msg.content ?? null, msg.tool_calls);
+            this.conversation.addAssistantMessage(msg.content ?? null, msg.tool_calls, reasoningContent);
             await this.executeToolCalls(functionCalls);
             continue;
           }
@@ -367,28 +405,22 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
         // No tool calls → done
         this.emit('stream:end', fullText);
-        this.conversation.addAssistantMessage(msg.content);
+        this.conversation.addAssistantMessage(msg.content, undefined, reasoningContent);
         this.emit('message:assistant', { role: 'assistant', content: fullText });
         return fullText;
       } else {
         // ── Streaming call ─────────────────────────────────────────────────
-        // AbortController guards against streaming hangs (server stops
-        // sending data without closing the connection).
-        const streamAbort = new AbortController();
-        const streamTimeout = setTimeout(
-          () => streamAbort.abort(),
-          120_000, // 2 min overall streaming timeout
-        );
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const stream = await (this.client.chat.completions.create as any)({
-          model: this.config.model,
+        // OpenAI SDK timeout (60s, set in constructor) already guards against
+        // streaming hangs. No separate AbortSignal needed — the SDK's
+        // internal timeout handles abort.
+        const stream: any = await this.llmClient.createStream(
+          this.config.model,
           messages,
-          tools: tools.length > 0 ? tools : undefined,
-          extra_body: thinkingBody,
-          stream: true,
-          signal: streamAbort.signal,
-        });
+          tools,
+          thinkingBody,
+          signal,
+        );
+        if (!stream) break;
 
         // Accumulate tool calls across chunks by index
         const toolCallAccumulators = new Map<
@@ -396,66 +428,67 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
           { id: string; name: string; arguments: string }
         >();
         let streamingContent = fullText;
+        let reasoningContent = '';
         let finished = false;
 
-        try {
-          for await (const chunk of stream) {
-            const delta = chunk.choices[0]?.delta;
-            const finishReason = chunk.choices[0]?.finish_reason;
+        for await (const chunk of stream) {
+          const delta = chunk.choices[0]?.delta;
+          const finishReason = chunk.choices[0]?.finish_reason;
 
-            if (!delta) continue;
+          if (!delta) continue;
 
-            // Text content
-            if (delta.content) {
-              streamingContent += delta.content;
-              this.emit('stream:delta', delta.content, streamingContent);
-            }
+          // Text content
+          if (delta.content) {
+            streamingContent += delta.content;
+            this.emit('stream:delta', delta.content, streamingContent);
+          }
 
-            // DeepSeek-specific: reasoning_content in delta
-            if (hasReasoning(delta)) {
-              this.emit('reasoning:delta', delta.reasoning_content);
-            }
+          // DeepSeek-specific: reasoning_content in delta
+          if (hasReasoning(delta)) {
+            reasoningContent += delta.reasoning_content;
+            this.emit('reasoning:delta', delta.reasoning_content);
+          }
 
-            // Tool calls (accumulate by index — Delta.ToolCall has function)
-            if (delta.tool_calls) {
-              for (const tc of delta.tool_calls) {
-                const idx = tc.index;
-                if (!toolCallAccumulators.has(idx)) {
-                  toolCallAccumulators.set(idx, {
-                    id: '',
-                    name: '',
-                    arguments: '',
-                  });
-                }
-                const acc = toolCallAccumulators.get(idx)!;
-                if (tc.id) acc.id = tc.id;
-                if (tc.function?.name) acc.name = tc.function.name;
-                if (tc.function?.arguments) acc.arguments += tc.function.arguments;
+          // Tool calls (accumulate by index — Delta.ToolCall has function)
+          if (delta.tool_calls) {
+            for (const tc of delta.tool_calls) {
+              const idx = tc.index;
+              if (!toolCallAccumulators.has(idx)) {
+                toolCallAccumulators.set(idx, {
+                  id: '',
+                  name: '',
+                  arguments: '',
+                });
               }
+              const acc = toolCallAccumulators.get(idx)!;
+              if (tc.id) acc.id = tc.id;
+              if (tc.function?.name) acc.name = tc.function.name;
+              if (tc.function?.arguments) acc.arguments += tc.function.arguments;
             }
+          }
 
-            if (finishReason === 'tool_calls' || finishReason === 'stop' || finishReason === 'length') {
-              if (toolCallAccumulators.size > 0) {
-                // Add assistant message with tool calls to history
-                this.conversation.addAssistantMessage(
-                  streamingContent.slice(fullText.length) || null,
-                  Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
-                    id: acc.id,
-                    type: 'function' as const,
-                    function: { name: acc.name, arguments: acc.arguments },
-                  }))
-                );
-                fullText = streamingContent;
+          if (finishReason === 'tool_calls' || finishReason === 'stop' || finishReason === 'length') {
+            if (toolCallAccumulators.size > 0) {
+              // Add assistant message with tool calls to history
+              this.conversation.addAssistantMessage(
+                streamingContent.slice(fullText.length) || null,
+                Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
+                  id: acc.id,
+                  type: 'function' as const,
+                  function: { name: acc.name, arguments: acc.arguments },
+                })),
+                reasoningContent
+              );
+              fullText = streamingContent;
 
-                // All accumulated calls are 'function' type (checked during accumulation)
-                const accumulatedCalls: ChatCompletionMessageFunctionToolCall[] =
-                  Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
-                    id: acc.id,
-                    type: 'function' as const,
-                    function: { name: acc.name, arguments: acc.arguments },
-                  }));
-                clearTimeout(streamTimeout);
-                await this.executeToolCalls(accumulatedCalls);
+              // All accumulated calls are 'function' type (checked during accumulation)
+              const accumulatedCalls: ChatCompletionMessageFunctionToolCall[] =
+                Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
+                  id: acc.id,
+                  type: 'function' as const,
+                  function: { name: acc.name, arguments: acc.arguments },
+                }));
+              await this.executeToolCalls(accumulatedCalls);
 
                 // If the response was truncated, warn the model
                 if (finishReason === 'length') {
@@ -470,15 +503,12 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
               break; // exit for-await loop
             }
           }
-        } finally {
-          clearTimeout(streamTimeout);
-        }
 
         if (!finished) {
           // No tool calls — assistant is done
           fullText = streamingContent;
           this.emit('stream:end', fullText);
-          this.conversation.addAssistantMessage(streamingContent);
+          this.conversation.addAssistantMessage(streamingContent, undefined, reasoningContent);
           this.emit('message:assistant', {
             role: 'assistant',
             content: fullText,
@@ -504,36 +534,25 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
   private async executeToolCalls(
     toolCalls: ChatCompletionMessageFunctionToolCall[]
   ): Promise<void> {
-    for (const tc of toolCalls) {
-      const tool = this.toolsByName.get(tc.function.name);
-      if (!tool) {
-        this.conversation.addToolResult(tc.id, JSON.stringify({
-          error: `Unknown tool: ${tc.function.name}`,
-        }));
-        continue;
-      }
-
-      let args: Record<string, unknown>;
-      try {
-        args = JSON.parse(tc.function.arguments);
-      } catch {
-        args = {};
-      }
-
-      this.emit('tool:call', tc.function.name, args);
-      try {
-        const result = await tool.execute(args);
+    const results = await this.toolExecutor.executeAll(
+      toolCalls,
+      // onCall
+      (name, args) => this.emit('tool:call', name, args),
+      // onResult
+      (name, result) => {
         this.consecutiveErrors = 0;
-        this.emit('tool:result', tc.function.name, result);
-        this.conversation.addToolResult(tc.id, JSON.stringify(result));
-      } catch (err) {
+        this.emit('tool:result', name, result);
+      },
+      // onError
+      (error) => {
         this.consecutiveErrors++;
-        const errMsg = err instanceof Error ? err.message : String(err);
-        this.emit('error', new Error(`Tool ${tc.function.name} failed: ${errMsg}`));
-        this.conversation.addToolResult(tc.id, JSON.stringify({
-          error: `Tool execution failed: ${errMsg}`,
-        }));
-      }
+        this.emit('error', error);
+      },
+    );
+
+    // Inject all results into conversation history
+    for (const r of results) {
+      this.conversation.addToolResult(r.toolCallId, r.content);
     }
   }
 }

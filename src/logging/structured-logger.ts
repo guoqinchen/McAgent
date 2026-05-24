@@ -62,6 +62,8 @@ export class ConsoleHandler implements LogHandler {
 export class FileHandler implements LogHandler {
   private level: LogLevel;
   private filePath: string;
+  private writeQueue: string[] = [];
+  private flushing = false;
 
   constructor(filePath: string, level: LogLevel = 'info') {
     this.filePath = filePath;
@@ -81,11 +83,37 @@ export class FileHandler implements LogHandler {
       stack: record.error?.stack,
     });
 
-    fs.appendFileSync(this.filePath, logEntry + '\n');
+    // Queue the write — never block the event loop with sync file I/O
+    this.writeQueue.push(logEntry + '\n');
+    this.scheduleFlush();
   }
 
   setLevel(level: LogLevel): void {
     this.level = level;
+  }
+
+  private scheduleFlush(): void {
+    if (this.flushing) return;
+    this.flushing = true;
+    // Use microtask so writes happen asynchronously without blocking
+    queueMicrotask(() => this.flush());
+  }
+
+  private async flush(): Promise<void> {
+    while (this.writeQueue.length > 0) {
+      const batch = this.writeQueue.splice(0);
+      try {
+        await fs.promises.appendFile(this.filePath, batch.join(''), 'utf-8');
+      } catch {
+        // Fallback: sync write if async fails (non-blocking design priority)
+        try {
+          fs.appendFileSync(this.filePath, batch.join(''), 'utf-8');
+        } catch {
+          // Silently drop log writes on failure — logging must never crash
+        }
+      }
+    }
+    this.flushing = false;
   }
 
   private shouldLog(level: LogLevel): boolean {

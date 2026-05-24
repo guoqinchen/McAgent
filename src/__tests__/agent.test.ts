@@ -1,10 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock node:fs module before anything else
+// Must include mkdirSync for the StructuredLogger's FileHandler.
 vi.mock('node:fs', () => ({
   writeFileSync: vi.fn(),
   readFileSync: vi.fn(),
   existsSync: vi.fn(),
+  mkdirSync: vi.fn(),
+  appendFileSync: vi.fn(),
+}));
+
+// Mock fs/promises for session persistence (writeFile / readFile)
+vi.mock('node:fs/promises', () => ({
+  writeFile: vi.fn(),
+  readFile: vi.fn(),
 }));
 
 // Mock openai module before importing agent
@@ -153,21 +162,22 @@ describe('MacOSAgent', () => {
 
   describe('session persistence', () => {
     it('saveSession writes to file', async () => {
-      const fs = await import('node:fs');
+      const fsp = await import('node:fs/promises');
       const agent = createTestAgent();
-      agent.saveSession('/tmp/test-session.json');
-      expect(fs.writeFileSync).toHaveBeenCalled();
+      await agent.saveSession('/tmp/test-session.json');
+      expect(fsp.writeFile).toHaveBeenCalled();
     });
 
     it('loadSession reads existing file', async () => {
       const fs = await import('node:fs');
+      const fsp = await import('node:fs/promises');
       (fs.existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
-      (fs.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(
+      (fsp.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(
         JSON.stringify([{ role: 'user', content: 'hello' }])
       );
 
       const agent = createTestAgent();
-      agent.loadSession('/tmp/test-session.json');
+      await agent.loadSession('/tmp/test-session.json');
       const msgs = agent.getMessages();
       expect(msgs.length).toBe(1);
       expect(msgs[0]?.content).toBe('hello');
@@ -180,7 +190,7 @@ describe('MacOSAgent', () => {
       const agent = createTestAgent();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (agent as any).conversation.addUserMessage('old');
-      agent.loadSession('/nonexistent/session.json');
+      await agent.loadSession('/nonexistent/session.json');
       expect(agent.getMessages()).toEqual([]);
     });
   });
@@ -563,14 +573,17 @@ describe('MacOSAgent', () => {
   describe('session error handling', () => {
     it('throws on corrupted session JSON', async () => {
       const fs = await import('node:fs');
+      const fsp = await import('node:fs/promises');
       (fs.existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
-      (fs.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue('{ invalid json }');
+      (fsp.readFile as ReturnType<typeof vi.fn>).mockResolvedValue('{ invalid json }');
 
       const agent = createTestAgent();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (agent as any).conversation.addUserMessage('preserved');
 
-      expect(() => agent.loadSession('/tmp/bad.json')).toThrow();
+      await expect(agent.loadSession('/tmp/bad.json')).rejects.toThrow();
+      // History should be preserved on error
+      expect(agent.getMessages().length).toBe(1);
     });
   });
 
@@ -631,6 +644,23 @@ describe('MacOSAgent', () => {
           }
         }
       });
+    });
+  });
+
+  describe('dispose()', () => {
+    it('prevents further use after dispose', async () => {
+      const { MacOSAgent } = await import('../agent.js');
+      const agent = new MacOSAgent({
+        apiKey: 'test',
+        tools: [],
+      });
+
+      agent.dispose();
+
+      // @ts-expect-error — accessing private dispose flag for test
+      expect(agent.disposed).toBe(true);
+      await expect(agent.send('hello')).rejects.toThrow('disposed');
+      await expect(agent.sendSync('hello')).rejects.toThrow('disposed');
     });
   });
 });

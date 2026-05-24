@@ -6,3 +6,4 @@ dist/
 .omc/
 .claude/
 docs/superpowers/plans/
+.deepseek/

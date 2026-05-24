@@ -1,5 +1,6 @@
-import * as fs from 'fs';
 import * as path from 'path';
+import { existsSync, readdirSync, mkdirSync } from 'node:fs';
+import { writeFile, readFile, unlink } from 'node:fs/promises';
 import { ChatCompletionMessage } from '../types/llm-provider.js';
 
 export interface Session {
@@ -29,12 +30,13 @@ export class FileBasedSessionManager {
 
   constructor(baseDir?: string) {
     this.sessionsDir = baseDir || path.join(process.env.HOME || '', '.mcagent', 'sessions');
+    // Constructor can remain sync — runs once at startup, not on hot path
     this.ensureDirectoryExists();
   }
 
   private ensureDirectoryExists(): void {
-    if (!fs.existsSync(this.sessionsDir)) {
-      fs.mkdirSync(this.sessionsDir, { recursive: true });
+    if (!existsSync(this.sessionsDir)) {
+      mkdirSync(this.sessionsDir, { recursive: true });
     }
   }
 
@@ -53,24 +55,25 @@ export class FileBasedSessionManager {
       metadata: options?.metadata,
     };
 
+    // Fire and forget — this.ensureDirExists() already ran in constructor
     this.save(session);
     return session;
   }
 
-  save(session: Session): void {
+  async save(session: Session): Promise<void> {
     session.lastModifiedAt = new Date();
     const filePath = this.getSessionFilePath(session.id);
     const data = JSON.stringify(session, null, 2);
-    fs.writeFileSync(filePath, data);
+    await writeFile(filePath, data, 'utf-8');
   }
 
-  load(sessionId: string): Session | undefined {
+  async load(sessionId: string): Promise<Session | undefined> {
     try {
       const filePath = this.getSessionFilePath(sessionId);
-      if (!fs.existsSync(filePath)) {
+      if (!existsSync(filePath)) {
         return undefined;
       }
-      const data = fs.readFileSync(filePath, 'utf-8');
+      const data = await readFile(filePath, 'utf-8');
       const parsed = JSON.parse(data);
       return {
         ...parsed,
@@ -82,15 +85,15 @@ export class FileBasedSessionManager {
     }
   }
 
-  list(options?: SessionListOptions): Session[] {
+  async list(options?: SessionListOptions): Promise<Session[]> {
     try {
-      const files = fs.readdirSync(this.sessionsDir);
+      const files = readdirSync(this.sessionsDir);
       const sessionFiles = files.filter(f => f.endsWith('.json'));
-      
+
       const sessions: Session[] = [];
       for (const file of sessionFiles) {
         const sessionId = file.replace('.json', '');
-        const session = this.load(sessionId);
+        const session = await this.load(sessionId);
         if (session) {
           sessions.push(session);
         }
@@ -98,7 +101,7 @@ export class FileBasedSessionManager {
 
       const sortBy = options?.sortBy || 'lastModifiedAt';
       const sortOrder = options?.sortOrder || 'desc';
-      
+
       sessions.sort((a, b) => {
         const aVal = a[sortBy].getTime();
         const bVal = b[sortBy].getTime();
@@ -107,18 +110,18 @@ export class FileBasedSessionManager {
 
       const limit = options?.limit ?? sessions.length;
       const offset = options?.offset ?? 0;
-      
+
       return sessions.slice(offset, offset + limit);
     } catch {
       return [];
     }
   }
 
-  delete(sessionId: string): boolean {
+  async delete(sessionId: string): Promise<boolean> {
     try {
       const filePath = this.getSessionFilePath(sessionId);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      if (existsSync(filePath)) {
+        await unlink(filePath);
         return true;
       }
       return false;
@@ -127,8 +130,8 @@ export class FileBasedSessionManager {
     }
   }
 
-  update(sessionId: string, updates: Partial<Session>): Session | undefined {
-    const session = this.load(sessionId);
+  async update(sessionId: string, updates: Partial<Session>): Promise<Session | undefined> {
+    const session = await this.load(sessionId);
     if (!session) {
       return undefined;
     }
@@ -139,39 +142,39 @@ export class FileBasedSessionManager {
       lastModifiedAt: new Date(),
     };
 
-    this.save(updated);
+    await this.save(updated);
     return updated;
   }
 
-  addMessage(sessionId: string, message: ChatCompletionMessage): Session | undefined {
-    const session = this.load(sessionId);
+  async addMessage(sessionId: string, message: ChatCompletionMessage): Promise<Session | undefined> {
+    const session = await this.load(sessionId);
     if (!session) {
       return undefined;
     }
 
     session.messages.push(message);
     session.lastModifiedAt = new Date();
-    this.save(session);
+    await this.save(session);
 
     return session;
   }
 
-  clearMessages(sessionId: string): Session | undefined {
-    const session = this.load(sessionId);
+  async clearMessages(sessionId: string): Promise<Session | undefined> {
+    const session = await this.load(sessionId);
     if (!session) {
       return undefined;
     }
 
     session.messages = [];
     session.lastModifiedAt = new Date();
-    this.save(session);
+    await this.save(session);
 
     return session;
   }
 
   getSessionCount(): number {
     try {
-      const files = fs.readdirSync(this.sessionsDir);
+      const files = readdirSync(this.sessionsDir);
       return files.filter(f => f.endsWith('.json')).length;
     } catch {
       return 0;

@@ -9,10 +9,12 @@ export interface StreamingChunk {
   timestamp: number;
 }
 
+/** Minimum buffer size to bother with markdown preprocessing — smaller buffers won't have meaningful structures. */
+const MIN_MARKDOWN_CHARS = 50;
+
 export class StreamingOptimizer {
   private buffer: string = '';
-  private lastFlushTime: number = 0;
-  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private flushScheduled = false;
   private listeners: Set<(content: string) => void> = new Set();
   
   private readonly bufferSize: number;
@@ -29,37 +31,33 @@ export class StreamingOptimizer {
     this.buffer += chunk;
     
     if (this.buffer.length >= this.bufferSize) {
+      // Buffer full — flush immediately and cancel any pending timer
+      if (this.flushScheduled) {
+        this.flushScheduled = false;
+      }
       this.flush();
-    } else {
-      this.scheduleDebounce();
+    } else if (!this.flushScheduled) {
+      // Schedule a single lazy timer instead of churning timers per chunk
+      this.flushScheduled = true;
+      setTimeout(() => {
+        this.flushScheduled = false;
+        this.flush();
+      }, this.debounceDelay);
     }
-  }
-
-  private scheduleDebounce(): void {
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-    }
-    
-    this.debounceTimer = setTimeout(() => {
-      this.flush();
-    }, this.debounceDelay);
+    // If flush is already scheduled, we don't need to do anything — the
+    // timer will fire with whatever buffer has accumulated.
   }
 
   flush(): void {
     if (this.buffer.length === 0) return;
     
-    const content = this.enableMarkdown 
+    const content = this.enableMarkdown && this.buffer.length >= MIN_MARKDOWN_CHARS
       ? this.preprocessMarkdown(this.buffer)
       : this.buffer;
     
-    this.lastFlushTime = Date.now();
     this.notifyListeners(content);
     this.buffer = '';
-    
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-      this.debounceTimer = null;
-    }
+    this.flushScheduled = false;
   }
 
   private preprocessMarkdown(content: string): string {
@@ -78,18 +76,22 @@ export class StreamingOptimizer {
   }
 
   private fixIncompleteCodeBlocks(content: string): string {
-    const backticks = (content.match(/`/g) || []).length;
-    if (backticks % 2 !== 0) {
-      return content + '`';
+    // Fast inline count: iterate once instead of creating match array
+    let count = 0;
+    for (let i = 0; i < content.length; i++) {
+      if (content[i] === '`') count++;
     }
+    if (count % 2 !== 0) return content + '`';
     return content;
   }
 
   private fixIncompleteEmphasis(content: string): string {
-    const asterisks = (content.match(/\*/g) || []).length;
-    if (asterisks % 2 !== 0) {
-      return content.replace(/\*$/, '');
+    // Fast inline count: iterate once instead of creating match array
+    let count = 0;
+    for (let i = 0; i < content.length; i++) {
+      if (content[i] === '*') count++;
     }
+    if (count % 2 !== 0) return content.replace(/\*$/, '');
     return content;
   }
 
@@ -110,9 +112,6 @@ export class StreamingOptimizer {
 
   reset(): void {
     this.buffer = '';
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-      this.debounceTimer = null;
-    }
+    this.flushScheduled = false;
   }
 }

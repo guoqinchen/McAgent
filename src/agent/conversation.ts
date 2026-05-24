@@ -5,32 +5,42 @@
  * and session persistence — all in one place so agent.ts doesn't need to.
  */
 
-import { writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { existsSync } from 'node:fs';
+import { writeFile, readFile } from 'node:fs/promises';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { evictMessages, DEFAULT_MAX_CONTEXT_TOKENS } from '../context-manager.js';
 import type { Message } from '../types/events.js';
 
 export class ConversationHistory {
+  /** Stored as the wider ChatCompletionMessageParam so evictMessages works without casting. */
   private messages: ChatCompletionMessageParam[] = [];
+  /** Cache for toPlainMessages() — invalidated on every mutation. */
+  private cachedPlain: Message[] | null = null;
 
   // ── Mutations ────────────────────────────────────────────────────────────
+
+  private invalidateCache(): void {
+    this.cachedPlain = null;
+  }
 
   addUserMessage(content: string): ChatCompletionMessageParam {
     const msg: ChatCompletionMessageParam = { role: 'user', content };
     this.messages.push(msg);
+    this.invalidateCache();
     return msg;
   }
 
-  addAssistantMessage(content: string | null, toolCalls?: unknown): void {
-    if (toolCalls) {
-      this.messages.push({
-        role: 'assistant',
-        content,
-        tool_calls: toolCalls,
-      } as unknown as ChatCompletionMessageParam);
-    } else {
-      this.messages.push({ role: 'assistant', content });
-    }
+  addAssistantMessage(content: string | null, toolCalls?: unknown, reasoningContent?: string): void {
+    const msg = {
+      role: 'assistant' as const,
+      content,
+      ...(reasoningContent ? { reasoning_content: reasoningContent } : {}),
+      ...(toolCalls ? { tool_calls: toolCalls } : {}),
+    };
+    // Cast through DeepSeekAssistantMessage then to ChatCompletionMessageParam
+    // because ChatCompletionAssistantMessageParam doesn't include reasoning_content.
+    this.messages.push(msg as ChatCompletionMessageParam);
+    this.invalidateCache();
   }
 
   addToolResult(toolCallId: string, content: string): void {
@@ -39,6 +49,7 @@ export class ConversationHistory {
       tool_call_id: toolCallId,
       content,
     });
+    this.invalidateCache();
   }
 
   addToolWarning(toolCallId: string, warning: string): void {
@@ -47,10 +58,12 @@ export class ConversationHistory {
       tool_call_id: toolCallId,
       content: JSON.stringify({ warning }),
     });
+    this.invalidateCache();
   }
 
   clear(): void {
     this.messages = [];
+    this.invalidateCache();
   }
 
   // ── Query ────────────────────────────────────────────────────────────────
@@ -69,13 +82,12 @@ export class ConversationHistory {
       ...this.messages,
     ];
 
-    // Evict old messages if context is getting full
     if (maxContextTokens > 0) {
       const evicted = evictMessages(result, maxContextTokens);
       if (evicted.length < result.length) {
-        // Update internal state (strip system prompt)
         this.messages = evicted.length > 1 ? evicted.slice(1) : [];
-        result = evicted; // use evicted for this call
+        result = evicted;
+        this.invalidateCache();
       }
     }
 
@@ -84,38 +96,41 @@ export class ConversationHistory {
 
   /** Return a simplified copy of the conversation for display. */
   toPlainMessages(): Message[] {
-    return this.messages.map((m) => ({
+    if (this.cachedPlain) return this.cachedPlain;
+    this.cachedPlain = this.messages.map((m: ChatCompletionMessageParam) => ({
       role: m.role as 'user' | 'assistant' | 'system',
       content:
         typeof m.content === 'string'
           ? m.content
           : Array.isArray(m.content)
-            ? m.content.map((c) => ('text' in c ? c.text : '')).join('')
+            ? m.content.map((c: { text?: string }) => ('text' in c ? c.text : '')).join('')
             : '',
     }));
+    return this.cachedPlain;
   }
 
   get length(): number {
     return this.messages.length;
   }
 
-  /** Access raw messages (for tool execution). */
-  get raw(): ChatCompletionMessageParam[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get raw(): any[] {
     return this.messages;
   }
 
   // ── Persistence ──────────────────────────────────────────────────────────
 
-  save(path: string): void {
-    writeFileSync(path, JSON.stringify(this.messages, null, 2), 'utf-8');
+  async save(path: string): Promise<void> {
+    await writeFile(path, JSON.stringify(this.messages, null, 2), 'utf-8');
   }
 
-  load(path: string): void {
+  async load(path: string): Promise<void> {
     if (existsSync(path)) {
-      const raw = readFileSync(path, 'utf-8');
+      const raw = await readFile(path, 'utf-8');
       this.messages = JSON.parse(raw);
     } else {
       this.messages = [];
     }
+    this.invalidateCache();
   }
 }

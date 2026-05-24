@@ -22,7 +22,7 @@ export interface ShellExecutor {
 
 export class RealShellExecutor implements ShellExecutor {
   async run(cmd: string, timeout = 30_000): Promise<string> {
-    return new Promise<string>((resolve) => {
+    return new Promise<string>((resolve, reject) => {
       exec(
         cmd,
         {
@@ -32,8 +32,16 @@ export class RealShellExecutor implements ShellExecutor {
         },
         (err: ExecException | null, stdout: string, stderr: string) => {
           if (err) {
-            // Preserve original behavior: return error output instead of rejecting,
-            // so tool execution always gets a string result to feed back to the LLM.
+            // System errors (command not found, permission denied, etc.)
+            // have a string err.code (e.g. 'ENOENT', 'EACCES').
+            // These are infrastructure failures — reject so callers can
+            // distinguish them from command failures.
+            if (typeof err.code === 'string' || err.killed || err.signal) {
+              reject(new Error(err.message));
+              return;
+            }
+            // Non-zero exit code: command ran but failed — return stderr
+            // so the LLM can see what went wrong.
             resolve(
               (stderr?.trim() || stdout?.trim() || err.message || String(err))
             );

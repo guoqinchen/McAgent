@@ -9,6 +9,8 @@
 import { createMacOSAgent } from './agent.js';
 
 import { macOSDefaultTools } from './tools.js';
+import { macOSExtendedTools } from './tools-extended.js';
+import { macOSProTools } from './tools-pro.js';
 import { createInterface } from 'node:readline';
 import { logger } from './logging/structured-logger.js';
 
@@ -46,7 +48,7 @@ const agent = createMacOSAgent({
     `- If a command fails, suggest alternatives.`,
     `- Keep explanations concise but informative.`,
   ].join('\n'),
-  tools: macOSDefaultTools,
+  tools: [...macOSDefaultTools, ...macOSExtendedTools, ...macOSProTools],
 });
 
 // ─── Event hooks ─────────────────────────────────────────────────────────────

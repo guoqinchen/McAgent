@@ -6,7 +6,7 @@
  */
 
 import type OpenAI from 'openai';
-import type { ChatCompletionTool } from 'openai/resources/chat/completions';
+import type { ChatCompletionTool, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { errorRecoveryEngine } from '../engine/error-recovery-engine.js';
 
 export type ThinkingBody = {
@@ -16,55 +16,74 @@ export type ThinkingBody = {
   reasoning_effort: 'high' | 'max';
 };
 
+/**
+ * Parameters passed to the OpenAI chat.completion.create.
+ * Extended with `extra_body` for DeepSeek-specific options (thinking mode).
+ */
+interface CreateCompletionParams {
+  model: string;
+  messages: ChatCompletionMessageParam[];
+  tools?: ChatCompletionTool[];
+  extra_body: ThinkingBody;
+  stream: boolean;
+  signal?: AbortSignal;
+}
+
 export class LLMClient {
   constructor(private client: OpenAI) {}
 
   /**
    * Create a non-streaming (sync) completion.
-   * Returns the response object, or undefined if recovery exhausted.
+   * Returns the response object, or null if recovery exhausted.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async createSync(
     model: string,
-    messages: unknown[],
+    messages: ChatCompletionMessageParam[],
     tools: ChatCompletionTool[],
     thinkingBody: ThinkingBody,
     signal?: AbortSignal,
-  ): Promise<any | undefined> {
+  ): Promise<any | null> {
+    const params: CreateCompletionParams = {
+      model,
+      messages,
+      tools: tools.length > 0 ? tools : undefined,
+      extra_body: thinkingBody,
+      stream: false,
+      signal,
+    };
+    // `extra_body` is an undocumented OpenAI SDK extension for provider-specific
+    // options (DeepSeek thinking mode). The SDK accepts it at runtime but its
+    // TypeScript types don't declare it. We cast narrowly here, confined to this
+    // one call, rather than using `as any` on the whole params object.
     return errorRecoveryEngine.executeWithRecovery(
-      () =>
-        (this.client.chat.completions.create as any)({
-          model,
-          messages,
-          tools: tools.length > 0 ? tools : undefined,
-          extra_body: thinkingBody,
-          stream: false,
-          signal,
-        }),
+      () => this.client.chat.completions.create(params),
       'chat.completions.create',
     );
   }
 
   /**
    * Create a streaming completion.
-   * Returns a stream (async iterable), or undefined if recovery exhausted.
+   * Returns a stream (async iterable), or null if recovery exhausted.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async createStream(
     model: string,
-    messages: unknown[],
+    messages: ChatCompletionMessageParam[],
     tools: ChatCompletionTool[],
     thinkingBody: ThinkingBody,
     signal?: AbortSignal,
-  ): Promise<any | undefined> {
+  ): Promise<any | null> {
+    const params: CreateCompletionParams = {
+      model,
+      messages,
+      tools: tools.length > 0 ? tools : undefined,
+      extra_body: thinkingBody,
+      stream: true,
+      signal,
+    };
     return errorRecoveryEngine.executeWithRecovery(
-      () =>
-        (this.client.chat.completions.create as any)({
-          model,
-          messages,
-          tools: tools.length > 0 ? tools : undefined,
-          extra_body: thinkingBody,
-          stream: true,
-          signal,
-        }),
+      () => this.client.chat.completions.create(params),
       'chat.completions.create',
     );
   }

@@ -444,86 +444,6 @@ McAgent 有三种权限模式：
 
 ## 📊 Tips & Tricks / 进阶技巧
 
-### Multi-LLM Provider / 多 LLM 提供商
-
-McAgent supports multiple LLM providers. You can switch between DeepSeek and OpenAI:
-
-```bash
-# Set provider via environment variable
-export LLM_PROVIDER=openai
-export OPENAI_API_KEY=sk-your-key-here
-
-# Or programmatically
-const agent = createMacOSAgent({
-  provider: 'openai',
-  apiKey: 'sk-your-openai-key',
-  baseURL: 'https://api.openai.com',
-});
-```
-
-### Session Management / 会话管理
-
-McAgent can save and load conversation sessions:
-
-```typescript
-// Create a new session
-const sessionId = agent.createSession('My Session');
-
-// Save session to file
-agent.saveSession(sessionId, './sessions/my-session.json');
-
-// Load session later
-agent.loadSession('./sessions/my-session.json');
-
-// List all sessions
-const sessions = agent.listSessions();
-
-// Delete a session
-agent.deleteSession(sessionId);
-```
-
-### Adaptive Reasoning / 自适应推理
-
-McAgent automatically selects reasoning strategies based on task complexity:
-
-- **Direct** — Simple questions, fast responses
-- **Reasoned** — Step-by-step thinking
-- **Explorative** — Complex problems requiring multiple approaches
-- **Critical** — High-risk operations with extreme caution
-
-You can override the reasoning strategy:
-
-```typescript
-agent.setReasoningStrategy('explorative'); // For complex tasks
-agent.setReasoningStrategy('critical');    // For high-risk operations
-```
-
-### Structured Logging / 结构化日志
-
-Logs are automatically written to both console and file:
-
-```bash
-# Log files are stored in ~/.mcagent/logs/
-ls ~/.mcagent/logs/
-# mcagent-2024-01-15.log
-```
-
-### Performance Monitoring / 性能监控
-
-View performance metrics:
-
-```typescript
-// Get current metrics
-const metrics = agent.getMetrics();
-console.log(metrics.requests);      // Total requests
-console.log(metrics.successRate);    // Success rate
-console.log(metrics.avgLatency);    // Average latency (ms)
-console.log(metrics.totalTokens);   // Total tokens used
-
-// Generate performance report
-const report = agent.generatePerformanceReport();
-```
-
 ### Combining Tools / 组合工具
 
 McAgent automatically chains tools. For example, to diagnose a slow network:
@@ -536,7 +456,7 @@ McAgent automatically chains tools. For example, to diagnose a slow network:
 
 The agent will reason through this sequence itself — just describe your problem.
 
-### Session Persistence
+### Session Persistence / 会话持久化
 
 McAgent can save and load conversation sessions:
 
@@ -548,27 +468,34 @@ agent.saveSession('./sessions/debug-session.json');
 agent.loadSession('./sessions/debug-session.json');
 ```
 
-### Context Window
+### Context Window / 上下文窗口
 
 McAgent automatically manages context with a 1M token limit (leaving headroom for DeepSeek-V4's 1M context). When approaching the limit, the system removes the oldest user/assistant exchanges first. You can adjust this:
 
 ```typescript
-// Disable automatic eviction
-const agent = createMacOSAgent({ maxContextTokens: 0 });
-
-// Or set a custom limit
+// Set a custom limit
 const agent = createMacOSAgent({ maxContextTokens: 524288 });
 
 // Clear history manually
 agent.clearHistory();
 ```
 
-### Adding Custom Tools
+### Structured Logging / 结构化日志
+
+Logs are automatically written to both console and file:
+
+```bash
+# Log files are stored in ~/.mcagent/logs/
+ls ~/.mcagent/logs/
+# mcagent-2024-01-15.log
+```
+
+### Adding Custom Tools / 添加自定义工具
 
 Tools implement a simple interface:
 
 ```typescript
-const myTool = {
+const myTool: Tool = {
   name: 'my_custom_tool',
   description: 'What this tool does',
   parameters: {
@@ -586,90 +513,6 @@ const myTool = {
 };
 
 agent.addTool(myTool);
-```
-
----
-
-## 📊 进阶技巧
-
-### 多 LLM 提供商
-
-McAgent 支持多个 LLM 提供商，可以在 DeepSeek 和 OpenAI 之间切换：
-
-```bash
-# 通过环境变量设置
-export LLM_PROVIDER=openai
-export OPENAI_API_KEY=sk-your-key-here
-
-# 或编程方式
-const agent = createMacOSAgent({
-  provider: 'openai',
-  apiKey: 'sk-your-openai-key',
-  baseURL: 'https://api.openai.com',
-});
-```
-
-### 会话管理
-
-McAgent 可以保存和加载对话会话：
-
-```typescript
-// 创建新会话
-const sessionId = agent.createSession('My Session');
-
-// 保存会话到文件
-agent.saveSession(sessionId, './sessions/my-session.json');
-
-// 稍后加载会话
-agent.loadSession('./sessions/my-session.json');
-
-// 列出所有会话
-const sessions = agent.listSessions();
-
-// 删除会话
-agent.deleteSession(sessionId);
-```
-
-### 自适应推理
-
-McAgent 根据任务复杂度自动选择推理策略：
-
-- **Direct（直接）** — 简单问题，快速响应
-- **Reasoned（推理）** — 逐步思考
-- **Explorative（探索）** — 需要多种方法的复杂问题
-- **Critical（严格）** — 高风险操作，极度谨慎
-
-你可以覆盖推理策略：
-
-```typescript
-agent.setReasoningStrategy('explorative'); // 复杂任务
-agent.setReasoningStrategy('critical');    // 高风险操作
-```
-
-### 结构化日志
-
-日志自动写入控制台和文件：
-
-```bash
-# 日志文件存储在 ~/.mcagent/logs/
-ls ~/.mcagent/logs/
-# mcagent-2024-01-15.log
-```
-
-### 性能监控
-
-查看性能指标：
-
-```typescript
-// 获取当前指标
-const metrics = agent.getMetrics();
-console.log(metrics.requests);      // 总请求数
-console.log(metrics.successRate);    // 成功率
-console.log(metrics.avgLatency);    // 平均延迟（毫秒）
-console.log(metrics.totalTokens);   // 总令牌数
-
-// 生成性能报告
-const report = agent.generatePerformanceReport();
 ```
 
 ---

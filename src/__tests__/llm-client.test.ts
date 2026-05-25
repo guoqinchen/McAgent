@@ -21,7 +21,7 @@ describe('LLMClient', () => {
   });
 
   const model = 'deepseek-v4-flash';
-  const messages = [{ role: 'user', content: 'hello' }];
+  const messages = [{ role: 'user' as const, content: 'hello' }];
   const tools: any[] = [];
   const body = { reasoning_effort: 'high' as const };
 

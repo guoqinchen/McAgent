@@ -13,6 +13,8 @@ import { render, Box, Text, useInput, useApp } from 'ink';
 import { createMacOSAgent } from './agent.js';
 import type { Message } from './types/events.js';
 import { macOSDefaultTools } from './tools.js';
+import { macOSExtendedTools } from './tools-extended.js';
+import { macOSProTools } from './tools-pro.js';
 import { logger } from './logging/structured-logger.js';
 
 // ─── Agent ───────────────────────────────────────────────────────────────────
@@ -45,7 +47,7 @@ const agent = createMacOSAgent({
     `- Prefer read-only flags by default.`,
     `- If a command fails, suggest alternatives.`,
   ].join('\n'),
-  tools: macOSDefaultTools,
+  tools: [...macOSDefaultTools, ...macOSExtendedTools, ...macOSProTools],
 });
 
 // ─── ChatMessage component ───────────────────────────────────────────────────

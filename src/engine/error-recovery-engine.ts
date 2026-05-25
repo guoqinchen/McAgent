@@ -139,36 +139,61 @@ export class ErrorRecoveryEngine {
       return 'unknown';
     }
 
-    const message = error.message.toLowerCase();
-    
-    if (message.includes('network') || message.includes('fetch') || message.includes('connection')) {
-      return 'network';
-    }
-    
-    if (message.includes('timeout') || message.includes('timed out')) {
+    // Use error.name and error.code first — these are stable across
+    // Node.js versions and runtimes, unlike message text which can vary.
+    const name = error.name;
+    const code = (error as NodeJS.ErrnoException).code;
+
+    // AbortError → treat as cancelled network call
+    if (name === 'AbortError') return 'network';
+
+    // Timeout
+    if (name === 'TimeoutError' || code === 'ETIMEDOUT' || code === 'ESOCKETTIMEDOUT') {
       return 'timeout';
     }
-    
-    if (message.includes('rate') || message.includes('limit')) {
-      return 'rate_limit';
+
+    // Network: DNS, connection refused, socket hang up
+    if (
+      code === 'ENOTFOUND' ||
+      code === 'ECONNREFUSED' ||
+      code === 'ECONNRESET' ||
+      code === 'EHOSTUNREACH' ||
+      code === 'ENETUNREACH' ||
+      code === 'EPIPE'
+    ) {
+      return 'network';
     }
-    
-    if (message.includes('permission') || message.includes('denied')) {
+
+    // Permission
+    if (code === 'EACCES' || code === 'EPERM' || name === 'PermissionError') {
       return 'permission_error';
     }
-    
-    if (message.includes('validation') || message.includes('invalid')) {
+
+    // Rate limiting — only detectable via HTTP status in API responses
+    // Fall through to message-based detection for API errors
+
+    const msg = error.message.toLowerCase();
+
+    // Rate limit
+    if (msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('429')) {
+      return 'rate_limit';
+    }
+
+    // Validation
+    if (msg.includes('validation') || name === 'ValidationError' || name === 'TypeError') {
       return 'validation_error';
     }
-    
-    if (message.includes('api') || message.includes('status')) {
+
+    // API errors (HTTP 4xx/5xx)
+    if (msg.includes('status 4') || msg.includes('status 5') || msg.includes('api error')) {
       return 'api_error';
     }
-    
-    if (message.includes('unavailable') || message.includes('service')) {
+
+    // Service unavailable
+    if (msg.includes('503') || msg.includes('service unavailable')) {
       return 'resource_unavailable';
     }
-    
+
     return 'unknown';
   }
 

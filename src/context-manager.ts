@@ -151,6 +151,7 @@ export function evictMessages(
 
 /**
  * Default max tokens for the context window.
- * DeepSeek-V4 supports 128K tokens; we leave ~32K headroom for the response.
+ * DeepSeek-V4 supports up to 1M context tokens; we leave generous headroom
+ * for the response so the model always has room to generate.
  */
 export const DEFAULT_MAX_CONTEXT_TOKENS = 96_000;

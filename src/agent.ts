@@ -366,7 +366,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
       if (sync) {
         // ── Non-streaming call ─────────────────────────────────────────────
-        const response: any = await this.llmClient.createSync(
+        const response = await this.llmClient.createSync(
           this.config.model,
           messages,
           tools,
@@ -413,7 +413,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
         // OpenAI SDK timeout (60s, set in constructor) already guards against
         // streaming hangs. No separate AbortSignal needed — the SDK's
         // internal timeout handles abort.
-        const stream: any = await this.llmClient.createStream(
+        const stream = await this.llmClient.createStream(
           this.config.model,
           messages,
           tools,

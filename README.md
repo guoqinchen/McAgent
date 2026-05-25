@@ -128,31 +128,20 @@ src/
 ├── context-manager.ts       # Context window management (token estimation + eviction)
 ├── cli.tsx                  # Ink/React TUI
 ├── headless.ts              # Readline headless CLI
-├── types/
-│   └── llm-provider.ts      # LLM Provider abstraction layer
-├── providers/
-│   ├── deepseek-provider.ts # DeepSeek API provider
-│   ├── openai-provider.ts   # OpenAI API provider
-│   └── provider-factory.ts  # Provider factory
-├── tools/
-│   ├── tool-registry.ts     # Tool registration & categorization
-│   └── enhanced-tool-executor.ts # Tool execution with caching & rate limiting
+├── agent/                   # Agent submodules
+│   ├── conversation.ts       # Conversation history management
+│   ├── llm-client.ts         # OpenAI SDK wrapper with error recovery
+│   └── tool-executor.ts      # Tool execution with metrics
 ├── engine/
-│   ├── reasoning-engine.ts  # Adaptive reasoning strategies
-│   └── error-recovery-engine.ts # Error recovery mechanisms
-├── session/
-│   └── session-manager.ts   # Persistent session management
-├── ui/
-│   ├── streaming-optimizer.ts # Streaming output optimization
-│   └── markdown-renderer.ts   # Markdown rendering
+│   └── error-recovery-engine.ts # Error recovery with retry & fallback
+├── shell/
+│   └── executor.ts           # Shell execution abstraction
 ├── logging/
-│   └── structured-logger.ts # Multi-handler logging system
+│   └── structured-logger.ts  # Multi-handler logging
 ├── monitoring/
-│   ├── metrics-collector.ts # Performance metrics collection
-│   └── performance-reporter.ts # Performance reporting
-├── security/
-│   └── permission-manager.ts # Fine-grained permission system
-└── __tests__/               # Vitest tests (100 tests)
+│   └── metrics-collector.ts  # Performance metrics collection
+├── types/                    # Shared type definitions
+└── __tests__/                # Vitest tests (126 tests)
 ```
 
 ---

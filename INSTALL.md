@@ -3,15 +3,16 @@
 ---
 
 <a name="english"></a>
+
 ## 📦 Installation
 
 ### Prerequisites
 
-| Requirement | Version |
-|-------------|---------|
-| **Node.js** | 18.x or later (LTS recommended) |
-| **npm** | 9.x or later (comes with Node.js) |
-| **macOS** | 13.0 (Ventura) or later |
+| Requirement          | Version                                                                    |
+| -------------------- | -------------------------------------------------------------------------- |
+| **Node.js**          | 18.x or later (LTS recommended)                                            |
+| **npm**              | 9.x or later (comes with Node.js)                                          |
+| **macOS**            | 13.0 (Ventura) or later                                                    |
 | **DeepSeek API Key** | Get one at [platform.deepseek.com](https://platform.deepseek.com/api-docs) |
 
 ### Step-by-Step
@@ -79,15 +80,16 @@ npm run start:headless
 ---
 
 <a name="chinese"></a>
+
 ## 📦 安装指南
 
 ### 系统要求
 
-| 项目 | 最低版本 |
-|------|---------|
-| **Node.js** | 18.x 或更新版本（推荐 LTS） |
-| **npm** | 9.x 或更新版本（随 Node.js 安装） |
-| **macOS** | 13.0 (Ventura) 或更新版本 |
+| 项目                  | 最低版本                                                                |
+| --------------------- | ----------------------------------------------------------------------- |
+| **Node.js**           | 18.x 或更新版本（推荐 LTS）                                             |
+| **npm**               | 9.x 或更新版本（随 Node.js 安装）                                       |
+| **macOS**             | 13.0 (Ventura) 或更新版本                                               |
 | **DeepSeek API 密钥** | 在 [platform.deepseek.com](https://platform.deepseek.com/api-docs) 获取 |
 
 ### 分步安装
@@ -156,10 +158,10 @@ npm run start:headless
 
 ## 🐛 Troubleshooting / 故障排除
 
-| Problem / 问题 | Solution / 解决方案 |
-|----------------|-------------------|
-| `command not found: tsx` | Run `npm install` again, or install tsx globally: `npm install -g tsx` |
-| `DEEPSEEK_API_KEY is required` | Set the environment variable before running (see step 3) |
-| `Cannot find module 'ink'` | Optional dependency not installed. Run `npm install ink react` manually, or use headless mode instead |
-| TUI display broken / 界面显示异常 | Use headless mode: `npm run start:headless` |
-| Tests fail with `99 passed` expected | Make sure you're running `npm test` from the project root |
+| Problem / 问题                       | Solution / 解决方案                                                                                   |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `command not found: tsx`             | Run `npm install` again, or install tsx globally: `npm install -g tsx`                                |
+| `DEEPSEEK_API_KEY is required`       | Set the environment variable before running (see step 3)                                              |
+| `Cannot find module 'ink'`           | Optional dependency not installed. Run `npm install ink react` manually, or use headless mode instead |
+| TUI display broken / 界面显示异常    | Use headless mode: `npm run start:headless`                                                           |
+| Tests fail with `99 passed` expected | Make sure you're running `npm test` from the project root                                             |

@@ -2,13 +2,13 @@
 
 ## 📋 Document Info
 
-| Field | Value |
-|-------|-------|
-| **Title** | McAgent v2.x Comprehensive Improvement Plan |
-| **Date** | 2026-05-21 |
-| **Version** | 1.0 |
-| **Status** | Approved |
-| **Author** | Agent |
+| Field       | Value                                       |
+| ----------- | ------------------------------------------- |
+| **Title**   | McAgent v2.x Comprehensive Improvement Plan |
+| **Date**    | 2026-05-21                                  |
+| **Version** | 1.0                                         |
+| **Status**  | Approved                                    |
+| **Author**  | Agent                                       |
 
 ---
 
@@ -16,13 +16,14 @@
 
 This document outlines a comprehensive 10-week improvement plan for McAgent, the CLI-first macOS AI assistant. The plan follows a **capability-first strategy** with three phases:
 
-| Phase | Duration | Focus | Key Deliverables |
-|-------|----------|-------|------------------|
-| **Phase 1** | 3-4 weeks | Core Capabilities | LLM Provider Abstraction, Enhanced Tool System, Reasoning Engine, Error Recovery |
-| **Phase 2** | 2-3 weeks | User Experience | Enhanced TUI, Session Management, Streaming Optimization |
-| **Phase 3** | 2-3 weeks | Stability & Security | Structured Logging, Performance Monitoring, Fine-grained Permissions |
+| Phase       | Duration  | Focus                | Key Deliverables                                                                 |
+| ----------- | --------- | -------------------- | -------------------------------------------------------------------------------- |
+| **Phase 1** | 3-4 weeks | Core Capabilities    | LLM Provider Abstraction, Enhanced Tool System, Reasoning Engine, Error Recovery |
+| **Phase 2** | 2-3 weeks | User Experience      | Enhanced TUI, Session Management, Streaming Optimization                         |
+| **Phase 3** | 2-3 weeks | Stability & Security | Structured Logging, Performance Monitoring, Fine-grained Permissions             |
 
 **Success Criteria:**
+
 - Tool call accuracy: +20%
 - Error recovery success rate: +40%
 - User satisfaction: +30%
@@ -96,6 +97,7 @@ This document outlines a comprehensive 10-week improvement plan for McAgent, the
 ### 1.1 LLM Provider Abstraction
 
 #### Objective
+
 Create a unified interface for LLM providers, enabling future support for OpenAI, Anthropic, and local models while maintaining DeepSeek as the default.
 
 #### Interface Definition
@@ -172,19 +174,25 @@ export interface ChatOptions {
 ```typescript
 export class DeepSeekProvider implements LLMProvider {
   readonly id = 'deepseek';
-  
+
   private client: OpenAI;
   private defaultModel: string;
-  
+
   constructor(apiKey: string, baseURL?: string, defaultModel = 'deepseek-v4-flash') {
     this.client = new OpenAI({ apiKey, baseURL: baseURL || 'https://api.deepseek.com' });
     this.defaultModel = defaultModel;
   }
-  
+
   getCapabilities(): LLMCapabilities {
-    return { streaming: true, toolCalling: true, reasoning: true, maxContextTokens: 1_000_000, strictToolMode: true };
+    return {
+      streaming: true,
+      toolCalling: true,
+      reasoning: true,
+      maxContextTokens: 1_000_000,
+      strictToolMode: true,
+    };
   }
-  
+
   async chat(messages: ChatMessage[], options?: ChatOptions): Promise<ChatResponse>;
   async *stream(messages: ChatMessage[], options?: ChatOptions): AsyncGenerator<StreamDelta>;
   async validate(): Promise<boolean>;
@@ -204,6 +212,7 @@ export class DeepSeekProvider implements LLMProvider {
 ### 1.2 Tool System Enhancement
 
 #### Objective
+
 Build a scalable tool registry with metadata management, caching, and rate limiting.
 
 #### Tool Registry
@@ -221,12 +230,19 @@ export interface ToolMetadata {
   retryable?: boolean;
 }
 
-export type ToolCategory = 'system' | 'process' | 'file' | 'network' | 'security' | 'development' | 'custom';
+export type ToolCategory =
+  | 'system'
+  | 'process'
+  | 'file'
+  | 'network'
+  | 'security'
+  | 'development'
+  | 'custom';
 
 export class ToolRegistry {
   private tools = new Map<string, Tool>();
   private metadata = new Map<string, ToolMetadata>();
-  
+
   register(tool: Tool, metadata?: Partial<ToolMetadata>): void;
   get(name: string): Tool | undefined;
   getByCategory(category: ToolCategory): Tool[];
@@ -257,7 +273,11 @@ export interface ToolExecutionResult {
 }
 
 export class EnhancedToolExecutor {
-  async execute(toolName: string, args: Record<string, unknown>, context: ToolExecutionContext): Promise<ToolExecutionResult>;
+  async execute(
+    toolName: string,
+    args: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<ToolExecutionResult>;
 }
 ```
 
@@ -266,6 +286,7 @@ export class EnhancedToolExecutor {
 ### 1.3 Reasoning Engine
 
 #### Objective
+
 Implement strategy-based reasoning to improve tool selection and task planning.
 
 **File:** `src/agent/reasoning.ts`
@@ -298,7 +319,11 @@ export interface ToolSelectionResult {
 }
 
 export class ToolSelector {
-  async selectTools(task: string, context: Message[], availableTools: Tool[]): Promise<ToolSelectionResult>;
+  async selectTools(
+    task: string,
+    context: Message[],
+    availableTools: Tool[]
+  ): Promise<ToolSelectionResult>;
 }
 ```
 
@@ -307,6 +332,7 @@ export class ToolSelector {
 ### 1.4 Error Recovery Engine
 
 #### Objective
+
 Implement robust error handling with retry strategies, fallback tools, and graceful degradation.
 
 **File:** `src/agent/error-handler.ts`
@@ -317,8 +343,12 @@ export type RecoveryStrategy = 'retry' | 'fallback' | 'skip' | 'abort' | 'escala
 
 export class ErrorRecoveryEngine {
   determineRecoveryStrategy(error: Error, context: ErrorContext): RecoveryStrategy;
-  async recover(error: Error, context: ErrorContext, executor: EnhancedToolExecutor): Promise<RecoveryResult>;
-  calculateDelay(context: ErrorContext): number;  // Exponential backoff
+  async recover(
+    error: Error,
+    context: ErrorContext,
+    executor: EnhancedToolExecutor
+  ): Promise<RecoveryResult>;
+  calculateDelay(context: ErrorContext): number; // Exponential backoff
 }
 ```
 
@@ -329,11 +359,13 @@ export class ErrorRecoveryEngine {
 ### 2.1 Enhanced TUI
 
 #### Objective
+
 Improve visual presentation with reasoning visualization, code highlighting, and smooth animations.
 
 **Files:** `src/cli/components/EnhancedChat.tsx`, `src/cli/components/Collapsible.tsx`, `src/cli/components/TypewriterText.tsx`
 
 **Key Features:**
+
 - Reasoning visualization (collapsible)
 - Tool call status animations
 - Markdown/Code syntax highlighting
@@ -343,6 +375,7 @@ Improve visual presentation with reasoning visualization, code highlighting, and
 ### 2.2 Session Management
 
 #### Objective
+
 Enable persistent sessions with saving, loading, and exporting capabilities.
 
 **File:** `src/agent/session-manager.ts`
@@ -375,6 +408,7 @@ export class FileBasedSessionManager implements SessionManager {
 ### 2.3 Streaming Optimization
 
 #### Objective
+
 Improve perceived responsiveness with buffering, debouncing, and Markdown-aware rendering.
 
 **Files:** `src/streaming/optimizers.ts`, `src/streaming/markdown-renderer.ts`
@@ -396,12 +430,19 @@ export class MarkdownRenderer {
 ### 3.1 Structured Logging
 
 #### Objective
+
 Implement comprehensive logging with multiple handlers, log rotation, and structured output.
 
 **File:** `src/logging/logger.ts`
 
 ```typescript
-export enum LogLevel { DEBUG = 0, INFO = 1, WARN = 2, ERROR = 3, FATAL = 4 }
+export enum LogLevel {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3,
+  FATAL = 4,
+}
 
 export interface LogEntry {
   timestamp: string;
@@ -430,6 +471,7 @@ export class FileHandler implements LogHandler {
 ### 3.2 Performance Monitoring
 
 #### Objective
+
 Track key metrics including latency, error rates, token usage, and tool usage patterns.
 
 **File:** `src/monitoring/metrics.ts`
@@ -457,6 +499,7 @@ export class PerformanceReporter {
 ### 3.3 Fine-Grained Permissions
 
 #### Objective
+
 Implement rule-based permission system with interactive confirmation and audit logging.
 
 **File:** `src/security/permission-manager.ts`
@@ -470,7 +513,7 @@ export interface PermissionRule {
   conditions?: PermissionCondition[];
 }
 
-export type PermissionTarget = 
+export type PermissionTarget =
   | { tool: string }
   | { category: ToolCategory }
   | { path: string | Pattern }
@@ -498,6 +541,7 @@ Week 8-10: Phase 3 - Stability & Security
 ### Detailed Plan
 
 #### Week 1: LLM Provider Abstraction
+
 - Define `LLMProvider` interface (`src/providers/base.ts`)
 - Implement `DeepSeekProvider` (`src/providers/deepseek.ts`)
 - Create provider factory (`src/providers/index.ts`)
@@ -505,6 +549,7 @@ Week 8-10: Phase 3 - Stability & Security
 - Write unit tests
 
 #### Week 2: Tool System Enhancement
+
 - Implement `ToolRegistry` (`src/tools/registry.ts`)
 - Implement `EnhancedToolExecutor` (`src/tools/executor.ts`)
 - Add tool caching mechanism
@@ -512,48 +557,56 @@ Week 8-10: Phase 3 - Stability & Security
 - Write integration tests
 
 #### Week 3: Reasoning Engine
+
 - Implement `ReasoningEngine` (`src/agent/reasoning.ts`)
 - Implement `ToolSelector` (`src/agent/tool-selector.ts`)
 - Integrate with agent loop
 - Write tests
 
 #### Week 4: Error Recovery
+
 - Implement `ErrorRecoveryEngine` (`src/agent/error-handler.ts`)
 - Add exponential backoff
 - Implement fallback tool mapping
 - End-to-end testing
 
 #### Week 5: Enhanced TUI
+
 - Refactor chat components (`src/cli/components/`)
 - Add reasoning visualization
 - Add code syntax highlighting
 - Implement smooth streaming animations
 
 #### Week 6: Session Management
+
 - Implement `FileBasedSessionManager` (`src/agent/session-manager.ts`)
 - Add session CRUD operations
 - Implement session export (JSON/Markdown)
 - Add TUI session management UI
 
 #### Week 7: Streaming Optimization
+
 - Implement `StreamingOptimizer` (`src/streaming/optimizers.ts`)
 - Implement `MarkdownRenderer` (`src/streaming/markdown-renderer.ts`)
 - Add history command completion
 - Add interactive confirmation dialogs
 
 #### Week 8: Structured Logging
+
 - Implement `StructuredLogger` (`src/logging/logger.ts`)
 - Add `ConsoleHandler` and `FileHandler`
 - Implement log rotation
 - Integrate logging into agent and tools
 
 #### Week 9: Performance Monitoring
+
 - Implement `MetricsCollector` (`src/monitoring/metrics.ts`)
 - Add request latency tracking
 - Add token usage statistics
 - Implement `PerformanceReporter`
 
 #### Week 10: Permission System
+
 - Implement `PermissionManager` (`src/security/permission-manager.ts`)
 - Add rule engine
 - Implement interactive confirmation flow
@@ -564,48 +617,55 @@ Week 8-10: Phase 3 - Stability & Security
 ## ✅ Success Criteria & Metrics
 
 ### Core Capabilities
-| Metric | Target | Baseline |
-|--------|--------|----------|
-| Tool call accuracy | +20% | TBD |
-| Error recovery success rate | +40% | TBD |
-| Average reasoning steps | 3-5 | TBD |
+
+| Metric                      | Target | Baseline |
+| --------------------------- | ------ | -------- |
+| Tool call accuracy          | +20%   | TBD      |
+| Error recovery success rate | +40%   | TBD      |
+| Average reasoning steps     | 3-5    | TBD      |
 
 ### User Experience
-| Metric | Target |
-|--------|--------|
-| User satisfaction (survey) | +30% |
-| Response perceived speed | +25% |
-| Session retention rate | 75%+ |
+
+| Metric                     | Target |
+| -------------------------- | ------ |
+| User satisfaction (survey) | +30%   |
+| Response perceived speed   | +25%   |
+| Session retention rate     | 75%+   |
 
 ### Stability
-| Metric | Target |
-|--------|--------|
-| Mean Time to Recovery (MTTR) | < 5s |
-| Error rate | < 1% |
-| Uptime | 99.9% |
+
+| Metric                       | Target |
+| ---------------------------- | ------ |
+| Mean Time to Recovery (MTTR) | < 5s   |
+| Error rate                   | < 1%   |
+| Uptime                       | 99.9%  |
 
 ### Security
-| Metric | Target |
-|--------|--------|
-| Permission violation blocks | 100% |
-| Audit log completeness | 100% |
-| Security scan pass rate | 100% |
+
+| Metric                      | Target |
+| --------------------------- | ------ |
+| Permission violation blocks | 100%   |
+| Audit log completeness      | 100%   |
+| Security scan pass rate     | 100%   |
 
 ---
 
 ## 🔄 Backward Compatibility
 
 ### API Compatibility
+
 - `createMacOSAgent()` signature unchanged
 - All existing tool interfaces unchanged
 - All event types unchanged
 - Configuration options remain compatible (additive only)
 
 ### Session Compatibility
+
 - Existing session files remain readable
 - Export format compatible with previous versions
 
 ### Migration Path
+
 - No breaking changes
 - In-place upgrade supported
 - `DEEPSEEK_API_KEY` environment variable still required
@@ -615,6 +675,7 @@ Week 8-10: Phase 3 - Stability & Security
 ## 🔒 Security Considerations
 
 ### Threat Model
+
 - **Command injection**: Blocked by dangerous command detection
 - **Path traversal**: Restricted to `$HOME` directory
 - **Data exfiltration**: Audit logging enabled
@@ -622,6 +683,7 @@ Week 8-10: Phase 3 - Stability & Security
 - **Unauthorized access**: Permission system with explicit confirmation
 
 ### Security Controls
+
 1. Dangerous command detection (14 patterns)
 2. Path restriction to `$HOME`
 3. Three permission modes (readonly/approve/auto)
@@ -634,17 +696,20 @@ Week 8-10: Phase 3 - Stability & Security
 ## 📝 Test Plan
 
 ### Unit Tests
+
 - Provider layer: Mock providers, API validation
 - Tool system: Registry, executor, caching
 - Reasoning engine: Strategy selection, tool matching
 - Error recovery: Retry logic, fallback selection
 
 ### Integration Tests
+
 - Agent loop: Message flow, tool execution, streaming
 - Session management: Save/load/export
 - Permission system: Rule evaluation, confirmation flow
 
 ### End-to-End Tests
+
 - Full conversation flow with tool calls
 - Error scenarios and recovery
 - Performance benchmarks
@@ -653,19 +718,20 @@ Week 8-10: Phase 3 - Stability & Security
 
 ## 📚 Documentation Plan
 
-| Document | Status |
-|----------|--------|
-| API Reference | Update |
-| Tool Development Guide | New |
+| Document                | Status |
+| ----------------------- | ------ |
+| API Reference           | Update |
+| Tool Development Guide  | New    |
 | Configuration Reference | Update |
-| Security Guide | New |
-| Migration Guide | New |
+| Security Guide          | New    |
+| Migration Guide         | New    |
 
 ---
 
 ## 📋 Checklist
 
 ### Phase 1
+
 - [ ] LLM Provider interface defined
 - [ ] DeepSeek Provider implemented
 - [ ] Agent refactored to use provider
@@ -676,6 +742,7 @@ Week 8-10: Phase 3 - Stability & Security
 - [ ] All unit tests passing
 
 ### Phase 2
+
 - [ ] Enhanced TUI components
 - [ ] SessionManager implemented
 - [ ] StreamingOptimizer implemented
@@ -683,6 +750,7 @@ Week 8-10: Phase 3 - Stability & Security
 - [ ] All integration tests passing
 
 ### Phase 3
+
 - [ ] StructuredLogger implemented
 - [ ] MetricsCollector implemented
 - [ ] PerformanceReporter implemented

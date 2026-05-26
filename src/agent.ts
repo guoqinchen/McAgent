@@ -37,8 +37,6 @@ export type { Message, McAgentEvents as MacOSAgentEvents } from './types/events.
 // The class uses the original names via the imported bindings
 // (McAgentConfig → MacOSAgentConfig, McAgentEvents → MacOSAgentEvents)
 
-
-
 let enableStrictMode = false;
 
 export function setToolStrictMode(strict: boolean): void {
@@ -80,14 +78,12 @@ function hasReasoning(input: unknown): input is { reasoning_content: string } {
   );
 }
 
-
-
 // ─── Defaults ────────────────────────────────────────────────────────────────
 // DeepSeek-V4: https://api-docs.deepseek.com/zh-cn/
 
-const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';       // OpenAI-compatible
-const DEEPSEEK_BETA_URL  = 'https://api.deepseek.com/beta';   // Beta features (strict mode)
-const DEEPSEEK_MODEL = 'deepseek-v4-flash';                   // Default: fast/economical
+const DEEPSEEK_BASE_URL = 'https://api.deepseek.com'; // OpenAI-compatible
+const DEEPSEEK_BETA_URL = 'https://api.deepseek.com/beta'; // Beta features (strict mode)
+const DEEPSEEK_MODEL = 'deepseek-v4-flash'; // Default: fast/economical
 
 // ─── Agent class ─────────────────────────────────────────────────────────────
 
@@ -125,7 +121,8 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     super();
 
     // Resolve base URL: beta endpoint for strict mode, otherwise custom or default
-    const baseURL = config.baseURL ?? (config.useBetaEndpoint ? DEEPSEEK_BETA_URL : DEEPSEEK_BASE_URL);
+    const baseURL =
+      config.baseURL ?? (config.useBetaEndpoint ? DEEPSEEK_BETA_URL : DEEPSEEK_BASE_URL);
     const model = config.model ?? DEEPSEEK_MODEL;
     const thinkingEnabled = config.thinkingEnabled ?? true;
 
@@ -147,7 +144,16 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
       maxToolRounds: config.maxToolRounds ?? 10,
       maxContextTokens: config.maxContextTokens ?? DEFAULT_MAX_CONTEXT_TOKENS,
       permissionMode: config.permissionMode ?? 'approve',
-      autoAllowlist: config.autoAllowlist ?? ['git', 'npm', 'brew', 'ls', 'cat', 'echo', 'mkdir', 'touch'],
+      autoAllowlist: config.autoAllowlist ?? [
+        'git',
+        'npm',
+        'brew',
+        'ls',
+        'cat',
+        'echo',
+        'mkdir',
+        'touch',
+      ],
       thinkingEnabled,
       reasoningEffort: config.reasoningEffort ?? (thinkingEnabled ? 'high' : 'max'),
       toolStrictMode: config.toolStrictMode ?? false,
@@ -162,8 +168,8 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     this.client = new OpenAI({
       apiKey: this.config.apiKey,
       baseURL: this.config.baseURL,
-      timeout: 60_000,       // 60s — prevent indefinite hang on API calls
-      maxRetries: 1,         // single retry to avoid long retry chains
+      timeout: 60_000, // 60s — prevent indefinite hang on API calls
+      maxRetries: 1, // single retry to avoid long retry chains
     });
 
     this.llmClient = new LLMClient(this.client);
@@ -339,7 +345,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     // Filter tools based on permission mode
     let activeTools = this.config.tools;
     if (this.config.permissionMode === 'readonly') {
-      activeTools = this.config.tools.filter(t => t.readonly === true);
+      activeTools = this.config.tools.filter((t) => t.readonly === true);
     }
     const tools: ChatCompletionTool[] = activeTools.map(toolToOpenAI);
 
@@ -371,7 +377,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
           messages,
           tools,
           thinkingBody,
-          signal,
+          signal
         );
         if (!response) break;
 
@@ -397,7 +403,11 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
           if (functionCalls.length > 0) {
             this.emit('stream:delta', msg.content || '', fullText);
             // Push assistant message with tool calls before executing tools
-            this.conversation.addAssistantMessage(msg.content ?? null, msg.tool_calls, reasoningContent);
+            this.conversation.addAssistantMessage(
+              msg.content ?? null,
+              msg.tool_calls,
+              reasoningContent
+            );
             await this.executeToolCalls(functionCalls);
             continue;
           }
@@ -418,7 +428,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
           messages,
           tools,
           thinkingBody,
-          signal,
+          signal
         );
         if (!stream) break;
 
@@ -467,7 +477,11 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
             }
           }
 
-          if (finishReason === 'tool_calls' || finishReason === 'stop' || finishReason === 'length') {
+          if (
+            finishReason === 'tool_calls' ||
+            finishReason === 'stop' ||
+            finishReason === 'length'
+          ) {
             if (toolCallAccumulators.size > 0) {
               // Add assistant message with tool calls to history
               this.conversation.addAssistantMessage(
@@ -482,27 +496,28 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
               fullText = streamingContent;
 
               // All accumulated calls are 'function' type (checked during accumulation)
-              const accumulatedCalls: ChatCompletionMessageFunctionToolCall[] =
-                Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
-                  id: acc.id,
-                  type: 'function' as const,
-                  function: { name: acc.name, arguments: acc.arguments },
-                }));
+              const accumulatedCalls: ChatCompletionMessageFunctionToolCall[] = Array.from(
+                toolCallAccumulators.entries()
+              ).map(([, acc]) => ({
+                id: acc.id,
+                type: 'function' as const,
+                function: { name: acc.name, arguments: acc.arguments },
+              }));
               await this.executeToolCalls(accumulatedCalls);
 
-                // If the response was truncated, warn the model
-                if (finishReason === 'length') {
-                  this.conversation.addToolWarning(
-                    toolCallAccumulators.values().next().value?.id || 'n/a',
-                    'Response was truncated due to context length limit. Tool calls may have been cut off.'
-                  );
-                }
-
-                finished = true;
+              // If the response was truncated, warn the model
+              if (finishReason === 'length') {
+                this.conversation.addToolWarning(
+                  toolCallAccumulators.values().next().value?.id || 'n/a',
+                  'Response was truncated due to context length limit. Tool calls may have been cut off.'
+                );
               }
-              break; // exit for-await loop
+
+              finished = true;
             }
+            break; // exit for-await loop
           }
+        }
 
         if (!finished) {
           // No tool calls — assistant is done
@@ -547,7 +562,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
       (error) => {
         this.consecutiveErrors++;
         this.emit('error', error);
-      },
+      }
     );
 
     // Inject all results into conversation history

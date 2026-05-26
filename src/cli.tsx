@@ -72,7 +72,7 @@ function ToolCallLine({ name, args }: { name: string; args: unknown }) {
   const argsStr = JSON.stringify(args);
   return (
     <Box>
-      <Text color="yellow">  🔧 {name}</Text>
+      <Text color="yellow"> 🔧 {name}</Text>
       <Text color="gray">({argsStr.length > 80 ? argsStr.slice(0, 80) + '…' : argsStr})</Text>
     </Box>
   );
@@ -285,10 +285,7 @@ function App() {
 
   const historyUp = useCallback(() => {
     if (inputHistory.length === 0) return;
-    const nextIdx =
-      historyIndex === -1
-        ? inputHistory.length - 1
-        : Math.max(0, historyIndex - 1);
+    const nextIdx = historyIndex === -1 ? inputHistory.length - 1 : Math.max(0, historyIndex - 1);
     if (historyIndex === -1) setHistoryDraft(input);
     setHistoryIndex(nextIdx);
     setInput(inputHistory[nextIdx] ?? '');
@@ -315,9 +312,9 @@ function App() {
       {/* Header */}
       <Box marginBottom={1} borderStyle="round" borderColor="magenta" paddingX={1}>
         <Text bold color="magenta">
-          🍏  McAgent
+          🍏 McAgent
         </Text>
-        <Text color="gray">  (Esc to exit)</Text>
+        <Text color="gray"> (Esc to exit)</Text>
       </Box>
 
       {/* Messages area */}
@@ -343,7 +340,9 @@ function App() {
         {/* Error indicator */}
         {errorMessage && (
           <Box flexDirection="column" marginTop={1}>
-            <Text bold color="red">❌ Error:</Text>
+            <Text bold color="red">
+              ❌ Error:
+            </Text>
             <Text color="red">{errorMessage}</Text>
           </Box>
         )}

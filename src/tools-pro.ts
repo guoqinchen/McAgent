@@ -60,7 +60,7 @@ export const networkDiagnosticsTool: Tool = {
   },
   execute: async ({ action, target, port, count }) => {
     const a = String(action ?? 'ping');
-    const t = target ? String(target) : (a === 'port' ? '8.8.8.8' : 'google.com');
+    const t = target ? String(target) : a === 'port' ? '8.8.8.8' : 'google.com';
     const p = typeof port === 'number' ? port : 443;
     const c = typeof count === 'number' ? Math.min(count, 20) : 4;
 
@@ -69,8 +69,8 @@ export const networkDiagnosticsTool: Tool = {
         const pingCmd = `ping -c ${c} -t 5 "${t}" 2>&1`;
         const pingOut = await run(pingCmd, 15_000);
         // Parse summary line
-        const summary = pingOut.split('\n').filter(l => l.includes('round-trip'));
-        const stats = pingOut.split('\n').filter(l => l.includes('packets'));
+        const summary = pingOut.split('\n').filter((l) => l.includes('round-trip'));
+        const stats = pingOut.split('\n').filter((l) => l.includes('packets'));
         return {
           action: 'ping',
           target: t,
@@ -107,7 +107,9 @@ export const networkDiagnosticsTool: Tool = {
       case 'port': {
         const cmd = `nc -zv -w 3 "${t}" ${p} 2>&1`;
         const output = await run(cmd, 10_000);
-        const succeeded = output.includes('succeeded') || !output.includes('refused') && !output.includes('failed');
+        const succeeded =
+          output.includes('succeeded') ||
+          (!output.includes('refused') && !output.includes('failed'));
         return {
           action: 'port',
           target: t,
@@ -184,7 +186,7 @@ export const systemDiagnosticsTool: Tool = {
         const output = await run(cmd, dur * 2000 + 10_000);
         const lines = output.split('\n').filter(Boolean);
         // Parse the top call weight
-        const heavyStack = lines.filter(l => l.match(/^\s+\d+/));
+        const heavyStack = lines.filter((l) => l.match(/^\s+\d+/));
         return {
           action: 'sample',
           pid: targetPid,
@@ -199,7 +201,9 @@ export const systemDiagnosticsTool: Tool = {
         const output = await run(cmd);
         const thermalPressure = output;
         // Try powermetrics for temperature (requires sudo, may fail)
-        const temp = await run("sudo powermetrics --samplers smc -i 500 -n 1 2>/dev/null | grep -i 'temperature\\|fan' | head -5 || echo '(requires sudo for thermal data)'");
+        const temp = await run(
+          "sudo powermetrics --samplers smc -i 500 -n 1 2>/dev/null | grep -i 'temperature\\|fan' | head -5 || echo '(requires sudo for thermal data)'"
+        );
         return {
           action: 'thermal',
           thermalPressure: thermalPressure || 'no thermal data',
@@ -292,7 +296,9 @@ export const securityCheckTool: Tool = {
       const gkStatus = await run('spctl --status 2>/dev/null');
       results.gatekeeper = gkStatus;
       // macOS 14+ also has
-      const gkAssess = await run('spctl --global-state 2>/dev/null || echo "(not available on this version)"');
+      const gkAssess = await run(
+        'spctl --global-state 2>/dev/null || echo "(not available on this version)"'
+      );
       results.gatekeeperDetail = gkAssess;
     }
 
@@ -316,11 +322,15 @@ export const securityCheckTool: Tool = {
       results.secureBoot = secureBoot;
 
       // XProtect version (macOS built-in malware protection)
-      const xprotect = await run('system_profiler SPInstallHistoryDataType 2>/dev/null | grep -A2 XProtect | head -5');
+      const xprotect = await run(
+        'system_profiler SPInstallHistoryDataType 2>/dev/null | grep -A2 XProtect | head -5'
+      );
       results.xprotectInfo = xprotect.split('\n').filter(Boolean);
 
       // Firewall status
-      const fw = await run('/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null');
+      const fw = await run(
+        '/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null'
+      );
       results.firewall = fw;
     }
 
@@ -386,7 +396,8 @@ export const powerManagementTool: Tool = {
           action: 'battery',
           percentage: pctMatch ? Number(pctMatch[1]) : null,
           status,
-          cycles: cycles.length > 0 ? cycles : 'No detailed battery data (may require SIP permissive)',
+          cycles:
+            cycles.length > 0 ? cycles : 'No detailed battery data (may require SIP permissive)',
           raw: batt,
         };
       }
@@ -394,8 +405,8 @@ export const powerManagementTool: Tool = {
         const asserts = await run('pmset -g assertions 2>/dev/null | head -40');
         const lines = asserts.split('\n').filter(Boolean);
         // Extract processes that are preventing sleep
-        const preventers = lines.filter(l =>
-          l.includes('PreventUserIdle') || l.includes('PreventSystemSleep')
+        const preventers = lines.filter(
+          (l) => l.includes('PreventUserIdle') || l.includes('PreventSystemSleep')
         );
         return {
           action: 'assertions',

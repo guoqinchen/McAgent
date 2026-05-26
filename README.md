@@ -17,6 +17,7 @@
 ---
 
 <a name="english"></a>
+
 ## 📖 Overview
 
 **McAgent** is a CLI-first macOS AI assistant that connects DeepSeek's language model to your Mac's operating system. It understands macOS internals, executes shell commands, inspects system state, and helps you troubleshoot — all from your terminal.
@@ -32,19 +33,20 @@
 
 ### Tools Overview
 
-| Category | Tools |
-|----------|-------|
-| **System** | `get_system_info`, `system_diagnostics`, `system_logs` |
-| **Process** | `list_processes`, `power_management` |
-| **Disk** | `disk_usage`, `read_file`, `write_file`, `edit_file` |
-| **Network** | `get_network_info`, `network_diagnostics` |
-| **Security** | `security_check`, `software_update` |
-| **File** | `find_files`, `screenshot` |
+| Category           | Tools                                                          |
+| ------------------ | -------------------------------------------------------------- |
+| **System**         | `get_system_info`, `system_diagnostics`, `system_logs`         |
+| **Process**        | `list_processes`, `power_management`                           |
+| **Disk**           | `disk_usage`, `read_file`, `write_file`, `edit_file`           |
+| **Network**        | `get_network_info`, `network_diagnostics`                      |
+| **Security**       | `security_check`, `software_update`                            |
+| **File**           | `find_files`, `screenshot`                                     |
 | **System Control** | `run_command`, `open_app`, `clipboard`, `brew_info`, `battery` |
 
 ---
 
 <a name="chinese"></a>
+
 ## 📖 项目简介
 
 **McAgent** 是一款 CLI 优先的 macOS AI 助手，将 DeepSeek 语言模型与你的 Mac 操作系统深度集成。它理解 macOS 内部机制，可执行 shell 命令、检查系统状态、帮助排错——全都在终端中完成。
@@ -60,14 +62,14 @@
 
 ### 工具概览
 
-| 类别 | 工具 |
-|------|------|
-| **系统** | `get_system_info`, `system_diagnostics`, `system_logs` |
-| **进程** | `list_processes`, `power_management` |
-| **磁盘** | `disk_usage`, `read_file`, `write_file`, `edit_file` |
-| **网络** | `get_network_info`, `network_diagnostics` |
-| **安全** | `security_check`, `software_update` |
-| **文件** | `find_files`, `screenshot` |
+| 类别         | 工具                                                           |
+| ------------ | -------------------------------------------------------------- |
+| **系统**     | `get_system_info`, `system_diagnostics`, `system_logs`         |
+| **进程**     | `list_processes`, `power_management`                           |
+| **磁盘**     | `disk_usage`, `read_file`, `write_file`, `edit_file`           |
+| **网络**     | `get_network_info`, `network_diagnostics`                      |
+| **安全**     | `security_check`, `software_update`                            |
+| **文件**     | `find_files`, `screenshot`                                     |
 | **系统控制** | `run_command`, `open_app`, `clipboard`, `brew_info`, `battery` |
 
 ---
@@ -98,11 +100,11 @@ npm run start:headless
 
 ## 📚 Documentation / 文档
 
-| Doc | Description |
-|-----|-------------|
-| [INSTALL.md](INSTALL.md) | Installation guide / 安装指南 |
-| [CONFIG.md](CONFIG.md) | Configuration reference / 配置参考 |
-| [USAGE.md](USAGE.md) | Usage guide & tool reference / 使用指南 |
+| Doc                      | Description                             |
+| ------------------------ | --------------------------------------- |
+| [INSTALL.md](INSTALL.md) | Installation guide / 安装指南           |
+| [CONFIG.md](CONFIG.md)   | Configuration reference / 配置参考      |
+| [USAGE.md](USAGE.md)     | Usage guide & tool reference / 使用指南 |
 
 ---
 
@@ -148,13 +150,13 @@ src/
 
 ## 🔒 Safety / 安全机制
 
-| Layer | Description |
-|-------|-------------|
+| Layer                           | Description                                                        |
+| ------------------------------- | ------------------------------------------------------------------ |
 | **Dangerous command detection** | 14 patterns blocked: `rm -rf`, `sudo`, `dd`, disk erase, RCE pipes |
-| **Path restriction** | File writes limited to `$HOME` directory |
-| **Permission modes** | `readonly` / `approve` (default) / `auto` — switchable at runtime |
-| **Command allowlist** | `git`, `brew`, `npm` etc. bypass safety gate |
-| **Consecutive error guard** | Breaks tool loop after 3 consecutive failures |
+| **Path restriction**            | File writes limited to `$HOME` directory                           |
+| **Permission modes**            | `readonly` / `approve` (default) / `auto` — switchable at runtime  |
+| **Command allowlist**           | `git`, `brew`, `npm` etc. bypass safety gate                       |
+| **Consecutive error guard**     | Breaks tool loop after 3 consecutive failures                      |
 
 ---
 

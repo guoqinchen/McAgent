@@ -8,24 +8,24 @@
 
 ### 核心特性
 
-| 特性 | 描述 |
-|------|------|
-| **20+ 内置工具** | 系统信息、进程管理、磁盘分析、网络诊断、统一日志、安全审计、电源管理等 |
-| **双界面** | Ink/React TUI（交互式）和 headless CLI（可脚本化） |
-| **安全优先** | 14 类危险命令检测、路径限定写权限、可配置权限模式 |
-| **上下文感知** | 自动消息驱逐防止上下文窗口溢出 |
-| **可扩展** | 简洁的 `Tool` 接口支持添加自定义工具 |
-| **DeepSeek 驱动** | 支持流式输出、推理能力 (R1)、可配置模型 |
+| 特性              | 描述                                                                   |
+| ----------------- | ---------------------------------------------------------------------- |
+| **20+ 内置工具**  | 系统信息、进程管理、磁盘分析、网络诊断、统一日志、安全审计、电源管理等 |
+| **双界面**        | Ink/React TUI（交互式）和 headless CLI（可脚本化）                     |
+| **安全优先**      | 14 类危险命令检测、路径限定写权限、可配置权限模式                      |
+| **上下文感知**    | 自动消息驱逐防止上下文窗口溢出                                         |
+| **可扩展**        | 简洁的 `Tool` 接口支持添加自定义工具                                   |
+| **DeepSeek 驱动** | 支持流式输出、推理能力 (R1)、可配置模型                                |
 
 ### 技术栈
 
-| 分类 | 技术 | 版本 |
-|------|------|------|
-| 语言 | TypeScript | 5.6+ |
-| 运行时 | Node.js | 18+ |
+| 分类   | 技术        | 版本 |
+| ------ | ----------- | ---- |
+| 语言   | TypeScript  | 5.6+ |
+| 运行时 | Node.js     | 18+  |
 | UI框架 | Ink + React | 5.0+ |
-| 测试 | Vitest | 4.1+ |
-| AI API | DeepSeek | V4 |
+| 测试   | Vitest      | 4.1+ |
+| AI API | DeepSeek    | V4   |
 
 ---
 
@@ -153,26 +153,26 @@ src/
 
 **核心属性**:
 
-| 属性 | 类型 | 说明 |
-|------|------|------|
-| `client` | `OpenAIClient` | DeepSeek API 客户端 |
-| `conversation` | `ConversationHistory` | 对话历史管理器 |
-| `config` | `McAgentConfig` | 完整配置对象 |
-| `toolsByName` | `Map<string, Tool>` | 工具名称到工具对象的映射 |
-| `busy` | `boolean` | 并发保护标志 |
-| `consecutiveErrors` | `number` | 连续工具错误计数 |
+| 属性                | 类型                  | 说明                     |
+| ------------------- | --------------------- | ------------------------ |
+| `client`            | `OpenAIClient`        | DeepSeek API 客户端      |
+| `conversation`      | `ConversationHistory` | 对话历史管理器           |
+| `config`            | `McAgentConfig`       | 完整配置对象             |
+| `toolsByName`       | `Map<string, Tool>`   | 工具名称到工具对象的映射 |
+| `busy`              | `boolean`             | 并发保护标志             |
+| `consecutiveErrors` | `number`              | 连续工具错误计数         |
 
 **核心方法**:
 
-| 方法 | 签名 | 说明 |
-|------|------|------|
-| `send()` | `async send(content: string): Promise<string>` | 发送消息并流式响应 |
-| `sendSync()` | `async sendSync(content: string): Promise<string>` | 发送消息并同步响应 |
-| `addTool()` | `addTool(tool: Tool): void` | 运行时注册工具 |
-| `setModel()` | `setModel(model: string): void` | 切换模型 |
-| `setPermissionMode()` | `setPermissionMode(mode: PermissionMode): void` | 切换权限模式 |
-| `saveSession()` | `saveSession(path: string): void` | 保存会话到文件 |
-| `loadSession()` | `loadSession(path: string): void` | 从文件加载会话 |
+| 方法                  | 签名                                               | 说明               |
+| --------------------- | -------------------------------------------------- | ------------------ |
+| `send()`              | `async send(content: string): Promise<string>`     | 发送消息并流式响应 |
+| `sendSync()`          | `async sendSync(content: string): Promise<string>` | 发送消息并同步响应 |
+| `addTool()`           | `addTool(tool: Tool): void`                        | 运行时注册工具     |
+| `setModel()`          | `setModel(model: string): void`                    | 切换模型           |
+| `setPermissionMode()` | `setPermissionMode(mode: PermissionMode): void`    | 切换权限模式       |
+| `saveSession()`       | `saveSession(path: string): void`                  | 保存会话到文件     |
+| `loadSession()`       | `loadSession(path: string): void`                  | 从文件加载会话     |
 
 **事件系统**:
 
@@ -200,14 +200,14 @@ interface McAgentEvents {
 
 **核心方法**:
 
-| 方法 | 说明 |
-|------|------|
-| `addUserMessage()` | 添加用户消息 |
-| `addAssistantMessage()` | 添加助手消息（支持工具调用） |
-| `addToolResult()` | 添加工具执行结果 |
+| 方法                      | 说明                           |
+| ------------------------- | ------------------------------ |
+| `addUserMessage()`        | 添加用户消息                   |
+| `addAssistantMessage()`   | 添加助手消息（支持工具调用）   |
+| `addToolResult()`         | 添加工具执行结果               |
 | `getMessagesWithSystem()` | 构建包含系统提示的完整消息数组 |
-| `toPlainMessages()` | 返回简化的消息列表用于显示 |
-| `save()` / `load()` | 会话持久化 |
+| `toPlainMessages()`       | 返回简化的消息列表用于显示     |
+| `save()` / `load()`       | 会话持久化                     |
 
 ### 3.2 工具系统
 
@@ -219,60 +219,60 @@ interface McAgentEvents {
 export interface Tool {
   name: string;
   description: string;
-  parameters: Record<string, unknown>;  // JSON Schema
+  parameters: Record<string, unknown>; // JSON Schema
   execute: (args: Record<string, unknown>) => Promise<unknown>;
-  readonly?: boolean;  // 只读标记
+  readonly?: boolean; // 只读标记
 }
 ```
 
 #### 3.2.2 工具分类
 
-| 分类 | 工具名称 | 只读 | 说明 |
-|------|----------|------|------|
-| **基础工具** (`tools.ts`) | | | |
-| | `run_command` | ❌ | 执行 shell 命令 |
-| | `get_system_info` | ✅ | 获取系统信息 |
-| | `list_processes` | ✅ | 列出进程 |
-| | `disk_usage` | ✅ | 磁盘使用分析 |
-| | `get_network_info` | ✅ | 网络信息 |
-| | `find_files` | ✅ | 文件搜索 |
-| | `read_file` | ✅ | 读取文件 |
-| | `system_logs` | ✅ | 系统日志 |
-| **扩展工具** (`tools-extended.ts`) | | | |
-| | `write_file` | ❌ | 写入文件 |
-| | `edit_file` | ❌ | 编辑文件 |
-| | `open_app` | ❌ | 打开应用 |
-| | `clipboard` | ❌ | 剪贴板操作 |
-| | `brew_info` | ✅ | Homebrew 信息 |
-| | `software_update` | ✅ | 软件更新检查 |
-| | `battery` | ✅ | 电池状态 |
-| | `screenshot` | ✅ | 截图 |
-| **专业工具** (`tools-pro.ts`) | | | |
-| | `network_diagnostics` | ✅ | 网络诊断 |
-| | `system_diagnostics` | ✅ | 系统诊断 |
-| | `security_check` | ✅ | 安全检查 |
-| | `power_management` | ✅ | 电源管理 |
+| 分类                               | 工具名称              | 只读 | 说明            |
+| ---------------------------------- | --------------------- | ---- | --------------- |
+| **基础工具** (`tools.ts`)          |                       |      |                 |
+|                                    | `run_command`         | ❌   | 执行 shell 命令 |
+|                                    | `get_system_info`     | ✅   | 获取系统信息    |
+|                                    | `list_processes`      | ✅   | 列出进程        |
+|                                    | `disk_usage`          | ✅   | 磁盘使用分析    |
+|                                    | `get_network_info`    | ✅   | 网络信息        |
+|                                    | `find_files`          | ✅   | 文件搜索        |
+|                                    | `read_file`           | ✅   | 读取文件        |
+|                                    | `system_logs`         | ✅   | 系统日志        |
+| **扩展工具** (`tools-extended.ts`) |                       |      |                 |
+|                                    | `write_file`          | ❌   | 写入文件        |
+|                                    | `edit_file`           | ❌   | 编辑文件        |
+|                                    | `open_app`            | ❌   | 打开应用        |
+|                                    | `clipboard`           | ❌   | 剪贴板操作      |
+|                                    | `brew_info`           | ✅   | Homebrew 信息   |
+|                                    | `software_update`     | ✅   | 软件更新检查    |
+|                                    | `battery`             | ✅   | 电池状态        |
+|                                    | `screenshot`          | ✅   | 截图            |
+| **专业工具** (`tools-pro.ts`)      |                       |      |                 |
+|                                    | `network_diagnostics` | ✅   | 网络诊断        |
+|                                    | `system_diagnostics`  | ✅   | 系统诊断        |
+|                                    | `security_check`      | ✅   | 安全检查        |
+|                                    | `power_management`    | ✅   | 电源管理        |
 
 #### 3.2.3 安全机制
 
 **危险命令检测** - 14 类危险命令模式：
 
-| 类别 | 命令模式 | 风险说明 |
-|------|----------|----------|
-| 文件删除 | `rm -rf`, `rm -r`, `rmdir` | 数据丢失 |
-| 磁盘操作 | `dd if=`, `mkfs`, `newfs_*`, `diskutil eraseDisk` | 磁盘擦除 |
-| 权限提升 | `sudo` | 绕过安全限制 |
-| 系统完整性 | `csrutil disable`, `nvram -d` | 禁用 SIP |
-| 服务管理 | `launchctl unload/remove` | 禁用系统服务 |
-| RCE 向量 | `curl|sh`, `wget|bash` | 远程代码执行 |
+| 类别       | 命令模式                                          | 风险说明     |
+| ---------- | ------------------------------------------------- | ------------ | ----- | ------------ |
+| 文件删除   | `rm -rf`, `rm -r`, `rmdir`                        | 数据丢失     |
+| 磁盘操作   | `dd if=`, `mkfs`, `newfs_*`, `diskutil eraseDisk` | 磁盘擦除     |
+| 权限提升   | `sudo`                                            | 绕过安全限制 |
+| 系统完整性 | `csrutil disable`, `nvram -d`                     | 禁用 SIP     |
+| 服务管理   | `launchctl unload/remove`                         | 禁用系统服务 |
+| RCE 向量   | `curl                                             | sh`, `wget   | bash` | 远程代码执行 |
 
 **权限模式**:
 
-| 模式 | 说明 |
-|------|------|
+| 模式       | 说明                         |
+| ---------- | ---------------------------- |
 | `readonly` | 仅允许标记为 readonly 的工具 |
-| `approve` | 默认模式，危险命令需要确认 |
-| `auto` | 跳过所有安全检查 |
+| `approve`  | 默认模式，危险命令需要确认   |
+| `auto`     | 跳过所有安全检查             |
 
 ### 3.3 上下文管理
 
@@ -282,13 +282,14 @@ export interface Tool {
 
 **核心函数**:
 
-| 函数 | 说明 |
-|------|------|
-| `estimateTokens()` | 根据字符长度估算 token 数（CJK: ~2 char/token, ASCII: ~4 char/token） |
-| `estimateMessageTokens()` | 估算消息数组的总 token 数 |
-| `evictMessages()` | 根据最大 token 限制驱逐旧消息 |
+| 函数                      | 说明                                                                  |
+| ------------------------- | --------------------------------------------------------------------- |
+| `estimateTokens()`        | 根据字符长度估算 token 数（CJK: ~2 char/token, ASCII: ~4 char/token） |
+| `estimateMessageTokens()` | 估算消息数组的总 token 数                                             |
+| `evictMessages()`         | 根据最大 token 限制驱逐旧消息                                         |
 
 **驱逐策略**:
+
 1. 无条件保留系统提示
 2. 优先移除最旧的用户/助手消息对
 3. 保留属于存活助手调用的工具消息
@@ -304,7 +305,7 @@ export interface Tool {
 export interface LLMProvider {
   name: string;
   config: ProviderConfig;
-  
+
   chatCompletion(messages: ChatCompletionMessage[], options?: {...}): Promise<ChatCompletionResponse>;
   streamingChatCompletion(messages: ChatCompletionMessage[], options?: {...}): Promise<AsyncIterable<StreamingChatCompletionChunk>>;
   estimateTokens(text: string): number;
@@ -313,10 +314,10 @@ export interface LLMProvider {
 
 #### 3.4.2 可用提供者
 
-| 提供者 | 类名 | 默认 URL | 默认模型 |
-|--------|------|----------|----------|
+| 提供者   | 类名               | 默认 URL                   | 默认模型            |
+| -------- | ------------------ | -------------------------- | ------------------- |
 | DeepSeek | `DeepSeekProvider` | `https://api.deepseek.com` | `deepseek-v4-flash` |
-| OpenAI | `OpenAIProvider` | `https://api.openai.com` | `gpt-4o-mini` |
+| OpenAI   | `OpenAIProvider`   | `https://api.openai.com`   | `gpt-4o-mini`       |
 
 **位置**: [src/providers/deepseek-provider.ts](file:///workspace/src/providers/deepseek-provider.ts)、[src/providers/openai-provider.ts](file:///workspace/src/providers/openai-provider.ts)
 
@@ -341,12 +342,12 @@ const provider = factory.create('deepseek', { apiKey: 'sk-xxx' });
 
 **推理策略**:
 
-| 策略 | 适用场景 | 说明 |
-|------|----------|------|
-| `direct` | 简单任务 | 直接、简洁的回答 |
-| `reasoned` | 中等复杂度 | 逐步思考后回答 |
-| `explorative` | 高复杂度/不确定性 | 探索多种方法后决策 |
-| `critical` | 高风险场景 | 极端谨慎，考虑最坏情况 |
+| 策略          | 适用场景          | 说明                   |
+| ------------- | ----------------- | ---------------------- |
+| `direct`      | 简单任务          | 直接、简洁的回答       |
+| `reasoned`    | 中等复杂度        | 逐步思考后回答         |
+| `explorative` | 高复杂度/不确定性 | 探索多种方法后决策     |
+| `critical`    | 高风险场景        | 极端谨慎，考虑最坏情况 |
 
 ### 4.2 错误恢复引擎
 
@@ -356,19 +357,20 @@ const provider = factory.create('deepseek', { apiKey: 'sk-xxx' });
 
 **错误类型与策略**:
 
-| 错误类型 | 恢复策略 |
-|----------|----------|
+| 错误类型                             | 恢复策略          |
+| ------------------------------------ | ----------------- |
 | `network` / `timeout` / `rate_limit` | 重试（最多 3 次） |
-| `api_error` | 重试或降级 |
-| `permission_error` | 升级到人工 |
-| `validation_error` | 中止 |
-| `resource_unavailable` | 重试或跳过 |
+| `api_error`                          | 重试或降级        |
+| `permission_error`                   | 升级到人工        |
+| `validation_error`                   | 中止              |
+| `resource_unavailable`               | 重试或跳过        |
 
 ### 4.3 日志系统
 
 **位置**: [src/logging/structured-logger.ts](file:///workspace/src/logging/structured-logger.ts)
 
 **特性**:
+
 - 多处理器架构（ConsoleHandler + FileHandler）
 - 日志级别：`trace` → `debug` → `info` → `warn` → `error` → `fatal`
 - 结构化 JSON 日志输出
@@ -381,6 +383,7 @@ const provider = factory.create('deepseek', { apiKey: 'sk-xxx' });
 **位置**: [src/monitoring/metrics-collector.ts](file:///workspace/src/monitoring/metrics-collector.ts)
 
 **收集的指标**:
+
 - 请求数、成功数、失败数
 - 延迟统计（最小/最大/平均）
 - Token 统计（prompt/completion/total）
@@ -391,6 +394,7 @@ const provider = factory.create('deepseek', { apiKey: 'sk-xxx' });
 **位置**: [src/monitoring/performance-reporter.ts](file:///workspace/src/monitoring/performance-reporter.ts)
 
 **功能**:
+
 - 定期生成性能报告（默认 10 分钟间隔）
 - 报告持久化存储
 - 支持查询历史报告
@@ -402,6 +406,7 @@ const provider = factory.create('deepseek', { apiKey: 'sk-xxx' });
 **职责**: 细粒度权限控制，支持规则配置。
 
 **默认规则**:
+
 1. 允许以 `get_`、`list_`、`search` 开头的只读工具
 2. 文件操作限制在用户主目录内
 
@@ -410,6 +415,7 @@ const provider = factory.create('deepseek', { apiKey: 'sk-xxx' });
 **位置**: [src/session/session-manager.ts](file:///workspace/src/session/session-manager.ts)
 
 **功能**:
+
 - 会话创建/保存/加载/删除
 - 支持分页列表查询
 - 按创建时间或修改时间排序
@@ -432,6 +438,7 @@ const provider = factory.create('deepseek', { apiKey: 'sk-xxx' });
 **技术栈**: Ink + React
 
 **特性**:
+
 - 交互式聊天界面
 - 实时流式输出
 - 工具调用可视化
@@ -444,6 +451,7 @@ const provider = factory.create('deepseek', { apiKey: 'sk-xxx' });
 **技术栈**: Node.js Readline
 
 **特性**:
+
 - 纯文本模式，适合脚本调用
 - 支持颜色输出
 - 事件驱动的状态显示
@@ -453,6 +461,7 @@ const provider = factory.create('deepseek', { apiKey: 'sk-xxx' });
 **位置**: [src/ui/markdown-renderer.ts](file:///workspace/src/ui/markdown-renderer.ts)
 
 **支持的格式**:
+
 - 粗体、斜体、下划线
 - 行内代码和代码块
 - 链接
@@ -465,6 +474,7 @@ const provider = factory.create('deepseek', { apiKey: 'sk-xxx' });
 **位置**: [src/ui/streaming-optimizer.ts](file:///workspace/src/ui/streaming-optimizer.ts)
 
 **功能**:
+
 - 缓冲区管理（默认 100 字符）
 - 防抖延迟（默认 50ms）
 - 不完整 Markdown 修复
@@ -476,31 +486,31 @@ const provider = factory.create('deepseek', { apiKey: 'sk-xxx' });
 
 ### 6.1 环境变量
 
-| 变量名 | 说明 | 默认值 |
-|--------|------|--------|
-| `DEEPSEEK_API_KEY` | DeepSeek API 密钥 | **必填** |
-| `DEEPSEEK_MODEL` | 模型 ID | `deepseek-v4-flash` |
-| `DEEPSEEK_THINKING_ENABLED` | 启用思考模式 | `true` |
-| `DEEPSEEK_REASONING_EFFORT` | 推理级别 | `high` |
-| `DEEPSEEK_MAX_TOKENS` | 最大上下文 token | `96000` |
+| 变量名                      | 说明              | 默认值              |
+| --------------------------- | ----------------- | ------------------- |
+| `DEEPSEEK_API_KEY`          | DeepSeek API 密钥 | **必填**            |
+| `DEEPSEEK_MODEL`            | 模型 ID           | `deepseek-v4-flash` |
+| `DEEPSEEK_THINKING_ENABLED` | 启用思考模式      | `true`              |
+| `DEEPSEEK_REASONING_EFFORT` | 推理级别          | `high`              |
+| `DEEPSEEK_MAX_TOKENS`       | 最大上下文 token  | `96000`             |
 
 ### 6.2 配置接口
 
 ```typescript
 interface McAgentConfig {
-  apiKey: string;                           // 必填
-  baseURL?: string;                         // API 基础 URL
-  model?: string;                           // 模型 ID
-  instructions?: string;                    // 系统提示
-  tools?: Tool[];                           // 工具数组
-  maxToolRounds?: number;                   // 最大工具调用轮数
-  maxContextTokens?: number;                // 上下文 token 限制
-  permissionMode?: PermissionMode;           // 权限模式
-  autoAllowlist?: string[];                 // 命令白名单
-  thinkingEnabled?: boolean;                // 思考模式
-  reasoningEffort?: 'high' | 'max';         // 推理级别
-  toolStrictMode?: boolean;                 // 严格工具模式(Beta)
-  useBetaEndpoint?: boolean;                // 使用 Beta 端点
+  apiKey: string; // 必填
+  baseURL?: string; // API 基础 URL
+  model?: string; // 模型 ID
+  instructions?: string; // 系统提示
+  tools?: Tool[]; // 工具数组
+  maxToolRounds?: number; // 最大工具调用轮数
+  maxContextTokens?: number; // 上下文 token 限制
+  permissionMode?: PermissionMode; // 权限模式
+  autoAllowlist?: string[]; // 命令白名单
+  thinkingEnabled?: boolean; // 思考模式
+  reasoningEffort?: 'high' | 'max'; // 推理级别
+  toolStrictMode?: boolean; // 严格工具模式(Beta)
+  useBetaEndpoint?: boolean; // 使用 Beta 端点
 }
 ```
 
@@ -569,12 +579,12 @@ agent.saveSession('/path/to/session.json');
 
 ### 7.1 测试覆盖
 
-| 测试文件 | 测试范围 |
-|----------|----------|
-| `agent.test.ts` | Agent 核心功能、安全检查、并发控制、上下文驱逐 |
-| `tools.test.ts` | 工具安全检查、命令格式验证、工具执行 |
-| `tools-pro.test.ts` | 专业工具测试 |
-| `context-manager.test.ts` | 上下文管理、token 估算 |
+| 测试文件                  | 测试范围                                       |
+| ------------------------- | ---------------------------------------------- |
+| `agent.test.ts`           | Agent 核心功能、安全检查、并发控制、上下文驱逐 |
+| `tools.test.ts`           | 工具安全检查、命令格式验证、工具执行           |
+| `tools-pro.test.ts`       | 专业工具测试                                   |
+| `context-manager.test.ts` | 上下文管理、token 估算                         |
 
 ### 7.2 运行测试
 
@@ -601,11 +611,11 @@ npx vitest run agent.test.ts
 
 ### 8.2 权限模式
 
-| 模式 | 适用场景 |
-|------|----------|
-| `readonly` | 公共环境、演示模式 |
-| `approve` | 默认模式，需要确认危险操作 |
-| `auto` | 可信环境、自动化脚本 |
+| 模式       | 适用场景                   |
+| ---------- | -------------------------- |
+| `readonly` | 公共环境、演示模式         |
+| `approve`  | 默认模式，需要确认危险操作 |
+| `auto`     | 可信环境、自动化脚本       |
 
 ### 8.3 错误处理
 
@@ -633,7 +643,7 @@ const myCustomTool: Tool = {
     },
     required: ['param1'],
   },
-  readonly: true,  // 或 false
+  readonly: true, // 或 false
   execute: async (args) => {
     const { param1, param2 } = args;
     // 实现工具逻辑
@@ -652,17 +662,17 @@ import { LLMProvider, ProviderConfig } from './types/llm-provider.js';
 
 export class MyProvider implements LLMProvider {
   name = 'my-provider';
-  
+
   constructor(private config: ProviderConfig) {}
-  
+
   async chatCompletion(messages, options) {
     // 实现 API 调用
   }
-  
+
   async streamingChatCompletion(messages, options) {
     // 实现流式调用
   }
-  
+
   estimateTokens(text) {
     return Math.ceil(text.length / 4);
   }
@@ -678,10 +688,10 @@ case 'my-provider':
 
 ## 10. 版本历史
 
-| 版本 | 日期 | 主要变更 |
-|------|------|----------|
+| 版本  | 日期    | 主要变更                                       |
+| ----- | ------- | ---------------------------------------------- |
 | 2.0.0 | 2026-05 | 升级到 DeepSeek V4；新增推理引擎；改进安全机制 |
-| 1.x.x | 之前 | 初始版本，基于 DeepSeek Chat API |
+| 1.x.x | 之前    | 初始版本，基于 DeepSeek Chat API               |
 
 ---
 
@@ -703,4 +713,4 @@ interface Message {
 
 ---
 
-*Built with 🍏 by [guoqinchen](https://github.com/guoqinchen)*
+_Built with 🍏 by [guoqinchen](https://github.com/guoqinchen)_

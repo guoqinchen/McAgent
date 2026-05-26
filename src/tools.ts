@@ -95,7 +95,7 @@ export function setSkipDangerousCheck(skip: boolean): void {
 
 export function isCommandAllowlisted(command: string): boolean {
   const trimmed = command.trim();
-  return commandAllowlist.some(prefix => trimmed.startsWith(prefix + ' ') || trimmed === prefix);
+  return commandAllowlist.some((prefix) => trimmed.startsWith(prefix + ' ') || trimmed === prefix);
 }
 
 export function checkCommand(command: string): SafetyCheck {
@@ -278,14 +278,19 @@ export const processListTool: Tool = {
     if (sam > 0 && lines.length > 1) {
       // The first data line (after potential header) has the highest CPU process
       // Headerless ps output: all lines start with a numeric PID
-      const topLine = lines.find(l => l.trim().length > 0 && !l.startsWith('#') && !isNaN(Number(l.trim().split(/\s+/)[0])));
+      const topLine = lines.find(
+        (l) => l.trim().length > 0 && !l.startsWith('#') && !isNaN(Number(l.trim().split(/\s+/)[0]))
+      );
       // Actually the headerless ps output: first line = top CPU process, format: "PID COMM %CPU %MEM USER"
       const topParts = topLine?.trim().split(/\s+/) ?? [];
       if (topParts.length >= 2) {
         const topPid = parseInt(topParts[0], 10);
         const topName = topParts[1];
         if (topPid && !isNaN(topPid)) {
-          const sampleOut = await run(`sample ${topPid} ${sam} 2>&1 | head -60`, sam * 2000 + 10_000);
+          const sampleOut = await run(
+            `sample ${topPid} ${sam} 2>&1 | head -60`,
+            sam * 2000 + 10_000
+          );
           const sampleLines = sampleOut.split('\n').filter(Boolean);
           return {
             count: lines.length,
@@ -294,7 +299,7 @@ export const processListTool: Tool = {
               pid: topPid,
               name: topName,
               duration: sam,
-              topStacks: sampleLines.filter(l => l.match(/^\s+\d+/)).slice(0, 10),
+              topStacks: sampleLines.filter((l) => l.match(/^\s+\d+/)).slice(0, 10),
               raw: sampleLines.slice(0, 50),
             },
           };
@@ -519,8 +524,7 @@ export const systemLogsTool: Tool = {
       },
       process: {
         type: 'string',
-        description:
-          'Filter by process name, e.g. "kernel", "WindowServer", "mds".',
+        description: 'Filter by process name, e.g. "kernel", "WindowServer", "mds".',
       },
       stream: {
         type: 'boolean',

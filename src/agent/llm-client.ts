@@ -6,15 +6,20 @@
  */
 
 import type OpenAI from 'openai';
-import type { ChatCompletionTool, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type {
+  ChatCompletionTool,
+  ChatCompletionMessageParam,
+} from 'openai/resources/chat/completions';
 import { errorRecoveryEngine } from '../engine/error-recovery-engine.js';
 
-export type ThinkingBody = {
-  thinking?: { type: 'enabled' };
-  reasoning_effort: 'high' | 'max';
-} | {
-  reasoning_effort: 'high' | 'max';
-};
+export type ThinkingBody =
+  | {
+      thinking?: { type: 'enabled' };
+      reasoning_effort: 'high' | 'max';
+    }
+  | {
+      reasoning_effort: 'high' | 'max';
+    };
 
 /**
  * Parameters passed to the OpenAI chat.completion.create.
@@ -42,7 +47,7 @@ export class LLMClient {
     messages: ChatCompletionMessageParam[],
     tools: ChatCompletionTool[],
     thinkingBody: ThinkingBody,
-    signal?: AbortSignal,
+    signal?: AbortSignal
   ): Promise<any | null> {
     const params: CreateCompletionParams = {
       model,
@@ -58,7 +63,7 @@ export class LLMClient {
     // one call, rather than using `as any` on the whole params object.
     return errorRecoveryEngine.executeWithRecovery(
       () => this.client.chat.completions.create(params),
-      'chat.completions.create',
+      'chat.completions.create'
     );
   }
 
@@ -72,7 +77,7 @@ export class LLMClient {
     messages: ChatCompletionMessageParam[],
     tools: ChatCompletionTool[],
     thinkingBody: ThinkingBody,
-    signal?: AbortSignal,
+    signal?: AbortSignal
   ): Promise<any | null> {
     const params: CreateCompletionParams = {
       model,
@@ -84,7 +89,7 @@ export class LLMClient {
     };
     return errorRecoveryEngine.executeWithRecovery(
       () => this.client.chat.completions.create(params),
-      'chat.completions.create',
+      'chat.completions.create'
     );
   }
 }

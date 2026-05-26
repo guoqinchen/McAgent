@@ -3,6 +3,7 @@
 ---
 
 <a name="english"></a>
+
 ## 🎮 Getting Started
 
 ### Launching McAgent
@@ -44,16 +45,16 @@ Here's your Mac's current state:
 
 ### Base Tools (`src/tools.ts`)
 
-| Tool | Description | Safety | Readonly |
-|------|-------------|--------|:--------:|
-| `run_command` | Execute any macOS shell command | ⚠️ Checked against 14 dangerous patterns | — |
-| `get_system_info` | OS version, hardware, memory, disk | ✅ Read-only | ✅ |
-| `list_processes` | Running processes with sorting & sampling | ✅ Read-only | ✅ |
-| `disk_usage` | Volume overview or directory breakdown | ✅ Read-only | ✅ |
-| `get_network_info` | Interfaces, Wi-Fi, connections, DNS | ✅ Read-only | ✅ |
-| `find_files` | Spotlight (`mdfind`) or `find` search | ✅ Read-only | ✅ |
-| `read_file` | Read file content with metadata | ✅ Read-only | ✅ |
-| `system_logs` | Query Unified Logging (`log show/stream`) | ✅ Read-only | ✅ |
+| Tool               | Description                               | Safety                                   | Readonly |
+| ------------------ | ----------------------------------------- | ---------------------------------------- | :------: |
+| `run_command`      | Execute any macOS shell command           | ⚠️ Checked against 14 dangerous patterns |    —     |
+| `get_system_info`  | OS version, hardware, memory, disk        | ✅ Read-only                             |    ✅    |
+| `list_processes`   | Running processes with sorting & sampling | ✅ Read-only                             |    ✅    |
+| `disk_usage`       | Volume overview or directory breakdown    | ✅ Read-only                             |    ✅    |
+| `get_network_info` | Interfaces, Wi-Fi, connections, DNS       | ✅ Read-only                             |    ✅    |
+| `find_files`       | Spotlight (`mdfind`) or `find` search     | ✅ Read-only                             |    ✅    |
+| `read_file`        | Read file content with metadata           | ✅ Read-only                             |    ✅    |
+| `system_logs`      | Query Unified Logging (`log show/stream`) | ✅ Read-only                             |    ✅    |
 
 #### `system_logs` Examples / 示例
 
@@ -85,16 +86,16 @@ list_processes sample: 5
 
 ### Extended Tools (`src/tools-extended.ts`)
 
-| Tool | Description | Safety | Readonly |
-|------|-------------|--------|:--------:|
-| `write_file` | Write content to a file | ⚠️ Path restricted to `$HOME` | — |
-| `edit_file` | Literal string replacement in a file | ⚠️ Path restricted to `$HOME` | — |
-| `open_app` | Launch a macOS application | ⚠️ Modifies system state | — |
-| `clipboard` | Read/write system clipboard | ⚠️ Modifies clipboard state | — |
-| `brew_info` | Query Homebrew packages | ✅ Read-only | ✅ |
-| `software_update` | Check for macOS updates | ✅ Read-only | ✅ |
-| `battery` | Battery status, cycle count, health | ✅ Read-only | ✅ |
-| `screenshot` | Take a screenshot | ✅ Read-only | ✅ |
+| Tool              | Description                          | Safety                        | Readonly |
+| ----------------- | ------------------------------------ | ----------------------------- | :------: |
+| `write_file`      | Write content to a file              | ⚠️ Path restricted to `$HOME` |    —     |
+| `edit_file`       | Literal string replacement in a file | ⚠️ Path restricted to `$HOME` |    —     |
+| `open_app`        | Launch a macOS application           | ⚠️ Modifies system state      |    —     |
+| `clipboard`       | Read/write system clipboard          | ⚠️ Modifies clipboard state   |    —     |
+| `brew_info`       | Query Homebrew packages              | ✅ Read-only                  |    ✅    |
+| `software_update` | Check for macOS updates              | ✅ Read-only                  |    ✅    |
+| `battery`         | Battery status, cycle count, health  | ✅ Read-only                  |    ✅    |
+| `screenshot`      | Take a screenshot                    | ✅ Read-only                  |    ✅    |
 
 #### `battery` Examples / 示例
 
@@ -115,12 +116,12 @@ battery
 
 ### Pro Diagnostic Tools (`src/tools-pro.ts`)
 
-| Tool | Description | Safety | Readonly |
-|------|-------------|--------|:--------:|
-| `network_diagnostics` | Ping, traceroute, DNS, port check, quality test | ✅ Read-only | ✅ |
-| `system_diagnostics` | Process sample, thermal, I/O, memory, sysdiagnose | ✅ Read-only | ✅ |
-| `security_check` | SIP, FileVault, Gatekeeper, code signing | ✅ Read-only | ✅ |
-| `power_management` | Power settings, battery health, sleep assertions | ✅ Read-only | ✅ |
+| Tool                  | Description                                       | Safety       | Readonly |
+| --------------------- | ------------------------------------------------- | ------------ | :------: |
+| `network_diagnostics` | Ping, traceroute, DNS, port check, quality test   | ✅ Read-only |    ✅    |
+| `system_diagnostics`  | Process sample, thermal, I/O, memory, sysdiagnose | ✅ Read-only |    ✅    |
+| `security_check`      | SIP, FileVault, Gatekeeper, code signing          | ✅ Read-only |    ✅    |
+| `power_management`    | Power settings, battery health, sleep assertions  | ✅ Read-only |    ✅    |
 
 #### `network_diagnostics` Examples / 示例
 
@@ -223,6 +224,7 @@ McAgent has three permission modes:
 ---
 
 <a name="chinese"></a>
+
 ## 🎮 开始使用
 
 ### 启动 McAgent
@@ -264,16 +266,16 @@ npm run start:headless
 
 ### 基础工具 (`src/tools.ts`)
 
-| 工具 | 说明 | 安全性 | 只读 |
-|------|------|--------|:----:|
-| `run_command` | 执行任意 macOS shell 命令 | ⚠️ 14 类危险模式检测 | — |
-| `get_system_info` | OS 版本、硬件、内存、磁盘信息 | ✅ 只读 | ✅ |
-| `list_processes` | 进程列表与采样分析 | ✅ 只读 | ✅ |
-| `disk_usage` | 卷概览或目录细分 | ✅ 只读 | ✅ |
-| `get_network_info` | 接口、Wi-Fi、连接、DNS | ✅ 只读 | ✅ |
-| `find_files` | Spotlight (`mdfind`) 或 `find` 搜索 | ✅ 只读 | ✅ |
-| `read_file` | 读取文件内容及元数据 | ✅ 只读 | ✅ |
-| `system_logs` | 查询统一日志 (`log show/stream`) | ✅ 只读 | ✅ |
+| 工具               | 说明                                | 安全性               | 只读 |
+| ------------------ | ----------------------------------- | -------------------- | :--: |
+| `run_command`      | 执行任意 macOS shell 命令           | ⚠️ 14 类危险模式检测 |  —   |
+| `get_system_info`  | OS 版本、硬件、内存、磁盘信息       | ✅ 只读              |  ✅  |
+| `list_processes`   | 进程列表与采样分析                  | ✅ 只读              |  ✅  |
+| `disk_usage`       | 卷概览或目录细分                    | ✅ 只读              |  ✅  |
+| `get_network_info` | 接口、Wi-Fi、连接、DNS              | ✅ 只读              |  ✅  |
+| `find_files`       | Spotlight (`mdfind`) 或 `find` 搜索 | ✅ 只读              |  ✅  |
+| `read_file`        | 读取文件内容及元数据                | ✅ 只读              |  ✅  |
+| `system_logs`      | 查询统一日志 (`log show/stream`)    | ✅ 只读              |  ✅  |
 
 #### `system_logs` 示例
 
@@ -305,16 +307,16 @@ list_processes sample: 5
 
 ### 扩展工具 (`src/tools-extended.ts`)
 
-| 工具 | 说明 | 安全性 | 只读 |
-|------|------|--------|:----:|
-| `write_file` | 写入文件内容 | ⚠️ 路径限制在 `$HOME` | — |
-| `edit_file` | 文件中的字面字符串替换 | ⚠️ 路径限制在 `$HOME` | — |
-| `open_app` | 启动 macOS 应用 | ⚠️ 修改系统状态 | — |
-| `clipboard` | 读写系统剪贴板 | ⚠️ 修改剪贴板 | — |
-| `brew_info` | 查询 Homebrew 包 | ✅ 只读 | ✅ |
-| `software_update` | 检查系统更新 | ✅ 只读 | ✅ |
-| `battery` | 电池状态、循环次数、健康度 | ✅ 只读 | ✅ |
-| `screenshot` | 截图 | ✅ 只读 | ✅ |
+| 工具              | 说明                       | 安全性                | 只读 |
+| ----------------- | -------------------------- | --------------------- | :--: |
+| `write_file`      | 写入文件内容               | ⚠️ 路径限制在 `$HOME` |  —   |
+| `edit_file`       | 文件中的字面字符串替换     | ⚠️ 路径限制在 `$HOME` |  —   |
+| `open_app`        | 启动 macOS 应用            | ⚠️ 修改系统状态       |  —   |
+| `clipboard`       | 读写系统剪贴板             | ⚠️ 修改剪贴板         |  —   |
+| `brew_info`       | 查询 Homebrew 包           | ✅ 只读               |  ✅  |
+| `software_update` | 检查系统更新               | ✅ 只读               |  ✅  |
+| `battery`         | 电池状态、循环次数、健康度 | ✅ 只读               |  ✅  |
+| `screenshot`      | 截图                       | ✅ 只读               |  ✅  |
 
 #### `battery` 示例
 
@@ -335,12 +337,12 @@ battery
 
 ### 高阶诊断工具 (`src/tools-pro.ts`)
 
-| 工具 | 说明 | 安全性 | 只读 |
-|------|------|--------|:----:|
-| `network_diagnostics` | Ping、traceroute、DNS、端口检测、质量测试 | ✅ 只读 | ✅ |
-| `system_diagnostics` | 进程采样、热状态、I/O、内存、系统诊断包 | ✅ 只读 | ✅ |
-| `security_check` | SIP、FileVault、Gatekeeper、代码签名 | ✅ 只读 | ✅ |
-| `power_management` | 电源设置、电池健康、睡眠阻止者 | ✅ 只读 | ✅ |
+| 工具                  | 说明                                      | 安全性  | 只读 |
+| --------------------- | ----------------------------------------- | ------- | :--: |
+| `network_diagnostics` | Ping、traceroute、DNS、端口检测、质量测试 | ✅ 只读 |  ✅  |
+| `system_diagnostics`  | 进程采样、热状态、I/O、内存、系统诊断包   | ✅ 只读 |  ✅  |
+| `security_check`      | SIP、FileVault、Gatekeeper、代码签名      | ✅ 只读 |  ✅  |
+| `power_management`    | 电源设置、电池健康、睡眠阻止者            | ✅ 只读 |  ✅  |
 
 #### `network_diagnostics` 示例
 
@@ -521,13 +523,13 @@ agent.addTool(myTool);
 
 ### TUI Mode
 
-| Key | Action |
-|-----|--------|
-| `Enter` | Send message |
+| Key       | Action                 |
+| --------- | ---------------------- |
+| `Enter`   | Send message           |
 | `↑` / `↓` | Navigate input history |
-| `Esc` | Exit |
-| `Ctrl+C` | Exit |
-| Backspace | Delete character |
+| `Esc`     | Exit                   |
+| `Ctrl+C`  | Exit                   |
+| Backspace | Delete character       |
 
 ---
 

@@ -1,6 +1,6 @@
 export type RecoveryStrategy = 'retry' | 'fallback' | 'skip' | 'abort' | 'escalate';
 
-export type ErrorType = 
+export type ErrorType =
   | 'network'
   | 'timeout'
   | 'api_error'
@@ -33,7 +33,7 @@ export class ErrorRecoveryEngine {
 
   determineStrategy(context: ErrorContext): RecoveryStrategy {
     const { errorType, retryCount } = context;
-    
+
     if (retryCount >= this.maxRetries) {
       return 'fallback';
     }
@@ -43,19 +43,19 @@ export class ErrorRecoveryEngine {
       case 'timeout':
       case 'rate_limit':
         return retryCount < this.maxRetries ? 'retry' : 'fallback';
-      
+
       case 'api_error':
         return retryCount < this.maxRetries ? 'retry' : 'fallback';
-      
+
       case 'permission_error':
         return 'escalate';
-      
+
       case 'validation_error':
         return 'abort';
-      
+
       case 'resource_unavailable':
         return retryCount < this.maxRetries ? 'retry' : 'skip';
-      
+
       default:
         return retryCount < this.maxRetries ? 'retry' : 'fallback';
     }
@@ -63,23 +63,23 @@ export class ErrorRecoveryEngine {
 
   async recover(context: ErrorContext): Promise<RecoveryResult> {
     const strategy = this.determineStrategy(context);
-    
+
     switch (strategy) {
       case 'retry':
         return this.handleRetry(context);
-      
+
       case 'fallback':
         return this.handleFallback(context);
-      
+
       case 'skip':
         return this.handleSkip(context);
-      
+
       case 'abort':
         return this.handleAbort(context);
-      
+
       case 'escalate':
         return this.handleEscalate(context);
-      
+
       default:
         return {
           strategy: 'abort',
@@ -94,7 +94,7 @@ export class ErrorRecoveryEngine {
     operationName: string
   ): Promise<T | undefined> {
     let retryCount = 0;
-    
+
     while (retryCount <= this.maxRetries) {
       try {
         return await operation();
@@ -110,7 +110,7 @@ export class ErrorRecoveryEngine {
         };
 
         const result = await this.recover(context);
-        
+
         if (result.strategy === 'retry') {
           retryCount++;
           if (result.retryDelay) {
@@ -118,19 +118,19 @@ export class ErrorRecoveryEngine {
           }
           continue;
         }
-        
+
         if (result.strategy === 'fallback' && result.fallbackValue !== undefined) {
           return result.fallbackValue as T;
         }
-        
+
         if (result.strategy === 'skip') {
           return undefined;
         }
-        
+
         throw error;
       }
     }
-    
+
     return undefined;
   }
 
@@ -199,7 +199,7 @@ export class ErrorRecoveryEngine {
 
   private async handleRetry(context: ErrorContext): Promise<RecoveryResult> {
     const delay = this.calculateRetryDelay(context.retryCount);
-    
+
     return {
       strategy: 'retry',
       success: true,
@@ -259,7 +259,7 @@ export class ErrorRecoveryEngine {
   }
 
   private async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

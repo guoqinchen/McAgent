@@ -121,8 +121,7 @@ describe('tool command formats', () => {
       `ps -eo pid=,comm=,%cpu=,%mem=,user= -r | sort -k3 -rn | head -${lim}`;
     const memCmd = (lim: number) =>
       `ps -eo pid=,comm=,%cpu=,%mem=,user= -r | sort -k4 -rn | head -${lim}`;
-    const nameCmd = (lim: number) =>
-      `ps -eo pid=,comm=,%cpu=,%mem=,user= -k comm | head -${lim}`;
+    const nameCmd = (lim: number) => `ps -eo pid=,comm=,%cpu=,%mem=,user= -k comm | head -${lim}`;
 
     expect(cpuCmd(20)).toContain('pid=,comm=,%cpu=,%mem=,user=');
     expect(memCmd(10)).toContain('sort -k4 -rn');
@@ -218,7 +217,10 @@ describe('runCommandTool.execute', () => {
     runMock.mockResolvedValue('hello world');
 
     const { runCommandTool } = await import('../tools.js');
-    const result = await runCommandTool.execute({ command: 'echo hello' }) as { exitCode: number; stdout: string };
+    const result = (await runCommandTool.execute({ command: 'echo hello' })) as {
+      exitCode: number;
+      stdout: string;
+    };
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toBe('hello world');
@@ -228,7 +230,9 @@ describe('runCommandTool.execute', () => {
     const { defaultExecutor } = await import('../shell/executor.js');
 
     const { runCommandTool } = await import('../tools.js');
-    const result = await runCommandTool.execute({ command: 'sudo rm -rf /' }) as { blocked: boolean };
+    const result = (await runCommandTool.execute({ command: 'sudo rm -rf /' })) as {
+      blocked: boolean;
+    };
 
     expect(result.blocked).toBe(true);
     expect(defaultExecutor.run).not.toHaveBeenCalled();
@@ -244,13 +248,17 @@ describe('readFileTool.execute', () => {
     const { defaultExecutor } = await import('../shell/executor.js');
     const runMock = vi.mocked(defaultExecutor.run);
     runMock
-      .mockResolvedValueOnce('yes')    // test -f
-      .mockResolvedValueOnce('file content')  // cat
-      .mockResolvedValueOnce('1024')   // wc -c
-      .mockResolvedValueOnce('10');    // wc -l
+      .mockResolvedValueOnce('yes') // test -f
+      .mockResolvedValueOnce('file content') // cat
+      .mockResolvedValueOnce('1024') // wc -c
+      .mockResolvedValueOnce('10'); // wc -l
 
     const { readFileTool } = await import('../tools.js');
-    const result = await readFileTool.execute({ path: '/tmp/test.txt' }) as { path: string; content: string; sizeBytes: number };
+    const result = (await readFileTool.execute({ path: '/tmp/test.txt' })) as {
+      path: string;
+      content: string;
+      sizeBytes: number;
+    };
 
     expect(result.path).toBe('/tmp/test.txt');
     expect(result.content).toBe('file content');
@@ -263,7 +271,7 @@ describe('readFileTool.execute', () => {
     runMock.mockResolvedValue('no');
 
     const { readFileTool } = await import('../tools.js');
-    const result = await readFileTool.execute({ path: '/nonexistent' }) as { error: string };
+    const result = (await readFileTool.execute({ path: '/nonexistent' })) as { error: string };
 
     expect(result).toHaveProperty('error');
     expect(result.error).toContain('not found');
@@ -279,12 +287,12 @@ describe('screenshotTool.execute', () => {
     const { defaultExecutor } = await import('../shell/executor.js');
     const runMock = vi.mocked(defaultExecutor.run);
     runMock
-      .mockResolvedValueOnce('0')         // screencapture
-      .mockResolvedValueOnce('yes')       // test -f
-      .mockResolvedValueOnce('50000');    // wc -c
+      .mockResolvedValueOnce('0') // screencapture
+      .mockResolvedValueOnce('yes') // test -f
+      .mockResolvedValueOnce('50000'); // wc -c
 
     const { screenshotTool } = await import('../tools-extended.js');
-    const result = await screenshotTool.execute({ type: 'fullscreen' }) as { success: boolean };
+    const result = (await screenshotTool.execute({ type: 'fullscreen' })) as { success: boolean };
 
     // Verify the screencapture command had no -S flag by checking the first call arg
     const cmdArg = runMock.mock.calls[0][0];
@@ -295,10 +303,7 @@ describe('screenshotTool.execute', () => {
   it('interactive mode uses -i flag', async () => {
     const { defaultExecutor } = await import('../shell/executor.js');
     const runMock = vi.mocked(defaultExecutor.run);
-    runMock
-      .mockResolvedValueOnce('0')
-      .mockResolvedValueOnce('yes')
-      .mockResolvedValueOnce('50000');
+    runMock.mockResolvedValueOnce('0').mockResolvedValueOnce('yes').mockResolvedValueOnce('50000');
 
     const { screenshotTool } = await import('../tools-extended.js');
     await screenshotTool.execute({ type: 'interactive' });
@@ -312,8 +317,7 @@ describe('screenshotTool.execute', () => {
 
 describe('systemLogsTool command format', () => {
   it('uses log show with --style compact --last', () => {
-    const cmd = (last: string) =>
-      `log show --style compact --last "${last}" | head -200`;
+    const cmd = (last: string) => `log show --style compact --last "${last}" | head -200`;
     expect(cmd('5m')).toContain('log show');
     expect(cmd('1h')).toContain('--last "1h"');
   });
@@ -339,7 +343,8 @@ describe('systemLogsTool command format', () => {
 
 describe('command allowlist', () => {
   it('setCommandAllowlist replaces the allowlist', async () => {
-    const { setCommandAllowlist, isCommandAllowlisted, setSkipDangerousCheck } = await import('../tools.js');
+    const { setCommandAllowlist, isCommandAllowlisted, setSkipDangerousCheck } =
+      await import('../tools.js');
     setCommandAllowlist(['git', 'brew']);
     setSkipDangerousCheck(false);
     expect(isCommandAllowlisted('git status')).toBe(true);
@@ -357,19 +362,17 @@ describe('processListTool sampling', () => {
     const { defaultExecutor } = await import('../shell/executor.js');
     const runMock = vi.mocked(defaultExecutor.run);
     // First call: headerless ps output (PID, COMM, %CPU, %MEM, USER)
-    runMock.mockResolvedValueOnce(
-      '9876 Chrome 12.5 3.2 alice\n' +
-      '5432 Terminal 2.1 1.5 alice\n'
-    );
+    runMock.mockResolvedValueOnce('9876 Chrome 12.5 3.2 alice\n' + '5432 Terminal 2.1 1.5 alice\n');
     // Second call: sample output
     runMock.mockResolvedValueOnce(
-      'Call graph:\n' +
-      '    1234 start (1234) 1\n' +
-      '      5678 main (libxul) 1\n'
+      'Call graph:\n' + '    1234 start (1234) 1\n' + '      5678 main (libxul) 1\n'
     );
 
     const { processListTool } = await import('../tools.js');
-    const result = await processListTool.execute({ sample: 3 }) as { processes: string[]; sampled?: { pid: number; name: string } };
+    const result = (await processListTool.execute({ sample: 3 })) as {
+      processes: string[];
+      sampled?: { pid: number; name: string };
+    };
 
     expect(result.sampled).toBeDefined();
     expect(result.sampled?.pid).toBe(9876);
@@ -392,12 +395,15 @@ describe('runCommandTool allowlist integration', () => {
     const runMock = vi.mocked(defaultExecutor.run);
     runMock.mockResolvedValue('ok');
 
-    const { setCommandAllowlist, setSkipDangerousCheck, runCommandTool } = await import('../tools.js');
+    const { setCommandAllowlist, setSkipDangerousCheck, runCommandTool } =
+      await import('../tools.js');
 
     setCommandAllowlist(['git', 'brew']);
     setSkipDangerousCheck(false);
 
-    const result = await runCommandTool.execute({ command: 'git push origin main' }) as { exitCode: number };
+    const result = (await runCommandTool.execute({ command: 'git push origin main' })) as {
+      exitCode: number;
+    };
     expect(result.exitCode).toBe(0);
     expect(defaultExecutor.run).toHaveBeenCalled();
   });
@@ -408,14 +414,21 @@ describe('enhanced batteryTool', () => {
     const { defaultExecutor } = await import('../shell/executor.js');
     const runMock = vi.mocked(defaultExecutor.run);
     runMock
-      .mockResolvedValueOnce('Now drawing from "Battery Power"\n -InternalBattery-0 85%; charging; 2:45 remaining')
+      .mockResolvedValueOnce(
+        'Now drawing from "Battery Power"\n -InternalBattery-0 85%; charging; 2:45 remaining'
+      )
       .mockResolvedValueOnce('AC Power')
       .mockResolvedValueOnce(
         '  Cycle Count: 342\n  Condition: Normal\n  Maximum Capacity: 89%\n  Temperature: 32'
       );
 
     const { batteryTool } = await import('../tools-extended.js');
-    const result = await batteryTool.execute({}) as { cycleCount: number | null; health: string | null; maxCapacityPercent: number | null; temperature: string | null };
+    const result = (await batteryTool.execute({})) as {
+      cycleCount: number | null;
+      health: string | null;
+      maxCapacityPercent: number | null;
+      temperature: string | null;
+    };
     expect(result.cycleCount).toBe(342);
     expect(result.health).toBe('Normal');
     expect(result.maxCapacityPercent).toBe(89);

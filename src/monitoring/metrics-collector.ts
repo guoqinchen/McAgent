@@ -44,7 +44,12 @@ export class MetricsCollector {
     });
   }
 
-  endRequest(requestId: string, success: boolean, errorType?: string, tokens?: { prompt: number; completion: number }): void {
+  endRequest(
+    requestId: string,
+    success: boolean,
+    errorType?: string,
+    tokens?: { prompt: number; completion: number }
+  ): void {
     const timing = this.activeRequests.get(requestId);
     if (!timing) return;
 
@@ -70,7 +75,8 @@ export class MetricsCollector {
     } else {
       this.metrics.failures++;
       if (timing.errorType) {
-        this.metrics.errorTypes[timing.errorType] = (this.metrics.errorTypes[timing.errorType] || 0) + 1;
+        this.metrics.errorTypes[timing.errorType] =
+          (this.metrics.errorTypes[timing.errorType] || 0) + 1;
       }
     }
 
@@ -108,13 +114,11 @@ export class MetricsCollector {
     totalTokens: number;
     errorBreakdown: Record<string, number>;
   } {
-    const successRate = this.metrics.requests > 0 
-      ? (this.metrics.successes / this.metrics.requests) * 100 
-      : 0;
-    
-    const avgLatency = this.metrics.requests > 0 
-      ? this.metrics.totalLatency / this.metrics.requests 
-      : 0;
+    const successRate =
+      this.metrics.requests > 0 ? (this.metrics.successes / this.metrics.requests) * 100 : 0;
+
+    const avgLatency =
+      this.metrics.requests > 0 ? this.metrics.totalLatency / this.metrics.requests : 0;
 
     return {
       requests: this.metrics.requests,

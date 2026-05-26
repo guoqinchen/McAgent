@@ -42,7 +42,9 @@ describe('ConversationHistory (typed)', () => {
   });
 
   it('addAssistantMessage stores tool_calls', () => {
-    const toolCalls = [{ id: 'tc1', type: 'function' as const, function: { name: 'f', arguments: '{}' } }];
+    const toolCalls = [
+      { id: 'tc1', type: 'function' as const, function: { name: 'f', arguments: '{}' } },
+    ];
     conv.addAssistantMessage(null, toolCalls);
     const msgs = conv.raw;
     expect(msgs[0].tool_calls).toEqual(toolCalls);

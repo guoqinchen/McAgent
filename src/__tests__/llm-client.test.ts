@@ -49,7 +49,7 @@ describe('LLMClient', () => {
     await client.createSync(model, messages, toolList, body);
 
     expect(mockOpenAI.chat.completions.create).toHaveBeenCalledWith(
-      expect.objectContaining({ tools: toolList }),
+      expect.objectContaining({ tools: toolList })
     );
   });
 
@@ -60,7 +60,7 @@ describe('LLMClient', () => {
     await client.createSync(model, messages, tools, body, ac.signal);
 
     expect(mockOpenAI.chat.completions.create).toHaveBeenCalledWith(
-      expect.objectContaining({ signal: ac.signal }),
+      expect.objectContaining({ signal: ac.signal })
     );
   });
 

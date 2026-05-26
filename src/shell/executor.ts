@@ -42,9 +42,7 @@ export class RealShellExecutor implements ShellExecutor {
             }
             // Non-zero exit code: command ran but failed — return stderr
             // so the LLM can see what went wrong.
-            resolve(
-              (stderr?.trim() || stdout?.trim() || err.message || String(err))
-            );
+            resolve(stderr?.trim() || stdout?.trim() || err.message || String(err));
           } else {
             resolve(stdout.trim());
           }

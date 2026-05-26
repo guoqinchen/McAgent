@@ -13,7 +13,9 @@ vi.mock('../monitoring/metrics-collector.js', () => ({
   },
 }));
 
-function makeToolCall(overrides: Partial<ChatCompletionMessageFunctionToolCall> = {}): ChatCompletionMessageFunctionToolCall {
+function makeToolCall(
+  overrides: Partial<ChatCompletionMessageFunctionToolCall> = {}
+): ChatCompletionMessageFunctionToolCall {
   return {
     id: 'call_123',
     type: 'function',
@@ -104,11 +106,7 @@ describe('ToolExecutor', () => {
 
     await executor.executeAll([makeToolCall()]);
 
-    expect(metricsCollector.recordToolCall).toHaveBeenCalledWith(
-      expect.any(Number),
-      true,
-      'echo',
-    );
+    expect(metricsCollector.recordToolCall).toHaveBeenCalledWith(expect.any(Number), true, 'echo');
   });
 
   it('records metrics on failure', async () => {
@@ -120,11 +118,7 @@ describe('ToolExecutor', () => {
 
     await executor.executeAll([makeToolCall()]);
 
-    expect(metricsCollector.recordToolCall).toHaveBeenCalledWith(
-      expect.any(Number),
-      false,
-      'echo',
-    );
+    expect(metricsCollector.recordToolCall).toHaveBeenCalledWith(expect.any(Number), false, 'echo');
   });
 
   it('executes multiple tool calls and returns results in order', async () => {

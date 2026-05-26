@@ -24,7 +24,7 @@ export class ToolExecutor {
     toolCalls: ChatCompletionMessageFunctionToolCall[],
     onCall?: (name: string, args: unknown) => void,
     onResult?: (name: string, result: unknown) => void,
-    onError?: (error: Error) => void,
+    onError?: (error: Error) => void
   ): Promise<ToolResult[]> {
     const results: ToolResult[] = [];
 

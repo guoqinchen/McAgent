@@ -121,7 +121,11 @@ export function evictMessages(
   }
 
   // Phase 1: Remove oldest user messages and their paired assistant/tool responses
-  for (let i = 1; i < result.length && totalTokens > maxTokens && result.length > MIN_MESSAGES_TO_KEEP; i++) {
+  for (
+    let i = 1;
+    i < result.length && totalTokens > maxTokens && result.length > MIN_MESSAGES_TO_KEEP;
+    i++
+  ) {
     const msg = result[i];
     if (msg.role === 'user') {
       // Remove this user message
@@ -129,7 +133,10 @@ export function evictMessages(
       i--;
 
       // Remove the following assistant or tool response if it belongs to this exchange
-      if (i + 1 < result.length && (result[i + 1]?.role === 'assistant' || result[i + 1]?.role === 'tool')) {
+      if (
+        i + 1 < result.length &&
+        (result[i + 1]?.role === 'assistant' || result[i + 1]?.role === 'tool')
+      ) {
         removeAt(i + 1);
       }
     }
@@ -137,7 +144,11 @@ export function evictMessages(
 
   // Phase 2: If still over limit, remove unpaired tool messages
   if (totalTokens > maxTokens) {
-    for (let i = result.length - 1; i >= 1 && totalTokens > maxTokens && result.length > MIN_MESSAGES_TO_KEEP; i--) {
+    for (
+      let i = result.length - 1;
+      i >= 1 && totalTokens > maxTokens && result.length > MIN_MESSAGES_TO_KEEP;
+      i--
+    ) {
       if (result[i]?.role === 'tool') {
         removeAt(i);
       }

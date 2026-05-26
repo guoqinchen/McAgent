@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { estimateTokens, estimateMessageTokens, evictMessages, DEFAULT_MAX_CONTEXT_TOKENS } from '../context-manager.js';
+import {
+  estimateTokens,
+  estimateMessageTokens,
+  evictMessages,
+  DEFAULT_MAX_CONTEXT_TOKENS,
+} from '../context-manager.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 describe('estimateTokens', () => {
@@ -36,11 +41,13 @@ describe('estimateMessageTokens', () => {
       {
         role: 'assistant',
         content: null,
-        tool_calls: [{
-          id: 'call_1',
-          type: 'function',
-          function: { name: 'test', arguments: '{"key":"value"}' },
-        }],
+        tool_calls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'test', arguments: '{"key":"value"}' },
+          },
+        ],
       },
     ];
     const tokens = estimateMessageTokens(msgs);
@@ -73,8 +80,8 @@ describe('evictMessages', () => {
 
     // Very low limit forces eviction of oldest pair
     const result = evictMessages(msgs, 5);
-    expect(result.map(m => m.content)).not.toContain('old user');
-    expect(result.map(m => m.content)).not.toContain('old asst');
+    expect(result.map((m) => m.content)).not.toContain('old user');
+    expect(result.map((m) => m.content)).not.toContain('old asst');
   });
 
   it('preserves the most recent exchanges', () => {
@@ -87,7 +94,7 @@ describe('evictMessages', () => {
     ];
 
     const result = evictMessages(msgs, 50);
-    const contents = result.map(m => m.content);
+    const contents = result.map((m) => m.content);
     expect(contents).toContain('user 19');
     expect(contents).toContain('asst 19');
   });

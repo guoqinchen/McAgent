@@ -30,7 +30,11 @@ export class ConversationHistory {
     return msg;
   }
 
-  addAssistantMessage(content: string | null, toolCalls?: unknown, reasoningContent?: string): void {
+  addAssistantMessage(
+    content: string | null,
+    toolCalls?: unknown,
+    reasoningContent?: string
+  ): void {
     const msg = {
       role: 'assistant' as const,
       content,

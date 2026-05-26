@@ -218,7 +218,10 @@ describe('MacOSAgent', () => {
       // Mock OpenAI to hang long enough for overlap
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (agent as any).client.chat.completions.create = vi.fn().mockImplementation(
-        () => new Promise(() => { /* never resolves */ })
+        () =>
+          new Promise(() => {
+            /* never resolves */
+          })
       );
 
       // Artificially mark as busy to simulate first send() locking
@@ -254,22 +257,28 @@ describe('MacOSAgent', () => {
         name: 'always_fail',
         description: 'Always fails',
         parameters: { type: 'object', properties: {} },
-        execute: async () => { throw new Error('mock failure'); },
+        execute: async () => {
+          throw new Error('mock failure');
+        },
       });
 
       // Mock API to always return a tool call for the failing tool
       const toolCallResponse = {
-        choices: [{
-          finish_reason: 'tool_calls' as const,
-          message: {
-            content: null,
-            tool_calls: [{
-              id: 'call_1',
-              type: 'function' as const,
-              function: { name: 'always_fail', arguments: '{}' },
-            }],
+        choices: [
+          {
+            finish_reason: 'tool_calls' as const,
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: 'call_1',
+                  type: 'function' as const,
+                  function: { name: 'always_fail', arguments: '{}' },
+                },
+              ],
+            },
           },
-        }],
+        ],
       };
 
       const mockCreate = vi.fn().mockResolvedValue(toolCallResponse);
@@ -309,24 +318,32 @@ describe('MacOSAgent', () => {
       // Streaming response ending with finish_reason=length and partial tool_calls
       const mockStream = (async function* () {
         yield {
-          choices: [{
-            delta: { content: 'Checking...' },
-            finish_reason: null,
-          }],
-        };
-        yield {
-          choices: [{
-            delta: {
-              tool_calls: [{ index: 0, id: 'call_1', function: { name: 'test_tool', arguments: '{}' } }],
+          choices: [
+            {
+              delta: { content: 'Checking...' },
+              finish_reason: null,
             },
-            finish_reason: null,
-          }],
+          ],
         };
         yield {
-          choices: [{
-            delta: {},
-            finish_reason: 'length',
-          }],
+          choices: [
+            {
+              delta: {
+                tool_calls: [
+                  { index: 0, id: 'call_1', function: { name: 'test_tool', arguments: '{}' } },
+                ],
+              },
+              finish_reason: null,
+            },
+          ],
+        };
+        yield {
+          choices: [
+            {
+              delta: {},
+              finish_reason: 'length',
+            },
+          ],
         };
       })();
 
@@ -359,10 +376,12 @@ describe('MacOSAgent', () => {
       // Mock API to return a simple response, triggering runLoop → eviction
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (agent as any).client.chat.completions.create = vi.fn().mockResolvedValue({
-        choices: [{
-          finish_reason: 'stop',
-          message: { content: 'ok', tool_calls: undefined },
-        }],
+        choices: [
+          {
+            finish_reason: 'stop',
+            message: { content: 'ok', tool_calls: undefined },
+          },
+        ],
       });
 
       await agent.sendSync('test');
@@ -388,25 +407,32 @@ describe('MacOSAgent', () => {
         execute: async ({ msg }) => ({ echoed: msg }),
       });
 
-      const mockCreate = vi.fn()
+      const mockCreate = vi
+        .fn()
         .mockResolvedValueOnce({
-          choices: [{
-            finish_reason: 'tool_calls' as const,
-            message: {
-              content: null,
-              tool_calls: [{
-                id: 'call_1',
-                type: 'function' as const,
-                function: { name: 'echo', arguments: '{"msg":"hello"}' },
-              }],
+          choices: [
+            {
+              finish_reason: 'tool_calls' as const,
+              message: {
+                content: null,
+                tool_calls: [
+                  {
+                    id: 'call_1',
+                    type: 'function' as const,
+                    function: { name: 'echo', arguments: '{"msg":"hello"}' },
+                  },
+                ],
+              },
             },
-          }],
+          ],
         })
         .mockResolvedValueOnce({
-          choices: [{
-            finish_reason: 'stop' as const,
-            message: { content: 'I echoed "hello"', tool_calls: undefined },
-          }],
+          choices: [
+            {
+              finish_reason: 'stop' as const,
+              message: { content: 'I echoed "hello"', tool_calls: undefined },
+            },
+          ],
         });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -417,8 +443,8 @@ describe('MacOSAgent', () => {
       expect(mockCreate).toHaveBeenCalledTimes(2);
 
       const msgs = agent.getMessages();
-      expect(msgs.some(m => m.content === 'say hello')).toBe(true);
-      expect(msgs.some(m => m.content === 'I echoed "hello"')).toBe(true);
+      expect(msgs.some((m) => m.content === 'say hello')).toBe(true);
+      expect(msgs.some((m) => m.content === 'I echoed "hello"')).toBe(true);
     });
 
     it('returns when maxToolRounds is reached with no text produced', async () => {
@@ -426,17 +452,21 @@ describe('MacOSAgent', () => {
 
       // Always returns a tool call
       const mockCreate = vi.fn().mockResolvedValue({
-        choices: [{
-          finish_reason: 'tool_calls' as const,
-          message: {
-            content: null,
-            tool_calls: [{
-              id: 'call_1',
-              type: 'function' as const,
-              function: { name: 'echo', arguments: '{"msg":"loop"}' },
-            }],
+        choices: [
+          {
+            finish_reason: 'tool_calls' as const,
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: 'call_1',
+                  type: 'function' as const,
+                  function: { name: 'echo', arguments: '{"msg":"loop"}' },
+                },
+              ],
+            },
           },
-        }],
+        ],
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -498,31 +528,40 @@ describe('MacOSAgent', () => {
         name: 'broken',
         description: 'Broken tool',
         parameters: { type: 'object', properties: {} },
-        execute: async () => { throw new Error('kaboom'); },
+        execute: async () => {
+          throw new Error('kaboom');
+        },
       });
 
       const errors: Error[] = [];
       agent.on('error', (err) => errors.push(err));
 
-      const mockCreate = vi.fn()
+      const mockCreate = vi
+        .fn()
         .mockResolvedValueOnce({
-          choices: [{
-            finish_reason: 'tool_calls' as const,
-            message: {
-              content: null,
-              tool_calls: [{
-                id: 'call_1',
-                type: 'function' as const,
-                function: { name: 'broken', arguments: '{}' },
-              }],
+          choices: [
+            {
+              finish_reason: 'tool_calls' as const,
+              message: {
+                content: null,
+                tool_calls: [
+                  {
+                    id: 'call_1',
+                    type: 'function' as const,
+                    function: { name: 'broken', arguments: '{}' },
+                  },
+                ],
+              },
             },
-          }],
+          ],
         })
         .mockResolvedValueOnce({
-          choices: [{
-            finish_reason: 'stop' as const,
-            message: { content: 'continuing after error', tool_calls: undefined },
-          }],
+          choices: [
+            {
+              finish_reason: 'stop' as const,
+              message: { content: 'continuing after error', tool_calls: undefined },
+            },
+          ],
         });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -538,25 +577,32 @@ describe('MacOSAgent', () => {
     it('handles unknown tool gracefully', async () => {
       const agent = createTestAgent({ maxToolRounds: 2 });
 
-      const mockCreate = vi.fn()
+      const mockCreate = vi
+        .fn()
         .mockResolvedValueOnce({
-          choices: [{
-            finish_reason: 'tool_calls' as const,
-            message: {
-              content: null,
-              tool_calls: [{
-                id: 'call_1',
-                type: 'function' as const,
-                function: { name: 'nonexistent_tool', arguments: '{}' },
-              }],
+          choices: [
+            {
+              finish_reason: 'tool_calls' as const,
+              message: {
+                content: null,
+                tool_calls: [
+                  {
+                    id: 'call_1',
+                    type: 'function' as const,
+                    function: { name: 'nonexistent_tool', arguments: '{}' },
+                  },
+                ],
+              },
             },
-          }],
+          ],
         })
         .mockResolvedValueOnce({
-          choices: [{
-            finish_reason: 'stop' as const,
-            message: { content: 'unknown tool handled', tool_calls: undefined },
-          }],
+          choices: [
+            {
+              finish_reason: 'stop' as const,
+              message: { content: 'unknown tool handled', tool_calls: undefined },
+            },
+          ],
         });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -566,7 +612,7 @@ describe('MacOSAgent', () => {
 
       expect(result).toBe('unknown tool handled');
       const msgs = agent.getMessages();
-      expect(msgs.some(m => m.content && m.content.includes('Unknown tool'))).toBe(true);
+      expect(msgs.some((m) => m.content && m.content.includes('Unknown tool'))).toBe(true);
     });
   });
 
@@ -625,10 +671,12 @@ describe('MacOSAgent', () => {
       // sendSync should only expose readonly tools to the LLM
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (agent as any).client.chat.completions.create = vi.fn().mockResolvedValue({
-        choices: [{
-          finish_reason: 'stop',
-          message: { content: 'ok', tool_calls: undefined },
-        }],
+        choices: [
+          {
+            finish_reason: 'stop',
+            message: { content: 'ok', tool_calls: undefined },
+          },
+        ],
       });
 
       agent.sendSync('test').then(() => {

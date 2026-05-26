@@ -51,22 +51,22 @@ src/
 
 ## Key Types
 
-| Type | File | Description |
-|------|------|-------------|
-| `Tool` | `types/tool.ts` | `{ name, description, parameters, execute, readonly? }` |
-| `McAgentConfig` | `types/config.ts` | Config object for `createMacOSAgent()` |
-| `PermissionMode` | `types/config.ts` | `'readonly' \| 'approve' \| 'auto'` |
-| `McAgentEvents` | `types/events.ts` | Event map for EventEmitter |
-| `ShellExecutor` | `shell/executor.ts` | Interface for shell command execution |
-| `LLMProvider` | `types/llm-provider.ts` | Unified interface for LLM backends |
-| `ChatCompletionMessage` | `types/llm-provider.ts` | Message format for chat completions |
-| `ToolRegistry` | `tools/tool-registry.ts` | Tool registration and categorization |
-| `ReasoningEngine` | `engine/reasoning-engine.ts` | Adaptive reasoning strategy selector |
-| `ErrorRecoveryEngine` | `engine/error-recovery-engine.ts` | Error recovery strategy handler |
-| `SessionManager` | `session/session-manager.ts` | Session persistence manager |
-| `StructuredLogger` | `logging/structured-logger.ts` | Multi-handler logging system |
-| `MetricsCollector` | `monitoring/metrics-collector.ts` | Performance metrics collection |
-| `PermissionManager` | `security/permission-manager.ts` | Fine-grained permission control |
+| Type                    | File                              | Description                                             |
+| ----------------------- | --------------------------------- | ------------------------------------------------------- |
+| `Tool`                  | `types/tool.ts`                   | `{ name, description, parameters, execute, readonly? }` |
+| `McAgentConfig`         | `types/config.ts`                 | Config object for `createMacOSAgent()`                  |
+| `PermissionMode`        | `types/config.ts`                 | `'readonly' \| 'approve' \| 'auto'`                     |
+| `McAgentEvents`         | `types/events.ts`                 | Event map for EventEmitter                              |
+| `ShellExecutor`         | `shell/executor.ts`               | Interface for shell command execution                   |
+| `LLMProvider`           | `types/llm-provider.ts`           | Unified interface for LLM backends                      |
+| `ChatCompletionMessage` | `types/llm-provider.ts`           | Message format for chat completions                     |
+| `ToolRegistry`          | `tools/tool-registry.ts`          | Tool registration and categorization                    |
+| `ReasoningEngine`       | `engine/reasoning-engine.ts`      | Adaptive reasoning strategy selector                    |
+| `ErrorRecoveryEngine`   | `engine/error-recovery-engine.ts` | Error recovery strategy handler                         |
+| `SessionManager`        | `session/session-manager.ts`      | Session persistence manager                             |
+| `StructuredLogger`      | `logging/structured-logger.ts`    | Multi-handler logging system                            |
+| `MetricsCollector`      | `monitoring/metrics-collector.ts` | Performance metrics collection                          |
+| `PermissionManager`     | `security/permission-manager.ts`  | Fine-grained permission control                         |
 
 All types are re-exported from `agent.ts` with their legacy names (`MacOSAgentConfig`, `MacOSAgentEvents`) for backward compatibility.
 
@@ -96,6 +96,7 @@ npm run format         # Prettier
 ## Environment
 
 **DeepSeek Configuration:**
+
 - `DEEPSEEK_API_KEY` (required)
 - `DEEPSEEK_MODEL` (default: `deepseek-v4-flash`)
 - `DEEPSEEK_BASE_URL` (default: `https://api.deepseek.com`)
@@ -104,6 +105,7 @@ npm run format         # Prettier
 - `DEEPSEEK_MAX_TOKENS` (default: `1048576`)
 
 **Multi-Provider Configuration (v2.x):**
+
 - `LLM_PROVIDER` (default: `deepseek`; options: `deepseek`, `openai`)
 - `OPENAI_API_KEY` (required when `LLM_PROVIDER=openai`)
 - `OPENAI_BASE_URL` (default: `https://api.openai.com`)

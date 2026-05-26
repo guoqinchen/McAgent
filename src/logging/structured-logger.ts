@@ -150,7 +150,7 @@ export class StructuredLogger {
 
   setLevel(level: LogLevel): void {
     this.level = level;
-    this.handlers.forEach(h => h.setLevel(level));
+    this.handlers.forEach((h) => h.setLevel(level));
   }
 
   trace(message: string, context?: Record<string, unknown>): void {
@@ -177,7 +177,12 @@ export class StructuredLogger {
     this.log('fatal', message, context, error);
   }
 
-  private log(level: LogLevel, message: string, context?: Record<string, unknown>, error?: Error): void {
+  private log(
+    level: LogLevel,
+    message: string,
+    context?: Record<string, unknown>,
+    error?: Error
+  ): void {
     if (!this.shouldLog(level)) return;
 
     const record: LogRecord = {
@@ -188,7 +193,7 @@ export class StructuredLogger {
       error,
     };
 
-    this.handlers.forEach(handler => handler.handle(record));
+    this.handlers.forEach((handler) => handler.handle(record));
   }
 
   private shouldLog(level: LogLevel): boolean {
@@ -199,10 +204,10 @@ export class StructuredLogger {
 
 const createDefaultLogger = (): StructuredLogger => {
   const logger = new StructuredLogger('info');
-  
+
   const consoleHandler = new ConsoleHandler('info');
   logger.addHandler(consoleHandler);
-  
+
   const logDir = path.join(process.env.HOME || '', '.mcagent', 'logs');
   const logFile = path.join(logDir, `mcagent-${new Date().toISOString().split('T')[0]}.log`);
   const fileHandler = new FileHandler(logFile, 'debug');

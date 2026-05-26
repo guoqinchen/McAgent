@@ -13,6 +13,7 @@ import { macOSExtendedTools } from './tools-extended.js';
 import { macOSProTools } from './tools-pro.js';
 import { createInterface } from 'node:readline';
 import { logger } from './logging/structured-logger.js';
+import { createAnsiTheme } from './ui/ansi-theme.js';
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
@@ -53,24 +54,15 @@ const agent = createMacOSAgent({
 
 // ─── Event hooks ─────────────────────────────────────────────────────────────
 
-const color = {
-  reset: '\x1b[0m',
-  dim: '\x1b[2m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  cyan: '\x1b[36m',
-  magenta: '\x1b[35m',
-  red: '\x1b[31m',
-  gray: '\x1b[90m',
-};
+const c = createAnsiTheme();
 
 agent.on('thinking:start', function onThinkingStart() {
-  process.stdout.write(`${color.magenta}⏳  Processing...${color.reset}\n`);
+  process.stdout.write(`${c.header}⏳  Processing...${c.reset}\n`);
 });
 
 agent.on('tool:call', function onToolCall(name, args) {
   process.stdout.write(
-    `  ${color.yellow}🔧 ${name}${color.reset}(${JSON.stringify(args, null, 2)})\n`
+    `  ${c.toolCall}🔧 ${name}${c.reset}(${JSON.stringify(args, null, 2)})\n`
   );
 });
 
@@ -83,12 +75,12 @@ agent.on('stream:end', function onStreamEnd() {
 });
 
 agent.on('reasoning:delta', function onReasoningDelta(text) {
-  process.stdout.write(`${color.dim}${text}${color.reset}`);
+  process.stdout.write(`${c.dim}${text}${c.reset}`);
 });
 
 agent.on('error', function onError(err) {
   logger.error('Agent error in headless CLI', err);
-  console.error(`\n${color.red}❌  Error:${color.reset} ${err.message}`);
+  console.error(`\n${c.error}❌  Error:${c.reset} ${err.message}`);
 });
 
 // ─── Interactive loop ────────────────────────────────────────────────────────
@@ -99,23 +91,23 @@ const rl = createInterface({
 });
 
 const welcome = `
-${color.magenta}╔══════════════════════════════════════════╗
+${c.header}╔══════════════════════════════════════════╗
 ║           🍏  McAgent                  ║
 ║  Your AI-powered macOS CLI assistant    ║
-╚══════════════════════════════════════════╝${color.reset}
-${color.gray}Model: ${agent.model}${color.reset}
-${color.gray}Type your macOS question or 'exit' to quit.${color.reset}
+╚══════════════════════════════════════════╝${c.reset}
+${c.muted}Model: ${agent.model}${c.reset}
+${c.muted}Type your macOS question or 'exit' to quit.${c.reset}
 `;
 
 console.log(welcome);
-console.log(`${color.gray}Logs: ~/.mcagent/logs/${color.reset}`);
+console.log(`${c.muted}Logs: ~/.mcagent/logs/${c.reset}`);
 
 function prompt(): void {
-  rl.question(`${color.cyan}macOS>${color.reset} `, async (input) => {
+  rl.question(`${c.userLabel}macOS>${c.reset} `, async (input) => {
     const trimmed = input.trim();
     if (!trimmed) return prompt();
     if (trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === 'quit') {
-      console.log(`${color.gray}Goodbye!${color.reset}`);
+      console.log(`${c.muted}Goodbye!${c.reset}`);
       rl.close();
       return;
     }

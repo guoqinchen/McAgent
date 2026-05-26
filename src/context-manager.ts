@@ -91,8 +91,7 @@ const MIN_MESSAGES_TO_KEEP = 5;
  * 3. Keep orphaned tool messages that belong to surviving assistant calls.
  * 4. Always keep at least MIN_MESSAGES_TO_KEEP messages.
  *
- * Performance: O(n) — computes per-message token counts once, then tracks
- * the running total incrementally instead of re-scanning on every removal.
+ * Performance: O(n) — single pass with filter, no splice mutations.
  *
  * @returns A new array with evicted messages removed (does not mutate original).
  */
@@ -102,60 +101,54 @@ export function evictMessages(
 ): ChatCompletionMessageParam[] {
   if (messages.length <= MIN_MESSAGES_TO_KEEP) return messages;
 
-  // Compute per-message token counts once — O(n)
-  const perMsgTokens: number[] = messages.map(estimateSingleMessageTokens);
-  let totalTokens = perMsgTokens.reduce((a, b) => a + b, 0);
+  const perMsgTokens = messages.map(estimateSingleMessageTokens);
+  const totalTokens = perMsgTokens.reduce((a, b) => a + b, 0);
 
   if (totalTokens <= maxTokens) return messages;
 
-  // Work on a copy
-  const result = [...messages];
-  // Keep token counts in sync with result
-  const tokenCounts = [...perMsgTokens];
+  // Single pass: mark which indices to keep
+  const keep = new Array<boolean>(messages.length).fill(true);
+  let remainingTokens = totalTokens;
+  let keptCount = messages.length;
 
-  // Helper: remove item at index and update totals
-  function removeAt(idx: number): void {
-    totalTokens -= tokenCounts[idx];
-    result.splice(idx, 1);
-    tokenCounts.splice(idx, 1);
+  // Phase 1: evict oldest user+assistant pairs from the front
+  for (let i = 1; i < messages.length && remainingTokens > maxTokens && keptCount > MIN_MESSAGES_TO_KEEP; i++) {
+    const msg = messages[i];
+    if (keep[i] && msg.role === 'user') {
+      // Evict user message
+      keep[i] = false;
+      remainingTokens -= perMsgTokens[i]!;
+      keptCount--;
+
+      // Evict subsequent assistant/tool messages until next user
+       let j = i + 1;
+       while (j < messages.length && remainingTokens > maxTokens) {
+         const next = messages[j];
+         if (next?.role === 'assistant' || next?.role === 'tool') {
+           keep[j] = false;
+           remainingTokens -= perMsgTokens[j]!;
+           keptCount--;
+           j++;
+         } else {
+           break;
+         }
+       }
+    }
   }
 
-  // Phase 1: Remove oldest user messages and their paired assistant/tool responses
-  for (
-    let i = 1;
-    i < result.length && totalTokens > maxTokens && result.length > MIN_MESSAGES_TO_KEEP;
-    i++
-  ) {
-    const msg = result[i];
-    if (msg.role === 'user') {
-      // Remove this user message
-      removeAt(i);
-      i--;
-
-      // Remove the following assistant or tool response if it belongs to this exchange
-      if (
-        i + 1 < result.length &&
-        (result[i + 1]?.role === 'assistant' || result[i + 1]?.role === 'tool')
-      ) {
-        removeAt(i + 1);
+  // Phase 2: evict remaining tool messages from the end if still over
+  if (remainingTokens > maxTokens) {
+    for (let i = messages.length - 1; i >= 1 && remainingTokens > maxTokens && keptCount > MIN_MESSAGES_TO_KEEP; i--) {
+      if (keep[i] && messages[i]?.role === 'tool') {
+        keep[i] = false;
+        remainingTokens -= perMsgTokens[i]!;
+        keptCount--;
       }
     }
   }
 
-  // Phase 2: If still over limit, remove unpaired tool messages
-  if (totalTokens > maxTokens) {
-    for (
-      let i = result.length - 1;
-      i >= 1 && totalTokens > maxTokens && result.length > MIN_MESSAGES_TO_KEEP;
-      i--
-    ) {
-      if (result[i]?.role === 'tool') {
-        removeAt(i);
-      }
-    }
-  }
-
-  return result;
+  // Filter in one pass
+  return messages.filter((_, i) => keep[i]);
 }
 
 // ─── Default limits ─────────────────────────────────────────────────────────

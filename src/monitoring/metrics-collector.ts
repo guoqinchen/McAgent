@@ -9,6 +9,14 @@ export interface MetricData {
   promptTokens: number;
   completionTokens: number;
   errorTypes: Record<string, number>;
+  /** Render performance metrics (for TUI) */
+  render: {
+    totalFrames: number;
+    slowFrames: number;
+    avgFrameTimeMs: number;
+    maxFrameTimeMs: number;
+    totalFrameTimeMs: number;
+  };
 }
 
 export interface RequestTiming {
@@ -34,6 +42,13 @@ export class MetricsCollector {
     promptTokens: 0,
     completionTokens: 0,
     errorTypes: {},
+    render: {
+      totalFrames: 0,
+      slowFrames: 0,
+      avgFrameTimeMs: 0,
+      maxFrameTimeMs: 0,
+      totalFrameTimeMs: 0,
+    },
   };
 
   private activeRequests = new Map<string, RequestTiming>();
@@ -87,7 +102,7 @@ export class MetricsCollector {
     }
   }
 
-  recordToolCall(duration: number, success: boolean, toolName: string): void {
+  recordToolCall(duration: number, success: boolean, _toolName: string): void {
     this.metrics.requests++;
     this.metrics.totalLatency += duration;
     this.metrics.minLatency = Math.min(this.metrics.minLatency, duration);
@@ -99,6 +114,24 @@ export class MetricsCollector {
       this.metrics.failures++;
       this.metrics.errorTypes['tool_call'] = (this.metrics.errorTypes['tool_call'] || 0) + 1;
     }
+  }
+
+  /** Track a single render frame for TUI performance monitoring. */
+  recordFrame(frameTimeMs: number): void {
+    const r = this.metrics.render;
+    r.totalFrames++;
+    r.totalFrameTimeMs += frameTimeMs;
+    r.maxFrameTimeMs = Math.max(r.maxFrameTimeMs, frameTimeMs);
+    if (frameTimeMs > 32) {
+      r.slowFrames++;
+    }
+    r.avgFrameTimeMs = r.totalFrameTimeMs / r.totalFrames;
+  }
+
+  /** Get the slow-frame ratio (frames over 32ms / total frames). */
+  getSlowFrameRate(): number {
+    const r = this.metrics.render;
+    return r.totalFrames > 0 ? r.slowFrames / r.totalFrames : 0;
   }
 
   getMetrics(): Readonly<MetricData> {
@@ -143,6 +176,13 @@ export class MetricsCollector {
       promptTokens: 0,
       completionTokens: 0,
       errorTypes: {},
+      render: {
+        totalFrames: 0,
+        slowFrames: 0,
+        avgFrameTimeMs: 0,
+        maxFrameTimeMs: 0,
+        totalFrameTimeMs: 0,
+      },
     };
     this.activeRequests.clear();
   }

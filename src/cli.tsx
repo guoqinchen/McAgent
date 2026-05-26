@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLineEditor } from './ui/hooks/use-line-editor.js';
+import { useStreamingAgent } from './ui/hooks/use-streaming-agent.js';
 import { MessageList } from './ui/components/message-list.js';
 import { render, Box, Text, useInput, useApp } from 'ink';
 import { useTheme } from './ui/hooks/use-theme.js';
@@ -65,16 +66,17 @@ function InputField({
   onHistoryUp,
   onHistoryDown,
   editorRef,
+  promptColor,
 }: {
   onSubmit: (value: string) => void;
   disabled: boolean;
   onHistoryUp: () => void;
   onHistoryDown: () => void;
   editorRef: React.MutableRefObject<{ setValue: (v: string) => void; value: string } | null>;
+  promptColor: string;
 }) {
   const editor = useLineEditor();
 
-  // Expose editor commands to parent (for history navigation)
   useEffect(() => {
     editorRef.current = { setValue: editor.setValue, value: editor.value };
   });
@@ -99,14 +101,13 @@ function InputField({
     editor.handleInput(input, key);
   });
 
-  // Render value with cursor indicator
   const beforeCursor = editor.value.slice(0, editor.cursor);
   const atCursor = editor.value[editor.cursor] || ' ';
   const afterCursor = editor.value.slice(editor.cursor + 1);
 
   return (
     <Box>
-      <Text bold color="yellow">
+      <Text bold color={promptColor}>
         {'> '}
       </Text>
       <Text>{beforeCursor}</Text>
@@ -132,6 +133,7 @@ function App() {
   const [toolCalls, setToolCalls] = useState<Array<{ name: string; args: unknown }>>([]);
 
   const [status, setStatus] = useState('');
+  const [toolResults, setToolResults] = useState<Array<{ name: string; result: string; success: boolean }>>([]);
   const [inputHistory, setInputHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [historyDraft, setHistoryDraft] = useState('');
@@ -162,103 +164,23 @@ function App() {
       return;
     }
   });
-  // ── Streaming debounce ───────────────────────────────────────────────
-  useEffect(() => {
-    // Buffer fast token-by-token emits into ~60fps React updates to prevent
-    // terminal stuttering from per-token re-renders.
-    const WRITE_INTERVAL_MS = 16; // ≈ 60 fps
-    let streamBuffer = '';
-    let streamFlushTimer: ReturnType<typeof setInterval> | null = null;
-
-    function flushStreamBuffer() {
-      if (streamFlushTimer !== null) {
-        clearInterval(streamFlushTimer);
-        streamFlushTimer = null;
+  // Streaming agent events with 60fps debounce
+  useStreamingAgent({
+    agent,
+    setStreamingText,
+    setToolCalls,
+    setToolResults,
+    setStatus,
+    setErrorMessage,
+    setMessages,
+    setIsLoading,
+    onError: (err) => logger.error('Agent error in TUI', err),
+    onFrame: (frameMs) => {
+      if (frameMs > 50) {
+        logger.warn('Slow render frame', { frameTimeMs: Math.round(frameMs) });
       }
-      if (streamBuffer.length > 0) {
-        setStreamingText(streamBuffer);
-      }
-      streamBuffer = '';
-    }
-
-    const onThinkingStart = () => {
-      flushStreamBuffer();
-      setStreamingText('');
-      setToolCalls([]);
-      setStatus('🤔 Processing…');
-      setErrorMessage('');
-    };
-
-    const onStreamDelta = (_delta: string, accumulated: string) => {
-      // Store latest accumulated text; the interval timer pushes it to state
-      streamBuffer = accumulated;
-      if (!streamFlushTimer) {
-        // First delta — start the periodic flush
-        streamFlushTimer = setInterval(() => {
-          if (streamBuffer.length > 0) {
-            setStreamingText(streamBuffer);
-          }
-        }, WRITE_INTERVAL_MS);
-      }
-    };
-
-    const onStreamEnd = (_fullText: string) => {
-      flushStreamBuffer();
-      setStatus('');
-      setStreamingText('');
-    };
-
-    const onToolCall = (name: string, args: unknown) => {
-      flushStreamBuffer();
-      setToolCalls((prev) => [...prev, { name, args }]);
-    };
-
-    const onMessageAssistant = () => {
-      flushStreamBuffer();
-      setMessages(agent.getMessages());
-      setIsLoading(false);
-      setStreamingText('');
-      setToolCalls([]);
-      setErrorMessage('');
-    };
-
-    const onError = () => {
-      flushStreamBuffer();
-      setIsLoading(false);
-      setStatus('');
-    };
-
-    const onReasoningDelta = (_text: string) => {
-      setStatus(`💭 Thinking…`);
-    };
-
-    agent.on('thinking:start', onThinkingStart);
-    agent.on('stream:delta', onStreamDelta);
-    agent.on('stream:end', onStreamEnd);
-    agent.on('tool:call', onToolCall);
-    agent.on('message:assistant', onMessageAssistant);
-    agent.on('error', onError);
-    agent.on('reasoning:delta', onReasoningDelta);
-
-    const onErrorWithLog = (err: Error) => {
-      logger.error('Agent error in TUI', err);
-      setErrorMessage(err.message);
-      onError();
-    };
-    agent.off('error', onError);
-    agent.on('error', onErrorWithLog);
-
-    return () => {
-      flushStreamBuffer();
-      agent.off('thinking:start', onThinkingStart);
-      agent.off('stream:delta', onStreamDelta);
-      agent.off('stream:end', onStreamEnd);
-      agent.off('tool:call', onToolCall);
-      agent.off('message:assistant', onMessageAssistant);
-      agent.off('error', onErrorWithLog);
-      agent.off('reasoning:delta', onReasoningDelta);
-    };
-  }, []);
+    },
+  });
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -310,8 +232,10 @@ function App() {
         messages={messages}
         streamingText={streamingText}
         toolCalls={toolCalls}
+        toolResults={toolResults}
         status={status}
         errorMessage={errorMessage}
+        isLoading={isLoading}
       />
 
       {/* Help overlay */}
@@ -323,15 +247,44 @@ function App() {
           padding={1}
           marginBottom={1}
         >
-          <Text bold>Keyboard Shortcuts</Text>
-          <Text color={theme.muted}>Ctrl+A/E     Beginning/End of line</Text>
-          <Text color={theme.muted}>Ctrl+K/U/W   Kill to end/start/word</Text>
-          <Text color={theme.muted}>Ctrl+Y       Yank (paste) last kill</Text>
-          <Text color={theme.muted}>Alt+B/F      Back/Forward one word</Text>
-          <Text color={theme.muted}>PgUp/PgDn    Scroll message history</Text>
-          <Text color={theme.muted}>Ctrl+L       Clear screen</Text>
-          <Text color={theme.muted}>Ctrl+C/Esc   Quit</Text>
-          <Text color={theme.muted}>?            Toggle this help</Text>
+          <Box marginBottom={1}>
+            <Text bold color={theme.header}>&#x2318; McAgent Help</Text>
+          </Box>
+
+          <Box flexDirection="column" marginBottom={1}>
+            <Text bold color={theme.heading}>Line Editing</Text>
+            <Text color={theme.muted}>  Ctrl+A/E       Go to beginning/end of line</Text>
+            <Text color={theme.muted}>  Alt+B/F        Move backward/forward one word</Text>
+            <Text color={theme.muted}>  Ctrl+K/U/W     Cut to end/start/previous word</Text>
+            <Text color={theme.muted}>  Ctrl+Y         Paste last cut text</Text>
+          </Box>
+
+          <Box flexDirection="column" marginBottom={1}>
+            <Text bold color={theme.heading}>Navigation</Text>
+            <Text color={theme.muted}>  PgUp/PgDn      Scroll message history</Text>
+            <Text color={theme.muted}>  Home/End       Jump to top/bottom</Text>
+            <Text color={theme.muted}>  &#8593;/&#8595;   Browse input history</Text>
+          </Box>
+
+          <Box flexDirection="column" marginBottom={1}>
+            <Text bold color={theme.heading}>Actions</Text>
+            <Text color={theme.muted}>  Ctrl+L         Clear screen</Text>
+            <Text color={theme.muted}>  Ctrl+C / Esc   Quit</Text>
+            <Text color={theme.muted}>  Ctrl+D         Quit (when input is empty)</Text>
+          </Box>
+
+          <Box flexDirection="column">
+            <Text bold color={theme.heading}>Color Key</Text>
+            <Box>
+              <Text color={theme.userLabel}>&#x25CF; User</Text>
+              <Text>  </Text>
+              <Text color={theme.assistantLabel}>&#x25CF; Assistant</Text>
+              <Text>  </Text>
+              <Text color={theme.toolCall}>&#x25CF; Tool</Text>
+              <Text>  </Text>
+              <Text color={theme.error}>&#x25CF; Error</Text>
+            </Box>
+          </Box>
         </Box>
       )}
 
@@ -343,6 +296,7 @@ function App() {
           onHistoryUp={historyUp}
           onHistoryDown={historyDown}
           editorRef={editorRef}
+          promptColor={theme.inputPrompt}
         />
       </Box>
     </Box>

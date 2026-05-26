@@ -31,6 +31,26 @@ export interface ThemeTokens {
   muted: string;
   /** Header color */
   header: string;
+  /** Streaming cursor indicator */
+  streamingIndicator: string;
+  /** Scroll position indicator */
+  scrollIndicator: string;
+  /** Markdown heading */
+  heading: string;
+  /** Markdown code block */
+  codeBlock: string;
+  /** Inline code */
+  inlineCode: string;
+  /** Hyperlinks / URLs */
+  link: string;
+  /** List markers (bullet, number) */
+  listMarker: string;
+  /** Success / confirmation messages */
+  success: string;
+  /** Warning messages */
+  warning: string;
+  /** Reasoning / thinking text */
+  reasoning: string;
 }
 
 // ─── Color palettes ───────────────────────────────────────────────────────────
@@ -45,6 +65,16 @@ const darkTokens: ThemeTokens = {
   error: 'redBright',
   muted: 'gray',
   header: 'magenta',
+  streamingIndicator: 'gray',
+  scrollIndicator: 'gray',
+  heading: 'cyanBright',
+  codeBlock: 'cyan',
+  inlineCode: 'yellow',
+  link: 'blueBright',
+  listMarker: 'gray',
+  success: 'greenBright',
+  warning: 'yellowBright',
+  reasoning: 'gray',
 };
 
 const lightTokens: ThemeTokens = {
@@ -57,6 +87,16 @@ const lightTokens: ThemeTokens = {
   error: 'redBright',
   muted: 'gray',
   header: 'magentaBright',
+  streamingIndicator: 'gray',
+  scrollIndicator: 'gray',
+  heading: 'blueBright',
+  codeBlock: 'blue',
+  inlineCode: 'magenta',
+  link: 'blueBright',
+  listMarker: 'gray',
+  success: 'green',
+  warning: 'yellow',
+  reasoning: 'gray',
 };
 
 // ─── Detection ────────────────────────────────────────────────────────────────

@@ -1,0 +1,42 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "glob": "src/**/*.ts",
+        "commands": ["npx prettier --write $FILE"],
+        "allowedTools": ["Edit", "Write"],
+        "description": "编辑后自动格式化 TypeScript 代码"
+      },
+      {
+        "glob": "src/**/*.ts",
+        "commands": ["npx tsc --noEmit 2>&1 | head -20"],
+        "allowedTools": ["Edit", "Write", "ToolResult"],
+        "description": "编辑后运行类型检查"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "glob": "package-lock.json",
+        "block": true,
+        "message": "此文件不应被直接编辑。请改用 `npm install <包名>`。",
+        "description": "阻止 AI 直接编辑 package-lock.json"
+      }
+    ]
+  },
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@context7/context7-server"],
+      "description": "实时库文档查找（OpenAI SDK、TypeScript 等）"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp"],
+      "description": "浏览器自动化（用于 TUI/Ink 端到端测试）"
+    }
+  },
+  "settings": {
+    "maxTokens": 8192,
+    "temperature": 0.3
+  }
+}

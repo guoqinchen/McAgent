@@ -146,20 +146,20 @@ export const runCommandTool: Tool = {
 
     const isAllowlisted = isCommandAllowlisted(cmd);
 
-    // Only check dangerous patterns for non-allowlisted commands
-    if (!isAllowlisted) {
-      const check = checkCommand(cmd);
-      if (!check.safe) {
-        return {
-          exitCode: -1,
-          blocked: true,
-          reason: check.reason,
-          command: cmd,
-          message:
-            `⚠️  Command BLOCKED: ${check.reason}. ` +
-            `Explain this to the user and suggest a safer alternative.`,
-        };
-      }
+    // ─── Safety Check ────────────────────────────────────────────────────────
+    // Always check dangerous patterns unless explicitly skipped in 'auto' mode.
+    // This prevents command injection like "ls; rm -rf /" even if "ls" is allowlisted.
+    const check = checkCommand(cmd);
+    if (!check.safe) {
+      return {
+        exitCode: -1,
+        blocked: true,
+        reason: check.reason,
+        command: cmd,
+        message:
+          `⚠️  Command BLOCKED: ${check.reason}. ` +
+          `Explain this to the user and suggest a safer alternative.`,
+      };
     }
 
     const t = typeof timeout === 'number' ? timeout : undefined;

@@ -1,0 +1,1728 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "9a388d62c0deb3474afe046346db93d9a491e62c",
+  "generatedAt": "2026-05-26T03:47:17.866Z",
+  "files": {
+    ".env.example": {
+      "filePath": ".env.example",
+      "contentHash": "a8e344f8b4a65531775c832aeceee5534d3552f010a9cb4ca738b49eca59d80a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 68,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/.understandignore": {
+      "filePath": ".understand-anything/.understandignore",
+      "contentHash": "337f0931f328117568d7c5fcfde6331ec7b434298e7d9b3c86ae45df84071e78",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 28,
+      "hasStructuralAnalysis": false
+    },
+    ".understand-anything/config.json": {
+      "filePath": ".understand-anything/config.json",
+      "contentHash": "a56d4e5e7252d3274a7f2389a3e9a79bf96890772a2b36e8d869036b9080a6d8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "AGENTS.md": {
+      "filePath": "AGENTS.md",
+      "contentHash": "e548ba01d19215384486ac7dfe77bbaffb16ed6ba68c323e0596e8b15e8be8e1",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 32,
+      "hasStructuralAnalysis": true
+    },
+    "analysis-output.md": {
+      "filePath": "analysis-output.md",
+      "contentHash": "97b6b406bf2a67eca958be4cfb103d31aae5d24499bc31012283fdcc6a1bbd1b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 55,
+      "hasStructuralAnalysis": true
+    },
+    "CLAUDE.md": {
+      "filePath": "CLAUDE.md",
+      "contentHash": "11c9fe948220ddd1f42c14e7cbd9e729d6211dfe659fc36117af44939e8b56e6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 125,
+      "hasStructuralAnalysis": true
+    },
+    "CODE_WIKI.md": {
+      "filePath": "CODE_WIKI.md",
+      "contentHash": "ee72cfa36f271b7706b5aec6f2f7de445d68d0c57a0ef489cd75c405792a7736",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 717,
+      "hasStructuralAnalysis": true
+    },
+    "CONFIG.md": {
+      "filePath": "CONFIG.md",
+      "contentHash": "0cfe3eef2488721a2c4f739db376fdb8e28e9f6ce70ecdf8d86c612caab0623e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 230,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/specs/2026-05-21-mcagent-improvement-design.md": {
+      "filePath": "docs/superpowers/specs/2026-05-21-mcagent-improvement-design.md",
+      "contentHash": "76116e9ec4da02cdf9fa1389e2f3392e63f345fe428c86620178f9720deed574",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 766,
+      "hasStructuralAnalysis": true
+    },
+    "eslint.config.js": {
+      "filePath": "eslint.config.js",
+      "contentHash": "296eefb5e870d6f8b6c846d80e1e19a8456c3b5a90792aaf589ec16386d8dc7a",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@eslint/js",
+          "specifiers": ["eslint"]
+        },
+        {
+          "source": "typescript-eslint",
+          "specifiers": ["tseslint"]
+        },
+        {
+          "source": "eslint-config-prettier",
+          "specifiers": ["prettier"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": true
+    },
+    "INSTALL.md": {
+      "filePath": "INSTALL.md",
+      "contentHash": "b2c63a94f54d9d94edb0936cf7cfb7fc155e7f587fc35504cf07b55d275d12dc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 168,
+      "hasStructuralAnalysis": true
+    },
+    "package.json": {
+      "filePath": "package.json",
+      "contentHash": "771ff8f976b43994b9609b4476bb4c47daa22948fd59a8b5a5ce11cde53dff2b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 47,
+      "hasStructuralAnalysis": true
+    },
+    "README.md": {
+      "filePath": "README.md",
+      "contentHash": "fe9d84ac628d49fb351148e5cc595fe036bad76c547a510a013c8a351e86ae83",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 172,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/agent.test.ts": {
+      "filePath": "src/__tests__/agent.test.ts",
+      "contentHash": "1131b6b2ff1953ab45cebf0dea13d89e1d49f5fb2aa048487f36eb7720d5f448",
+      "functions": [
+        {
+          "name": "createTestAgent",
+          "params": ["overrides"],
+          "returnType": "MacOSAgent",
+          "exported": false,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "vi", "beforeEach"]
+        },
+        {
+          "source": "../agent.js",
+          "specifiers": ["MacOSAgent", "MacOSAgentConfig"]
+        },
+        {
+          "source": "../tools.js",
+          "specifiers": ["checkCommand"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 715,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/benchmarks/baseline.ts": {
+      "filePath": "src/__tests__/benchmarks/baseline.ts",
+      "contentHash": "a0cb35640becf495d49b2fd3ff8a2d8e3644f023c2aa9c1b54d5bb9878e72e03",
+      "functions": [
+        {
+          "name": "ensureBaselineDir",
+          "params": [],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "getBaselinePath",
+          "params": ["name"],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "saveBaseline",
+          "params": ["name", "results", "commit"],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 26
+        },
+        {
+          "name": "loadBaseline",
+          "params": ["name"],
+          "returnType": "BaselineFile | null",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "listBaselines",
+          "params": [],
+          "returnType": "string[]",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "compareWithBaseline",
+          "params": ["current", "baseline", "thresholdPercent"],
+          "returnType": "BaselineReport",
+          "exported": true,
+          "lineCount": 83
+        },
+        {
+          "name": "formatComparisonReport",
+          "params": ["report"],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 68
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:fs",
+          "specifiers": ["existsSync", "mkdirSync", "readFileSync", "writeFileSync"]
+        },
+        {
+          "source": "node:path",
+          "specifiers": ["join"]
+        },
+        {
+          "source": "./framework.js",
+          "specifiers": ["BenchmarkResult", "BenchmarkStatistics"]
+        }
+      ],
+      "exports": [
+        "saveBaseline",
+        "loadBaseline",
+        "listBaselines",
+        "compareWithBaseline",
+        "formatComparisonReport",
+        "REGRESSION_THRESHOLD_PERCENT",
+        "IMPROVEMENT_THRESHOLD_PERCENT"
+      ],
+      "totalLines": 305,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/benchmarks/context-eviction.bench.ts": {
+      "filePath": "src/__tests__/benchmarks/context-eviction.bench.ts",
+      "contentHash": "aacf31e85586dd735293470e70a0da9650a45ca874ea589291b81b8c269b59c3",
+      "functions": [
+        {
+          "name": "generateMessages",
+          "params": ["count"],
+          "returnType": "ChatCompletionMessageParam[]",
+          "exported": false,
+          "lineCount": 16
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect"]
+        },
+        {
+          "source": "./framework.js",
+          "specifiers": ["runBenchmark", "formatResult", "sanityCheck"]
+        },
+        {
+          "source": "../../context-manager.js",
+          "specifiers": ["evictMessages"]
+        },
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": ["ChatCompletionMessageParam"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 164,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/benchmarks/conversation-history.bench.ts": {
+      "filePath": "src/__tests__/benchmarks/conversation-history.bench.ts",
+      "contentHash": "c9d866929e0be2d519a9bb31a802e46e8eb5a6e198fd56b21e8467c9732ba98a",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "beforeEach"]
+        },
+        {
+          "source": "./framework.js",
+          "specifiers": ["runBenchmark", "formatResult", "sanityCheck"]
+        },
+        {
+          "source": "../../agent/conversation.js",
+          "specifiers": ["ConversationHistory"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 152,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/benchmarks/error-recovery.bench.ts": {
+      "filePath": "src/__tests__/benchmarks/error-recovery.bench.ts",
+      "contentHash": "086f54089cab1535259acc394bc850b67107a1693df2772c1e556de903f08465",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "beforeEach"]
+        },
+        {
+          "source": "./framework.js",
+          "specifiers": ["runBenchmark", "formatResult", "sanityCheck"]
+        },
+        {
+          "source": "../../engine/error-recovery-engine.js",
+          "specifiers": ["ErrorRecoveryEngine"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 165,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/benchmarks/framework.ts": {
+      "filePath": "src/__tests__/benchmarks/framework.ts",
+      "contentHash": "fac88aa1aada5aacac71827f026028a45e73463ef98ea6ffeb203d789168ce04",
+      "functions": [
+        {
+          "name": "mean",
+          "params": ["values"],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "median",
+          "params": ["values"],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "percentile",
+          "params": ["values", "p"],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "stddev",
+          "params": ["values", "avg"],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "computeStatistics",
+          "params": ["samples"],
+          "returnType": "BenchmarkStatistics",
+          "exported": false,
+          "lineCount": 20
+        },
+        {
+          "name": "round",
+          "params": ["n", "decimals"],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "tryTriggerGC",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "runBenchmark",
+          "params": ["config"],
+          "returnType": "Promise<BenchmarkResult>",
+          "exported": true,
+          "lineCount": 49
+        },
+        {
+          "name": "runSyncBenchmark",
+          "params": ["config"],
+          "returnType": "Promise<BenchmarkResult>",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "runBenchmarkSuite",
+          "params": ["benchmarks"],
+          "returnType": "Promise<BenchmarkResult[]>",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "formatMicroseconds",
+          "params": ["us"],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "formatResult",
+          "params": ["result"],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "sanityCheck",
+          "params": ["result"],
+          "returnType": "string[]",
+          "exported": true,
+          "lineCount": 22
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "runBenchmark",
+        "runSyncBenchmark",
+        "runBenchmarkSuite",
+        "formatMicroseconds",
+        "formatResult",
+        "sanityCheck"
+      ],
+      "totalLines": 290,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/benchmarks/metrics-collector.bench.ts": {
+      "filePath": "src/__tests__/benchmarks/metrics-collector.bench.ts",
+      "contentHash": "7fdbbab5ee82f7e9ea54e868ba51209c7a0b45b14a67f2e8a803b8eaf5ba9c74",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "beforeEach"]
+        },
+        {
+          "source": "./framework.js",
+          "specifiers": ["runBenchmark", "formatResult", "sanityCheck"]
+        },
+        {
+          "source": "../../monitoring/metrics-collector.js",
+          "specifiers": ["MetricsCollector"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 153,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/benchmarks/reporter.ts": {
+      "filePath": "src/__tests__/benchmarks/reporter.ts",
+      "contentHash": "7541fdaa4347be638d03c7639f4a8d72f38391f1216a2b5fd28672db09dddbb3",
+      "functions": [
+        {
+          "name": "rankByMean",
+          "params": ["results"],
+          "returnType": "RankedResult[]",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "printConsoleReport",
+          "params": ["results"],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 72
+        },
+        {
+          "name": "exportJSON",
+          "params": ["results", "filepath"],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 28
+        },
+        {
+          "name": "exportMarkdown",
+          "params": ["results", "filepath"],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 33
+        },
+        {
+          "name": "printFullReport",
+          "params": ["results", "baselineReport"],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:fs",
+          "specifiers": ["writeFileSync"]
+        },
+        {
+          "source": "./framework.js",
+          "specifiers": ["BenchmarkResult"]
+        },
+        {
+          "source": "./framework.js",
+          "specifiers": ["formatMicroseconds", "sanityCheck"]
+        },
+        {
+          "source": "./baseline.js",
+          "specifiers": ["BaselineReport"]
+        },
+        {
+          "source": "./baseline.js",
+          "specifiers": ["formatComparisonReport"]
+        }
+      ],
+      "exports": ["printConsoleReport", "exportJSON", "exportMarkdown", "printFullReport"],
+      "totalLines": 200,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/benchmarks/run-all.bench.ts": {
+      "filePath": "src/__tests__/benchmarks/run-all.bench.ts",
+      "contentHash": "f9a61dd9717ed9a517d5b861d23281db12fad2acb2fee6512bb42ed3290df671",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect"]
+        },
+        {
+          "source": "./framework.js",
+          "specifiers": ["runBenchmark", "BenchmarkResult", "sanityCheck"]
+        },
+        {
+          "source": "./baseline.js",
+          "specifiers": ["saveBaseline", "loadBaseline", "compareWithBaseline"]
+        },
+        {
+          "source": "./reporter.js",
+          "specifiers": ["printFullReport", "exportJSON", "exportMarkdown"]
+        },
+        {
+          "source": "./token-estimation.bench.js",
+          "specifiers": []
+        },
+        {
+          "source": "./context-eviction.bench.js",
+          "specifiers": []
+        },
+        {
+          "source": "./conversation-history.bench.js",
+          "specifiers": []
+        },
+        {
+          "source": "./error-recovery.bench.js",
+          "specifiers": []
+        },
+        {
+          "source": "./metrics-collector.bench.js",
+          "specifiers": []
+        },
+        {
+          "source": "./structured-logger.bench.js",
+          "specifiers": []
+        },
+        {
+          "source": "./tool-executor.bench.js",
+          "specifiers": []
+        }
+      ],
+      "exports": [],
+      "totalLines": 145,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/benchmarks/structured-logger.bench.ts": {
+      "filePath": "src/__tests__/benchmarks/structured-logger.bench.ts",
+      "contentHash": "9e57fc2fdcb76b3f72eed75caedc56cdbccd8fd74a86e6c13059b98ba1ba3a48",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "beforeEach"]
+        },
+        {
+          "source": "./framework.js",
+          "specifiers": ["runBenchmark", "formatResult", "sanityCheck"]
+        },
+        {
+          "source": "../../logging/structured-logger.js",
+          "specifiers": ["StructuredLogger", "ConsoleHandler"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 167,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/benchmarks/token-estimation.bench.ts": {
+      "filePath": "src/__tests__/benchmarks/token-estimation.bench.ts",
+      "contentHash": "2f593b98c1e625d20392342013552651ad2f89c1d204bb82dd5a715f647253ab",
+      "functions": [
+        {
+          "name": "getToolCallMessages",
+          "params": [],
+          "returnType": "ChatCompletionMessageParam[]",
+          "exported": false,
+          "lineCount": 27
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect"]
+        },
+        {
+          "source": "./framework.js",
+          "specifiers": ["runBenchmark", "formatResult", "sanityCheck"]
+        },
+        {
+          "source": "../../context-manager.js",
+          "specifiers": ["estimateTokens", "estimateMessageTokens"]
+        },
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": ["ChatCompletionMessageParam"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 220,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/benchmarks/tool-executor.bench.ts": {
+      "filePath": "src/__tests__/benchmarks/tool-executor.bench.ts",
+      "contentHash": "91a031587faee5b60224ab449ada5ea68184dfd945ecac4a614b76aeb61a098d",
+      "functions": [
+        {
+          "name": "makeToolCall",
+          "params": ["id", "name", "args"],
+          "returnType": "ChatCompletionMessageFunctionToolCall",
+          "exported": false,
+          "lineCount": 11
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "beforeEach", "vi"]
+        },
+        {
+          "source": "./framework.js",
+          "specifiers": ["runBenchmark", "formatResult", "sanityCheck"]
+        },
+        {
+          "source": "../../agent/tool-executor.js",
+          "specifiers": ["ToolExecutor"]
+        },
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": ["ChatCompletionMessageFunctionToolCall"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 177,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/context-manager.test.ts": {
+      "filePath": "src/__tests__/context-manager.test.ts",
+      "contentHash": "4b01d4d0e62abbf664769edfc8f0d50e0a14141ac03a9d3cac1fdbb280e2ed7d",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect"]
+        },
+        {
+          "source": "../context-manager.js",
+          "specifiers": [
+            "estimateTokens",
+            "estimateMessageTokens",
+            "evictMessages",
+            "DEFAULT_MAX_CONTEXT_TOKENS"
+          ]
+        },
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": ["ChatCompletionMessageParam"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 137,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/conversation-typed.test.ts": {
+      "filePath": "src/__tests__/conversation-typed.test.ts",
+      "contentHash": "876569b696f5117030f9bee9282188da13c94c3a8d4dd67f33a29fd9661dd82d",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "vi", "beforeEach"]
+        },
+        {
+          "source": "../agent/conversation.js",
+          "specifiers": ["ConversationHistory"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 106,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/executor.test.ts": {
+      "filePath": "src/__tests__/executor.test.ts",
+      "contentHash": "a11183ecf2f0c033978e60c86f5ae17ebe9b310e3ad81f9effd4bc3943ed7cc1",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "vi", "beforeEach"]
+        },
+        {
+          "source": "node:child_process",
+          "specifiers": ["exec"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 40,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/llm-client.test.ts": {
+      "filePath": "src/__tests__/llm-client.test.ts",
+      "contentHash": "b57edf78e4ffb3a9a17b4ebfb309aa28f26eae587eae09eec72f1e1c847bbf62",
+      "functions": [
+        {
+          "name": "createMockClient",
+          "params": [],
+          "exported": false,
+          "lineCount": 9
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "vi", "beforeEach"]
+        },
+        {
+          "source": "../agent/llm-client.js",
+          "specifiers": ["LLMClient"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 93,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/performance.test.ts": {
+      "filePath": "src/__tests__/performance.test.ts",
+      "contentHash": "7a532f81dad8258de31e4586a771c9fa44b9edc123f1ad01af026e1fff4f7078",
+      "functions": [
+        {
+          "name": "measureSync",
+          "params": ["fn", "iterations"],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "measureAsync",
+          "params": ["fn", "iterations"],
+          "returnType": "Promise<number>",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "generateMessages",
+          "params": ["count"],
+          "returnType": "ChatCompletionMessageParam[]",
+          "exported": false,
+          "lineCount": 16
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "vi", "beforeEach"]
+        },
+        {
+          "source": "../context-manager.js",
+          "specifiers": [
+            "estimateTokens",
+            "estimateMessageTokens",
+            "evictMessages",
+            "DEFAULT_MAX_CONTEXT_TOKENS"
+          ]
+        },
+        {
+          "source": "../agent/conversation.js",
+          "specifiers": ["ConversationHistory"]
+        },
+        {
+          "source": "../engine/error-recovery-engine.js",
+          "specifiers": ["ErrorRecoveryEngine", "errorRecoveryEngine"]
+        },
+        {
+          "source": "../monitoring/metrics-collector.js",
+          "specifiers": ["MetricsCollector"]
+        },
+        {
+          "source": "../logging/structured-logger.js",
+          "specifiers": ["StructuredLogger", "ConsoleHandler", "FileHandler", "LogLevel"]
+        },
+        {
+          "source": "../agent/tool-executor.js",
+          "specifiers": ["ToolExecutor"]
+        },
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": ["ChatCompletionMessageParam"]
+        },
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": ["ChatCompletionMessageFunctionToolCall"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 726,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/tool-executor.test.ts": {
+      "filePath": "src/__tests__/tool-executor.test.ts",
+      "contentHash": "60831864abc282e7f680826529d89ec48b41dff8ce6187d77e9f5e179c1b08a8",
+      "functions": [
+        {
+          "name": "makeToolCall",
+          "params": ["overrides"],
+          "returnType": "ChatCompletionMessageFunctionToolCall",
+          "exported": false,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "vi", "beforeEach"]
+        },
+        {
+          "source": "../agent/tool-executor.js",
+          "specifiers": ["ToolExecutor"]
+        },
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": ["ChatCompletionMessageFunctionToolCall"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 142,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/tools-pro.test.ts": {
+      "filePath": "src/__tests__/tools-pro.test.ts",
+      "contentHash": "c8b39af911b999e01452608e36c6c1be7c9330864769e0547e2c4c0c07804f20",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "vi", "beforeEach"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 189,
+      "hasStructuralAnalysis": true
+    },
+    "src/__tests__/tools.test.ts": {
+      "filePath": "src/__tests__/tools.test.ts",
+      "contentHash": "a44c18ebe4512ef9c9d8b46aa9cf09a45f7dfdc042ea065548135da34d94b348",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest",
+          "specifiers": ["describe", "it", "expect", "vi", "beforeEach"]
+        },
+        {
+          "source": "../tools.js",
+          "specifiers": ["checkCommand"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 438,
+      "hasStructuralAnalysis": true
+    },
+    "src/agent.ts": {
+      "filePath": "src/agent.ts",
+      "contentHash": "b07335015a964c48ffd0c6a154dab6ca7663a35bf5efb4980897a5ed5ebb15f4",
+      "functions": [
+        {
+          "name": "setToolStrictMode",
+          "params": ["strict"],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "toolToOpenAI",
+          "params": ["t"],
+          "returnType": "ChatCompletionTool",
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "isFunctionToolCall",
+          "params": ["tc"],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "hasReasoning",
+          "params": ["input"],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "createMacOSAgent",
+          "params": ["config"],
+          "returnType": "MacOSAgent",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [
+        {
+          "name": "MacOSAgent",
+          "methods": [
+            "constructor",
+            "model",
+            "getMessages",
+            "clearHistory",
+            "setInstructions",
+            "addTool",
+            "setModel",
+            "setPermissionMode",
+            "getPermissionMode",
+            "setAllowlist",
+            "saveSession",
+            "loadSession",
+            "dispose",
+            "send",
+            "sendSync",
+            "runLoop",
+            "executeToolCalls"
+          ],
+          "properties": [
+            "client",
+            "conversation",
+            "config",
+            "toolsByName",
+            "llmClient",
+            "toolExecutor",
+            "busy",
+            "consecutiveErrors",
+            "disposed"
+          ],
+          "exported": true,
+          "lineCount": 478
+        }
+      ],
+      "imports": [
+        {
+          "source": "openai",
+          "specifiers": ["OpenAI", "OpenAIClient"]
+        },
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": [
+            "ChatCompletionTool",
+            "ChatCompletionMessageToolCall",
+            "ChatCompletionMessageFunctionToolCall"
+          ]
+        },
+        {
+          "source": "eventemitter3",
+          "specifiers": ["EventEmitter"]
+        },
+        {
+          "source": "./tools.js",
+          "specifiers": ["setCommandAllowlist", "setSkipDangerousCheck"]
+        },
+        {
+          "source": "./agent/conversation.js",
+          "specifiers": ["ConversationHistory"]
+        },
+        {
+          "source": "./agent/llm-client.js",
+          "specifiers": ["LLMClient"]
+        },
+        {
+          "source": "./agent/tool-executor.js",
+          "specifiers": ["ToolExecutor"]
+        },
+        {
+          "source": "./context-manager.js",
+          "specifiers": ["DEFAULT_MAX_CONTEXT_TOKENS"]
+        },
+        {
+          "source": "./logging/structured-logger.js",
+          "specifiers": ["logger"]
+        },
+        {
+          "source": "./monitoring/metrics-collector.js",
+          "specifiers": ["metricsCollector"]
+        },
+        {
+          "source": "./types/tool.js",
+          "specifiers": ["Tool"]
+        },
+        {
+          "source": "./types/config.js",
+          "specifiers": ["MacOSAgentConfig", "PermissionMode"]
+        },
+        {
+          "source": "./types/events.js",
+          "specifiers": ["Message", "MacOSAgentEvents"]
+        }
+      ],
+      "exports": [
+        "Tool",
+        "MacOSAgentConfig",
+        "PermissionMode",
+        "Message",
+        "MacOSAgentEvents",
+        "setToolStrictMode",
+        "MacOSAgent",
+        "createMacOSAgent"
+      ],
+      "totalLines": 580,
+      "hasStructuralAnalysis": true
+    },
+    "src/agent/conversation.ts": {
+      "filePath": "src/agent/conversation.ts",
+      "contentHash": "cc1797cc69ea4496f67f61fe413d0ed279162970e7db46174de91ad5b8565e2d",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ConversationHistory",
+          "methods": [
+            "invalidateCache",
+            "addUserMessage",
+            "addAssistantMessage",
+            "addToolResult",
+            "addToolWarning",
+            "clear",
+            "getMessagesWithSystem",
+            "toPlainMessages",
+            "length",
+            "raw",
+            "save",
+            "load"
+          ],
+          "properties": ["messages", "cachedPlain"],
+          "exported": true,
+          "lineCount": 127
+        }
+      ],
+      "imports": [
+        {
+          "source": "node:fs",
+          "specifiers": ["existsSync"]
+        },
+        {
+          "source": "node:fs/promises",
+          "specifiers": ["writeFile", "readFile"]
+        },
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": ["ChatCompletionMessageParam"]
+        },
+        {
+          "source": "../context-manager.js",
+          "specifiers": ["evictMessages", "DEFAULT_MAX_CONTEXT_TOKENS"]
+        },
+        {
+          "source": "../types/events.js",
+          "specifiers": ["Message"]
+        }
+      ],
+      "exports": ["ConversationHistory"],
+      "totalLines": 141,
+      "hasStructuralAnalysis": true
+    },
+    "src/agent/llm-client.ts": {
+      "filePath": "src/agent/llm-client.ts",
+      "contentHash": "84293ce01abc8ba3692eab61a3fecfce310de7da11bd16517dfa4cb286c97e7d",
+      "functions": [],
+      "classes": [
+        {
+          "name": "LLMClient",
+          "methods": ["constructor", "createSync", "createStream"],
+          "properties": [],
+          "exported": true,
+          "lineCount": 59
+        }
+      ],
+      "imports": [
+        {
+          "source": "openai",
+          "specifiers": ["OpenAI"]
+        },
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": ["ChatCompletionTool", "ChatCompletionMessageParam"]
+        },
+        {
+          "source": "../engine/error-recovery-engine.js",
+          "specifiers": ["errorRecoveryEngine"]
+        }
+      ],
+      "exports": ["LLMClient"],
+      "totalLines": 96,
+      "hasStructuralAnalysis": true
+    },
+    "src/agent/tool-executor.ts": {
+      "filePath": "src/agent/tool-executor.ts",
+      "contentHash": "c1ad3407a4b4f1b5af0be3b0e3d70ef5f3e90b1045d1a5c7ec70a0adc92fc32d",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ToolExecutor",
+          "methods": ["constructor", "executeAll"],
+          "properties": [],
+          "exported": true,
+          "lineCount": 58
+        }
+      ],
+      "imports": [
+        {
+          "source": "../types/tool.js",
+          "specifiers": ["Tool"]
+        },
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": ["ChatCompletionMessageFunctionToolCall"]
+        },
+        {
+          "source": "../monitoring/metrics-collector.js",
+          "specifiers": ["metricsCollector"]
+        }
+      ],
+      "exports": ["ToolExecutor"],
+      "totalLines": 74,
+      "hasStructuralAnalysis": true
+    },
+    "src/cli.tsx": {
+      "filePath": "src/cli.tsx",
+      "contentHash": "949ca2a7ac7b882b1c09afb1203356ac2404b878d5b9dd229cfccee3e30aa90f",
+      "functions": [
+        {
+          "name": "ChatMessage",
+          "params": ["{ message }"],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "ToolCallLine",
+          "params": ["{ name, args }"],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "InputField",
+          "params": [
+            "{\n  value,\n  onChange,\n  onSubmit,\n  disabled,\n  onHistoryUp,\n  onHistoryDown,\n}"
+          ],
+          "exported": false,
+          "lineCount": 40
+        },
+        {
+          "name": "StreamingText",
+          "params": ["{ text }"],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "App",
+          "params": [],
+          "exported": false,
+          "lineCount": 223
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": ["useState", "useEffect", "useCallback", "useRef"]
+        },
+        {
+          "source": "ink",
+          "specifiers": ["render", "Box", "Text", "useInput", "useApp"]
+        },
+        {
+          "source": "./agent.js",
+          "specifiers": ["createMacOSAgent"]
+        },
+        {
+          "source": "./types/events.js",
+          "specifiers": ["Message"]
+        },
+        {
+          "source": "./tools.js",
+          "specifiers": ["macOSDefaultTools"]
+        },
+        {
+          "source": "./tools-extended.js",
+          "specifiers": ["macOSExtendedTools"]
+        },
+        {
+          "source": "./tools-pro.js",
+          "specifiers": ["macOSProTools"]
+        },
+        {
+          "source": "./logging/structured-logger.js",
+          "specifiers": ["logger"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 367,
+      "hasStructuralAnalysis": true
+    },
+    "src/context-manager.ts": {
+      "filePath": "src/context-manager.ts",
+      "contentHash": "aeb26fb6d368e5236881ec6072175086e23ee1936bf300380e3001fd07843df2",
+      "functions": [
+        {
+          "name": "estimateTokens",
+          "params": ["text"],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "estimateMessageTokens",
+          "params": ["messages"],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "estimateSingleMessageTokens",
+          "params": ["msg"],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 20
+        },
+        {
+          "name": "evictMessages",
+          "params": ["messages", "maxTokens"],
+          "returnType": "ChatCompletionMessageParam[]",
+          "exported": true,
+          "lineCount": 61
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "openai/resources/chat/completions",
+          "specifiers": ["ChatCompletionMessageParam"]
+        }
+      ],
+      "exports": [
+        "estimateTokens",
+        "estimateMessageTokens",
+        "evictMessages",
+        "DEFAULT_MAX_CONTEXT_TOKENS"
+      ],
+      "totalLines": 169,
+      "hasStructuralAnalysis": true
+    },
+    "src/engine/error-recovery-engine.ts": {
+      "filePath": "src/engine/error-recovery-engine.ts",
+      "contentHash": "54c040ac500de737ad11770582a12820b9b3a6feea30ba9d368d524c97c90d85",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ErrorRecoveryEngine",
+          "methods": [
+            "determineStrategy",
+            "recover",
+            "executeWithRecovery",
+            "classifyError",
+            "handleRetry",
+            "handleFallback",
+            "handleSkip",
+            "handleAbort",
+            "handleEscalate",
+            "calculateRetryDelay",
+            "getDefaultFallback",
+            "delay"
+          ],
+          "properties": ["maxRetries", "baseRetryDelay"],
+          "exported": true,
+          "lineCount": 235
+        }
+      ],
+      "imports": [],
+      "exports": ["ErrorRecoveryEngine", "errorRecoveryEngine"],
+      "totalLines": 267,
+      "hasStructuralAnalysis": true
+    },
+    "src/headless.ts": {
+      "filePath": "src/headless.ts",
+      "contentHash": "67370395c3fb83214c2353cfed1dc2f6946c15306a63a48963aa854eb0cbf85f",
+      "functions": [
+        {
+          "name": "prompt",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 18
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./agent.js",
+          "specifiers": ["createMacOSAgent"]
+        },
+        {
+          "source": "./tools.js",
+          "specifiers": ["macOSDefaultTools"]
+        },
+        {
+          "source": "./tools-extended.js",
+          "specifiers": ["macOSExtendedTools"]
+        },
+        {
+          "source": "./tools-pro.js",
+          "specifiers": ["macOSProTools"]
+        },
+        {
+          "source": "node:readline",
+          "specifiers": ["createInterface"]
+        },
+        {
+          "source": "./logging/structured-logger.js",
+          "specifiers": ["logger"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 133,
+      "hasStructuralAnalysis": true
+    },
+    "src/logging/structured-logger.ts": {
+      "filePath": "src/logging/structured-logger.ts",
+      "contentHash": "1fef6e0fdbda916b4b6c4bd564cb7bae68aa9be5d95ab26d9e4a782ed9668239",
+      "functions": [
+        {
+          "name": "createDefaultLogger",
+          "params": [],
+          "returnType": "StructuredLogger",
+          "exported": false,
+          "lineCount": 13
+        }
+      ],
+      "classes": [
+        {
+          "name": "ConsoleHandler",
+          "methods": ["constructor", "handle", "setLevel", "shouldLog", "getStream"],
+          "properties": ["level"],
+          "exported": true,
+          "lineCount": 42
+        },
+        {
+          "name": "FileHandler",
+          "methods": [
+            "constructor",
+            "handle",
+            "setLevel",
+            "scheduleFlush",
+            "flush",
+            "shouldLog",
+            "ensureDirectoryExists"
+          ],
+          "properties": ["level", "filePath", "writeQueue", "flushing"],
+          "exported": true,
+          "lineCount": 69
+        },
+        {
+          "name": "StructuredLogger",
+          "methods": [
+            "constructor",
+            "addHandler",
+            "removeHandler",
+            "setLevel",
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "fatal",
+            "log",
+            "shouldLog"
+          ],
+          "properties": ["handlers", "level"],
+          "exported": true,
+          "lineCount": 72
+        }
+      ],
+      "imports": [
+        {
+          "source": "fs",
+          "specifiers": ["* as fs"]
+        },
+        {
+          "source": "path",
+          "specifiers": ["* as path"]
+        }
+      ],
+      "exports": ["ConsoleHandler", "FileHandler", "StructuredLogger", "logger"],
+      "totalLines": 220,
+      "hasStructuralAnalysis": true
+    },
+    "src/monitoring/metrics-collector.ts": {
+      "filePath": "src/monitoring/metrics-collector.ts",
+      "contentHash": "c25fc77cea2066a881412f1e8c81141dffe376be778cca9b39d57f894a20bef8",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MetricsCollector",
+          "methods": [
+            "startRequest",
+            "endRequest",
+            "updateMetrics",
+            "recordToolCall",
+            "getMetrics",
+            "getSummary",
+            "reset",
+            "getActiveRequestCount"
+          ],
+          "properties": ["metrics", "activeRequests"],
+          "exported": true,
+          "lineCount": 129
+        }
+      ],
+      "imports": [],
+      "exports": ["MetricsCollector", "metricsCollector"],
+      "totalLines": 156,
+      "hasStructuralAnalysis": true
+    },
+    "src/shell/executor.ts": {
+      "filePath": "src/shell/executor.ts",
+      "contentHash": "0bbba0ea6b9cfaa3ec67c8dd3328a8fd63f5037d76492b86d83d30d27f9ff5fc",
+      "functions": [],
+      "classes": [
+        {
+          "name": "RealShellExecutor",
+          "methods": ["run"],
+          "properties": [],
+          "exported": true,
+          "lineCount": 31
+        }
+      ],
+      "imports": [
+        {
+          "source": "node:child_process",
+          "specifiers": ["exec", "ExecException"]
+        }
+      ],
+      "exports": ["RealShellExecutor", "defaultExecutor"],
+      "totalLines": 57,
+      "hasStructuralAnalysis": true
+    },
+    "src/tools-extended.ts": {
+      "filePath": "src/tools-extended.ts",
+      "contentHash": "75ca2c27483c34dbd55e7a099ec50eac066d14aff158bf0a41ab3f53e08db605",
+      "functions": [
+        {
+          "name": "run",
+          "params": ["cmd", "timeout"],
+          "returnType": "Promise<string>",
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "safePath",
+          "params": ["p"],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:fs",
+          "specifiers": ["writeFileSync", "mkdirSync", "readFileSync", "existsSync"]
+        },
+        {
+          "source": "node:path",
+          "specifiers": ["resolve", "normalize", "dirname"]
+        },
+        {
+          "source": "node:os",
+          "specifiers": ["homedir"]
+        },
+        {
+          "source": "./types/tool.js",
+          "specifiers": ["Tool"]
+        },
+        {
+          "source": "./shell/executor.js",
+          "specifiers": ["defaultExecutor"]
+        }
+      ],
+      "exports": [
+        "writeFileTool",
+        "editFileTool",
+        "openAppTool",
+        "clipboardTool",
+        "brewInfoTool",
+        "softwareUpdateTool",
+        "batteryTool",
+        "screenshotTool",
+        "macOSExtendedTools"
+      ],
+      "totalLines": 360,
+      "hasStructuralAnalysis": true
+    },
+    "src/tools-pro.ts": {
+      "filePath": "src/tools-pro.ts",
+      "contentHash": "aba4811cde60880516a3aef83aa2dfc5bedac096cc8f4a692128a56eb68e54c0",
+      "functions": [
+        {
+          "name": "run",
+          "params": ["cmd", "timeout"],
+          "returnType": "Promise<string>",
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./types/tool.js",
+          "specifiers": ["Tool"]
+        },
+        {
+          "source": "./shell/executor.js",
+          "specifiers": ["defaultExecutor"]
+        }
+      ],
+      "exports": [
+        "networkDiagnosticsTool",
+        "systemDiagnosticsTool",
+        "securityCheckTool",
+        "powerManagementTool",
+        "macOSProTools"
+      ],
+      "totalLines": 440,
+      "hasStructuralAnalysis": true
+    },
+    "src/tools.ts": {
+      "filePath": "src/tools.ts",
+      "contentHash": "1a947c4f4c943f1863da3edf8da3fd91687e1c544fa1a18a766a40e0836b48d4",
+      "functions": [
+        {
+          "name": "run",
+          "params": ["cmd", "timeout"],
+          "returnType": "Promise<string>",
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "setCommandAllowlist",
+          "params": ["list"],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setSkipDangerousCheck",
+          "params": ["skip"],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "isCommandAllowlisted",
+          "params": ["command"],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "checkCommand",
+          "params": ["command"],
+          "returnType": "SafetyCheck",
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./types/tool.js",
+          "specifiers": ["Tool"]
+        },
+        {
+          "source": "./shell/executor.js",
+          "specifiers": ["defaultExecutor"]
+        }
+      ],
+      "exports": [
+        "setCommandAllowlist",
+        "setSkipDangerousCheck",
+        "isCommandAllowlisted",
+        "checkCommand",
+        "runCommandTool",
+        "systemInfoTool",
+        "processListTool",
+        "diskUsageTool",
+        "networkInfoTool",
+        "fileSearchTool",
+        "readFileTool",
+        "systemLogsTool",
+        "macOSDefaultTools"
+      ],
+      "totalLines": 596,
+      "hasStructuralAnalysis": true
+    },
+    "src/types/config.ts": {
+      "filePath": "src/types/config.ts",
+      "contentHash": "69966e5ecb237220b158e17fe371cdbe4c9a7ac8a4ef387402533f8e63dabfaa",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./tool.js",
+          "specifiers": ["Tool"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 77,
+      "hasStructuralAnalysis": true
+    },
+    "src/types/events.ts": {
+      "filePath": "src/types/events.ts",
+      "contentHash": "130c2712319e37c00305bb34f7325643655b25c531e8f5e3fae8a0331eda234f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "src/types/tool.ts": {
+      "filePath": "src/types/tool.ts",
+      "contentHash": "4e731622dd1943694269bee976c6ab7487c689d047963a5fc6e59a2cf100142c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 23,
+      "hasStructuralAnalysis": true
+    },
+    "tsconfig.json": {
+      "filePath": "tsconfig.json",
+      "contentHash": "f7242367f9aedd362c9180bb3448f95f1516320b1ced5ea1763592e299e4be56",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "USAGE.md": {
+      "filePath": "USAGE.md",
+      "contentHash": "d92d75bcfa3e9128d2e2664e742f12b6ad157ff5ccc0f2e473141b1ea96beae0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 539,
+      "hasStructuralAnalysis": true
+    },
+    "vitest.config.ts": {
+      "filePath": "vitest.config.ts",
+      "contentHash": "5ae1646e14e5d593a1278bca6c6c0c1d5ea8406f35c1430c48578f9080a3b3f8",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vitest/config",
+          "specifiers": ["defineConfig"]
+        }
+      ],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

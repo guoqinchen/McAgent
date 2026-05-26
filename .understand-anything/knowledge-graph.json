@@ -1,0 +1,2713 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "mcagent",
+    "languages": ["javascript", "json", "markdown", "typescript"],
+    "frameworks": ["React", "Ink", "Vitest", "TypeScript"],
+    "description": "McAgent — CLI-first macOS AI assistant, integrating DeepSeek with macOS for system diagnostics and troubleshooting.",
+    "analyzedAt": "2026-05-26T03:46:28Z",
+    "gitCommitHash": "9a388d62c0deb3474afe046346db93d9a491e62c"
+  },
+  "nodes": [
+    {
+      "id": "file:.env.example",
+      "type": "config",
+      "name": ".env.example",
+      "filePath": ".env.example",
+      "summary": "McAgent 环境变量配置模板，定义 DeepSeek API 密钥、模型选择、思考模式、推理级别、上下文窗口等核心配置项，并提供 low-cost/balanced/max-power 三套预设配置方案。",
+      "tags": ["环境变量", "DeepSeek配置", "API密钥", "预设方案"],
+      "complexity": "simple",
+      "languageNotes": "dotenv 格式，包含丰富的注释说明每个变量的用途和可选值"
+    },
+    {
+      "id": "file:AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "AGENTS.md",
+      "summary": "AI 助手项目指令的最简版本，包含 Node.js 项目类型声明、基础命令（install/test/build/start）、文档指引和代码规范，是 CLAUDE.md 的精简变体。",
+      "tags": ["AI指令", "项目配置", "指南"],
+      "complexity": "simple",
+      "languageNotes": "Markdown 格式，内容简洁，仅包含项目级元指令"
+    },
+    {
+      "id": "file:CLAUDE.md",
+      "type": "document",
+      "name": "CLAUDE.md",
+      "filePath": "CLAUDE.md",
+      "summary": "面向 AI 编码助手的完整项目指令文档，涵盖架构总览（目录树 + 模块依赖图）、核心类型速查表（14 个关键类型）、Agent 对话循环流程、CLI 命令、环境变量配置和多提供者支持，以及编码规范约定。",
+      "tags": ["AI指令", "架构文档", "类型速查", "开发规范", "环境配置"],
+      "complexity": "moderate",
+      "languageNotes": "Markdown 格式，122 行，包含 ASCII 图表和 14 行类型速查表，是 AGENTS.md 的完整扩展版"
+    },
+    {
+      "id": "file:CODE_WIKI.md",
+      "type": "document",
+      "name": "CODE_WIKI.md",
+      "filePath": "CODE_WIKI.md",
+      "summary": "McAgent 完整代码百科，共 10 章，涵盖项目概述、架构（目录结构+模块依赖图）、核心模块详解（Agent/工具系统/上下文管理/LLM 提供者）、辅助模块（推理引擎/错误恢复/日志/监控/权限/会话/Shell）、UI 模块、配置与运行、测试体系、安全实践和扩展指南，是项目的终极参考文档。",
+      "tags": ["代码百科", "架构文档", "模块详解", "安全", "配置", "测试", "扩展指南", "API参考"],
+      "complexity": "complex",
+      "languageNotes": "Markdown 格式，706 行，中英文混合，包含大量代码示例、ASCII 架构图和 API 签名表格"
+    },
+    {
+      "id": "file:CONFIG.md",
+      "type": "document",
+      "name": "CONFIG.md",
+      "filePath": "CONFIG.md",
+      "summary": "McAgent 配置参考指南（双语 EN/ZH），涵盖环境变量配置表（9 个变量）、编程配置接口（14 个选项）、运行时动态配置 API（权限/白名单/模型/指令/工具注册）、权限三模式对比表，以及 npm 脚本命令速查。",
+      "tags": ["配置参考", "环境变量", "权限模式", "API参考", "双语文档"],
+      "complexity": "moderate",
+      "languageNotes": "Markdown 格式，223 行，英文和中文两个语言版本，包含 TypeScript 代码示例"
+    },
+    {
+      "id": "file:INSTALL.md",
+      "type": "document",
+      "name": "INSTALL.md",
+      "filePath": "INSTALL.md",
+      "summary": "McAgent 安装指南（双语 EN/ZH），包含系统要求（Node.js 18+/macOS 13+）、五步安装流程（克隆/安装依赖/配置密钥/验证测试/编译）、首次运行说明（TUI 和 headless 模式）以及故障排除表（4 种常见问题及解决方案）。",
+      "tags": ["安装指南", "快速开始", "故障排除", "系统要求", "双语文档"],
+      "complexity": "simple",
+      "languageNotes": "Markdown 格式，165 行，英文和中文两个语言版本，包含 shell 命令示例"
+    },
+    {
+      "id": "file:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "McAgent 项目主页（双语 EN/ZH），包含概述与功能特性（6 大特性 + 20+ 工具概览表）、快速开始命令、文档导航（指向 INSTALL/CONFIG/USAGE）、测试套件说明、架构总览（简化版目录树）、安全机制五层防护说明以及 MIT 许可证。",
+      "tags": ["项目主页", "概述", "快速开始", "架构概览", "安全机制", "双语文档"],
+      "complexity": "moderate",
+      "languageNotes": "Markdown 格式，169 行，HTML/CSS 居中头部，包含 shields.io 徽章和 emoji 图标"
+    },
+    {
+      "id": "file:USAGE.md",
+      "type": "document",
+      "name": "USAGE.md",
+      "filePath": "USAGE.md",
+      "summary": "McAgent 使用指南和完整工具参考（双语 EN/ZH），涵盖启动方式（TUI/headless）、三类工具详解（基础 8 个 + 扩展 8 个 + 专业诊断 4 个），每个工具配有示例和参数说明、安全建议与权限模式说明、进阶技巧（工具组合/会话持久化/上下文管理/结构化日志/自定义工具）以及 TUI 快捷键表。",
+      "tags": ["使用指南", "工具参考", "安全建议", "进阶技巧", "快捷键", "双语文档"],
+      "complexity": "complex",
+      "languageNotes": "Markdown 格式，536 行，英文和中文双版本，包含大量 shell 命令和工具调用示例"
+    },
+    {
+      "id": "file:analysis-output.md",
+      "type": "document",
+      "name": "analysis-output.md",
+      "filePath": "analysis-output.md",
+      "summary": "src/ 目录导入依赖分析报告，对 25 个 TypeScript 源文件进行静态导入扫描，识别出 17 个活跃文件和 8 个死代码文件（包括 monitoring/performance-reporter、security/permission-manager、session/session-manager、tools/enhanced-tool-executor、ui/markdown-renderer、ui/streaming-optimizer、tools-extended、tools-pro），并分析每个死代码文件未被引用的原因。",
+      "tags": ["代码分析", "死代码检测", "依赖分析", "导入扫描"],
+      "complexity": "moderate",
+      "languageNotes": "Markdown 格式，54 行，定量分析结果以表格呈现，包含方法论说明"
+    },
+    {
+      "id": "file:package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "McAgent NPM 包配置，定义包名 mcagent v2.0.0，ES 模块类型，14 个 npm 脚本（start/headless/dev/lint/format/build/test 等），核心依赖 openai + eventemitter3，可选依赖 ink + react（TUI），开发依赖包含 ESLint/Prettier/TypeScript/Vitest/tsx。",
+      "tags": ["包配置", "NPM脚本", "依赖管理", "ES模块"],
+      "complexity": "simple",
+      "languageNotes": "JSON 格式，46 行，module 类型，target ES2022"
+    },
+    {
+      "id": "file:tsconfig.json",
+      "type": "config",
+      "name": "tsconfig.json",
+      "filePath": "tsconfig.json",
+      "summary": "TypeScript 编译器配置，target ES2022，module NodeNext，moduleResolution NodeNext，JSX react-jsx（支持 Ink/React TUI），strict 模式全开，esModuleInterop 启用，输出目录 dist，仅编译 src/ 目录。",
+      "tags": ["TypeScript配置", "编译选项", "strict模式", "ES2022"],
+      "complexity": "simple",
+      "languageNotes": "JSON 格式，13 行，NodeNext 模块系统，JSX 支持"
+    },
+    {
+      "id": "file:.understand-anything/.understandignore",
+      "type": "file",
+      "name": ".understandignore",
+      "filePath": ".understand-anything/.understandignore",
+      "summary": "understand-anything 分析工具的忽略规则配置文件，使用 .gitignore 语法定义排除模式",
+      "tags": ["配置", "分析工具", "忽略规则"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.understand-anything/config.json",
+      "type": "file",
+      "name": "config.json",
+      "filePath": ".understand-anything/config.json",
+      "summary": "understand-anything 分析工具的全局配置，启用自动更新并将输出语言设为中文",
+      "tags": ["配置", "分析工具", "JSON"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docs/superpowers/specs/2026-05-21-mcagent-improvement-design.md",
+      "type": "file",
+      "name": "2026-05-21-mcagent-improvement-design.md",
+      "filePath": "docs/superpowers/specs/2026-05-21-mcagent-improvement-design.md",
+      "summary": "McAgent v2.x 全面改进设计文档，包含三期 10 周路线图：LLM Provider 抽象、工具系统增强、推理引擎、错误恢复、用户体验增强、稳定性与安全加固",
+      "tags": ["架构设计", "技术规划", "路线图", "v2.x", "设计文档"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:eslint.config.js",
+      "type": "file",
+      "name": "eslint.config.js",
+      "filePath": "eslint.config.js",
+      "summary": "ESLint 扁平化配置，集成 TypeScript-ESLint 和 Prettier，配置未使用变量警告和 prefer-const 规则",
+      "tags": ["配置", "代码质量", "ESLint", "TypeScript"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/agent.ts",
+      "type": "file",
+      "name": "agent.ts",
+      "filePath": "src/agent.ts",
+      "summary": "McAgent 核心文件，包含 MacOSAgent 类和完整的事件驱动智能体循环：支持流式/同步调用、工具执行、推理内容处理、并发保护、自动清理和工厂函数",
+      "tags": ["核心模块", "智能体", "EventEmitter", "DeepSeek", "工具调用", "tested"],
+      "complexity": "complex",
+      "functions": [
+        {
+          "name": "setToolStrictMode",
+          "summary": "设置工具严格模式开关（全局）",
+          "complexity": "simple"
+        },
+        {
+          "name": "toolToOpenAI",
+          "summary": "将 Tool 转换为 OpenAI ChatCompletionTool 格式",
+          "complexity": "simple"
+        },
+        {
+          "name": "isFunctionToolCall",
+          "summary": "类型守卫：判断是否为函数类型的工具调用",
+          "complexity": "simple"
+        },
+        {
+          "name": "hasReasoning",
+          "summary": "类型守卫：检查 Delta/Message 是否包含 DeepSeek reasoning_content",
+          "complexity": "simple"
+        },
+        {
+          "name": "createMacOSAgent",
+          "summary": "工厂函数，创建 MacOSAgent 实例",
+          "complexity": "simple"
+        }
+      ],
+      "classes": [
+        {
+          "name": "MacOSAgent",
+          "summary": "McAgent 主智能体类，继承 EventEmitter，管理对话历史、LLM 客户端、工具执行器，实现完整的 runLoop 机制（流式+同步双路径）",
+          "methods": [
+            {
+              "name": "constructor",
+              "summary": "初始化 OpenAI 客户端、对话历史、LLM 客户端、工具执行器，同步 allowlist 和权限模式"
+            },
+            {
+              "name": "send",
+              "summary": "异步发送消息，支持流式响应和自动工具调用，带有并发保护和指标收集"
+            },
+            {
+              "name": "sendSync",
+              "summary": "同步（非流式）发送消息，适合简单查询场景"
+            },
+            {
+              "name": "runLoop",
+              "summary": "核心循环：构建消息→调用模型→处理工具调用→反馈结果，支持最多 maxToolRounds 轮"
+            },
+            {
+              "name": "executeToolCalls",
+              "summary": "执行工具调用列表，通过 ToolExecutor 调度并将结果注入对话历史"
+            },
+            {
+              "name": "getMessages",
+              "summary": "返回对话历史的纯消息副本"
+            },
+            {
+              "name": "clearHistory",
+              "summary": "清空对话历史"
+            },
+            {
+              "name": "setInstructions",
+              "summary": "替换系统指令"
+            },
+            {
+              "name": "addTool",
+              "summary": "运行时动态注册工具"
+            },
+            {
+              "name": "setModel",
+              "summary": "运行时切换模型"
+            },
+            {
+              "name": "setPermissionMode",
+              "summary": "运行时切换权限模式（readonly/approve/auto）"
+            },
+            {
+              "name": "getPermissionMode",
+              "summary": "获取当前权限模式"
+            },
+            {
+              "name": "setAllowlist",
+              "summary": "更新命令允许列表"
+            },
+            {
+              "name": "saveSession",
+              "summary": "保存对话历史到 JSON 文件"
+            },
+            {
+              "name": "loadSession",
+              "summary": "从 JSON 文件恢复对话历史"
+            },
+            {
+              "name": "dispose",
+              "summary": "释放资源，移除所有事件监听器"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "file:src/__tests__/agent.test.ts",
+      "type": "file",
+      "name": "agent.test.ts",
+      "filePath": "src/__tests__/agent.test.ts",
+      "summary": "MacOSAgent 集成测试套件，覆盖命令安全检查、智能体创建与销毁、会话保存/加载、工具注册、权限模式切换、send/sendSync 流程、错误处理和并发保护",
+      "tags": ["测试", "单元测试", "智能体", "Vitest", "集成测试"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "file",
+      "name": "framework.ts",
+      "filePath": "src/__tests__/benchmarks/framework.ts",
+      "summary": "微基准测试框架，提供统计聚合（均值、中位数、P50/P75/P95/P99、标准差）、性能采样、预热、GC 触发、结果格式化和合理性检查等核心能力",
+      "tags": ["基准测试", "性能", "统计", "框架"],
+      "complexity": "moderate",
+      "functions": [
+        {
+          "name": "mean",
+          "summary": "计算数值数组的算术平均值",
+          "complexity": "simple"
+        },
+        {
+          "name": "median",
+          "summary": "计算排序数组的中位数",
+          "complexity": "simple"
+        },
+        {
+          "name": "percentile",
+          "summary": "计算指定百分位数值",
+          "complexity": "simple"
+        },
+        {
+          "name": "stddev",
+          "summary": "计算标准差",
+          "complexity": "simple"
+        },
+        {
+          "name": "computeStatistics",
+          "summary": "从采样数组计算完整统计报告",
+          "complexity": "moderate"
+        },
+        {
+          "name": "round",
+          "summary": "四舍五入到指定小数位",
+          "complexity": "simple"
+        },
+        {
+          "name": "tryTriggerGC",
+          "summary": "尝试触发垃圾回收（如果可用）",
+          "complexity": "simple"
+        },
+        {
+          "name": "runBenchmark",
+          "summary": "主基准测试运行函数，支持预热、定时采样和异步操作",
+          "complexity": "moderate"
+        },
+        {
+          "name": "runSyncBenchmark",
+          "summary": "同步版基准测试入口",
+          "complexity": "simple"
+        },
+        {
+          "name": "runBenchmarkSuite",
+          "summary": "依次运行多个基准测试",
+          "complexity": "simple"
+        },
+        {
+          "name": "formatMicroseconds",
+          "summary": "将微秒格式化为人类可读字符串",
+          "complexity": "simple"
+        },
+        {
+          "name": "formatResult",
+          "summary": "格式化单个基准测试结果的详细报告",
+          "complexity": "moderate"
+        },
+        {
+          "name": "sanityCheck",
+          "summary": "检查基准测试结果的合理性（CV、负值等警告）",
+          "complexity": "simple"
+        }
+      ]
+    },
+    {
+      "id": "file:src/__tests__/benchmarks/baseline.ts",
+      "type": "file",
+      "name": "baseline.ts",
+      "filePath": "src/__tests__/benchmarks/baseline.ts",
+      "summary": "基准测试基线管理模块，支持基线的保存/加载/列举/对比，可检测性能回归（默认 10% 阈值）并生成对比报告",
+      "tags": ["基准测试", "性能回归", "基线管理", "持久化"],
+      "complexity": "moderate",
+      "functions": [
+        {
+          "name": "ensureBaselineDir",
+          "summary": "确保基准线存储目录存在",
+          "complexity": "simple"
+        },
+        {
+          "name": "getBaselinePath",
+          "summary": "获取基准线文件的完整路径",
+          "complexity": "simple"
+        },
+        {
+          "name": "saveBaseline",
+          "summary": "保存基准测试结果到 JSON 文件",
+          "complexity": "moderate"
+        },
+        {
+          "name": "loadBaseline",
+          "summary": "从 JSON 文件加载基准测试结果",
+          "complexity": "simple"
+        },
+        {
+          "name": "listBaselines",
+          "summary": "列出所有已保存的基准线名称",
+          "complexity": "simple"
+        },
+        {
+          "name": "compareWithBaseline",
+          "summary": "对比当前结果与基线，检测回归和改进",
+          "complexity": "moderate"
+        },
+        {
+          "name": "formatComparisonReport",
+          "summary": "格式化对比报告为可读文本",
+          "complexity": "moderate"
+        }
+      ]
+    },
+    {
+      "id": "file:src/__tests__/benchmarks/reporter.ts",
+      "type": "file",
+      "name": "reporter.ts",
+      "filePath": "src/__tests__/benchmarks/reporter.ts",
+      "summary": "基准测试报告生成器，支持 ANSI 彩色控制台输出、JSON 导出（CI/CD）、Markdown 表格生成和包含基线对比的完整报告",
+      "tags": ["基准测试", "报告", "ANSI", "JSON", "Markdown"],
+      "complexity": "moderate",
+      "functions": [
+        {
+          "name": "rankByMean",
+          "summary": "按平均值对基准结果排序并添加排名",
+          "complexity": "simple"
+        },
+        {
+          "name": "printConsoleReport",
+          "summary": "生成 ANSI 彩色控制台报告（排名表+警告）",
+          "complexity": "moderate"
+        },
+        {
+          "name": "exportJSON",
+          "summary": "将基准结果导出为 JSON 格式文件",
+          "complexity": "moderate"
+        },
+        {
+          "name": "exportMarkdown",
+          "summary": "将基准结果导出为 Markdown 表格文件",
+          "complexity": "moderate"
+        },
+        {
+          "name": "printFullReport",
+          "summary": "打印完整报告（控制台+基线对比）",
+          "complexity": "simple"
+        }
+      ]
+    },
+    {
+      "id": "file:src/__tests__/benchmarks/run-all.bench.ts",
+      "type": "file",
+      "name": "run-all.bench.ts",
+      "filePath": "src/__tests__/benchmarks/run-all.bench.ts",
+      "summary": "主基准测试运行器，导入并编排所有微基准套件，收集结果、保存/对比基线、生成控制台报告并导出 JSON 和 Markdown 报告",
+      "tags": ["基准测试", "编排", "运行器", "入口"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/__tests__/benchmarks/context-eviction.bench.ts",
+      "type": "file",
+      "name": "context-eviction.bench.ts",
+      "filePath": "src/__tests__/benchmarks/context-eviction.bench.ts",
+      "summary": "上下文淘汰（evictMessages）微基准测试，覆盖不同消息数量（50-2000）和不同 token 预算下的吞吐量",
+      "tags": ["基准测试", "上下文管理", "内存淘汰", "性能"],
+      "complexity": "moderate",
+      "functions": [
+        {
+          "name": "generateMessages",
+          "summary": "生成指定数量的模拟聊天消息用于测试",
+          "complexity": "simple"
+        }
+      ]
+    },
+    {
+      "id": "file:src/__tests__/benchmarks/conversation-history.bench.ts",
+      "type": "file",
+      "name": "conversation-history.bench.ts",
+      "filePath": "src/__tests__/benchmarks/conversation-history.bench.ts",
+      "summary": "ConversationHistory 操作微基准测试，测量批量添加消息、缓存命中/未命中、getMessagesWithSystem 管道和清空操作的性能",
+      "tags": ["基准测试", "对话历史", "操作性能", "缓存"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/__tests__/benchmarks/error-recovery.bench.ts",
+      "type": "file",
+      "name": "error-recovery.bench.ts",
+      "filePath": "src/__tests__/benchmarks/error-recovery.bench.ts",
+      "summary": "ErrorRecoveryEngine 微基准测试，测量错误分类、策略确定、快速路径（无错误）和恢复路径（重试→回退）的延迟",
+      "tags": ["基准测试", "错误恢复", "性能"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/__tests__/benchmarks/metrics-collector.bench.ts",
+      "type": "file",
+      "name": "metrics-collector.bench.ts",
+      "filePath": "src/__tests__/benchmarks/metrics-collector.bench.ts",
+      "summary": "MetricsCollector 微基准测试，测量指标收集管道（startRequest/endRequest、getSummary、reset、recordToolCall）的吞吐量",
+      "tags": ["基准测试", "性能监控", "指标"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/__tests__/benchmarks/structured-logger.bench.ts",
+      "type": "file",
+      "name": "structured-logger.bench.ts",
+      "filePath": "src/__tests__/benchmarks/structured-logger.bench.ts",
+      "summary": "StructuredLogger 微基准测试，测量日志分发、ConsoleHandler 格式化写入、级别过滤、处理器增删和错误级日志的性能",
+      "tags": ["基准测试", "日志", "性能"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/__tests__/benchmarks/token-estimation.bench.ts",
+      "type": "file",
+      "name": "token-estimation.bench.ts",
+      "filePath": "src/__tests__/benchmarks/token-estimation.bench.ts",
+      "summary": "Token 估算微基准测试，测量 estimateTokens 在不同输入（ASCII、CJK、混合、空、短、长、含工具调用的消息）下的吞吐量",
+      "tags": ["基准测试", "Token估算", "性能"],
+      "complexity": "moderate",
+      "functions": [
+        {
+          "name": "getToolCallMessages",
+          "summary": "生成包含工具调用的模拟消息数组",
+          "complexity": "simple"
+        }
+      ]
+    },
+    {
+      "id": "file:src/__tests__/benchmarks/tool-executor.bench.ts",
+      "type": "file",
+      "name": "tool-executor.bench.ts",
+      "filePath": "src/__tests__/benchmarks/tool-executor.bench.ts",
+      "summary": "ToolExecutor 微基准测试，测量单工具执行、批量执行（10/50/100 工具）、未知工具查找、JSON 参数解析和回调分发的开销",
+      "tags": ["基准测试", "工具执行", "性能"],
+      "complexity": "moderate",
+      "functions": [
+        {
+          "name": "makeToolCall",
+          "summary": "工厂函数：创建 ChatCompletionMessageFunctionToolCall 对象",
+          "complexity": "simple"
+        }
+      ]
+    },
+    {
+      "id": "file:src/__tests__/context-manager.test.ts",
+      "type": "file",
+      "name": "context-manager.test.ts",
+      "filePath": "src/__tests__/context-manager.test.ts",
+      "summary": "上下文管理器单元测试，覆盖 estimateTokens（ASCII/CJK/空字符串）、estimateMessageTokens（多消息/工具调用）、evictMessages（已达标/需淘汰/空数组/仅有系统消息）",
+      "tags": ["测试", "单元测试", "上下文管理", "Token估算"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/__tests__/conversation-typed.test.ts",
+      "type": "file",
+      "name": "conversation-typed.test.ts",
+      "filePath": "src/__tests__/conversation-typed.test.ts",
+      "summary": "ConversationHistory 类型化单元测试，覆盖纯消息转换、变量赋值、批量突变时缓存失效等类型完整性验证",
+      "tags": ["测试", "单元测试", "对话历史", "类型安全"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/__tests__/executor.test.ts",
+      "type": "file",
+      "name": "executor.test.ts",
+      "filePath": "src/__tests__/executor.test.ts",
+      "summary": "ShellExecutor 单元测试，验证 RealShellExecutor 错误处理契约（ENOENT、EACCES、killed、signal 等错误路径）和 defaultExecutor 单例导出",
+      "tags": ["测试", "单元测试", "Shell", "执行器"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/__tests__/llm-client.test.ts",
+      "type": "file",
+      "name": "llm-client.test.ts",
+      "filePath": "src/__tests__/llm-client.test.ts",
+      "summary": "LLMClient 单元测试，验证 createSync（含 reasoning_content、tool_calls、空 choices）、createStream（text delta 流）和错误处理（401/429/网络错误/AbortSignal）",
+      "tags": ["测试", "单元测试", "LLM客户端", "Mock"],
+      "complexity": "moderate",
+      "functions": [
+        {
+          "name": "createMockClient",
+          "summary": "创建模拟的 OpenAI 客户端对象",
+          "complexity": "simple"
+        }
+      ]
+    },
+    {
+      "id": "file:src/__tests__/performance.test.ts",
+      "type": "file",
+      "name": "performance.test.ts",
+      "filePath": "src/__tests__/performance.test.ts",
+      "summary": "性能冒烟测试套件，覆盖 Token 估算、消息淘汰、对话历史操作、错误恢复引擎、指标收集器、结构化日志和工具执行器等关键路径的吞吐量/延迟",
+      "tags": ["测试", "性能测试", "冒烟测试", "延迟"],
+      "complexity": "complex",
+      "functions": [
+        {
+          "name": "measureSync",
+          "summary": "测量同步函数的执行时间（毫秒）",
+          "complexity": "simple"
+        },
+        {
+          "name": "measureAsync",
+          "summary": "测量异步函数的执行时间（毫秒）",
+          "complexity": "simple"
+        },
+        {
+          "name": "generateMessages",
+          "summary": "生成指定数量的 ChatCompletionMessageParam 消息",
+          "complexity": "simple"
+        }
+      ]
+    },
+    {
+      "id": "file:src/__tests__/tool-executor.test.ts",
+      "type": "file",
+      "name": "tool-executor.test.ts",
+      "filePath": "src/__tests__/tool-executor.test.ts",
+      "summary": "ToolExecutor 单元测试，验证单个/批量工具执行、未知工具错误、执行失败不阻塞其他工具、JSON 参数解析、指标记录和回调通知",
+      "tags": ["测试", "单元测试", "工具执行", "错误处理"],
+      "complexity": "moderate",
+      "functions": [
+        {
+          "name": "makeToolCall",
+          "summary": "工厂函数：创建 ChatCompletionMessageFunctionToolCall 测试对象",
+          "complexity": "simple"
+        }
+      ]
+    },
+    {
+      "id": "file:src/__tests__/tools-pro.test.ts",
+      "type": "file",
+      "name": "tools-pro.test.ts",
+      "filePath": "src/__tests__/tools-pro.test.ts",
+      "summary": "专业诊断工具测试套件，覆盖 networkDiagnosticsTool（ping/dns/traceroute）、securityAuditTool、powerDiagnosticsTool 和 systemPerformanceTool 的命令构造和执行",
+      "tags": ["测试", "单元测试", "诊断工具", "网络", "安全", "性能"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/__tests__/tools.test.ts",
+      "type": "file",
+      "name": "tools.test.ts",
+      "filePath": "src/__tests__/tools.test.ts",
+      "summary": "基础工具测试套件，覆盖 checkCommand 安全命令检查、runCommandTool（权限/超时/错误）、8 个基础工具（read/write/edit/file/clipboard/system/diagnostic/process）和路径限制",
+      "tags": ["测试", "单元测试", "工具", "安全", "命令"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/types/tool.ts",
+      "type": "file",
+      "name": "Tool 工具接口",
+      "filePath": "src/types/tool.ts",
+      "summary": "定义 Tool 核心接口，包含 name、description、JSON Schema 参数定义及异步 execute 函数，是工具系统的基础类型。",
+      "tags": ["类型定义", "工具系统", "接口"],
+      "complexity": "simple",
+      "languageNotes": "纯类型定义，无运行时逻辑",
+      "functions": [],
+      "classes": []
+    },
+    {
+      "id": "file:src/types/events.ts",
+      "type": "file",
+      "name": "事件类型定义",
+      "filePath": "src/types/events.ts",
+      "summary": "定义 Message 和 McAgentEvents 事件映射接口，支持 UI 层订阅 agent 事件（流式输出、工具调用、推理过程等），实现解耦。",
+      "tags": ["类型定义", "事件系统", "接口"],
+      "complexity": "simple",
+      "languageNotes": "纯类型定义，含 10 个事件类型",
+      "functions": [],
+      "classes": []
+    },
+    {
+      "id": "file:src/types/config.ts",
+      "type": "file",
+      "name": "配置类型定义",
+      "filePath": "src/types/config.ts",
+      "summary": "定义 McAgentConfig 配置接口，包含 API 密钥、模型选择、权限模式、推理配置、工具严格模式等全部配置项。",
+      "tags": ["类型定义", "配置", "接口"],
+      "complexity": "simple",
+      "languageNotes": "导入 Tool 类型，导出 4 个类型/接口",
+      "functions": [],
+      "classes": []
+    },
+    {
+      "id": "file:src/shell/executor.ts",
+      "type": "file",
+      "name": "Shell 执行器",
+      "filePath": "src/shell/executor.ts",
+      "summary": "提供 ShellExecutor 接口和 RealShellExecutor 实现，使用异步 child_process.exec 执行 shell 命令，支持超时控制和大缓冲区。",
+      "tags": ["Shell", "执行器", "系统调用"],
+      "complexity": "simple",
+      "languageNotes": "导出 defaultExecutor 单例，区分系统错误和命令失败",
+      "functions": [],
+      "classes": [
+        {
+          "id": "class:src/shell/executor.ts:RealShellExecutor",
+          "type": "class",
+          "name": "RealShellExecutor",
+          "filePath": "src/shell/executor.ts",
+          "summary": "Shell 命令的真实执行实现，通过 child_process.exec 异步执行命令并返回结果。",
+          "tags": ["Shell", "执行器"],
+          "complexity": "simple",
+          "methods": ["run"],
+          "properties": []
+        }
+      ]
+    },
+    {
+      "id": "file:src/context-manager.ts",
+      "type": "file",
+      "name": "上下文管理器",
+      "filePath": "src/context-manager.ts",
+      "summary": "提供 token 估算和消息驱逐功能，防止对话历史超出模型上下文窗口限制，使用字符级启发式算法近似 token 计数。",
+      "tags": ["上下文管理", "Token估算", "内存优化"],
+      "complexity": "moderate",
+      "languageNotes": "0 外部依赖，导出 4 个函数/常量",
+      "functions": [
+        {
+          "id": "function:src/context-manager.ts:estimateTokens",
+          "type": "function",
+          "name": "estimateTokens",
+          "filePath": "src/context-manager.ts",
+          "summary": "基于字符分布的 token 数粗略估计，ASCII 4 字符/token，CJK 2 字符/token。",
+          "tags": ["Token估算", "工具函数"],
+          "complexity": "simple"
+        },
+        {
+          "id": "function:src/context-manager.ts:evictMessages",
+          "type": "function",
+          "name": "evictMessages",
+          "filePath": "src/context-manager.ts",
+          "summary": "按策略驱逐消息以控制 token 总数：保留系统提示，优先删除旧用户消息对，保留最少 5 条消息。",
+          "tags": ["消息驱逐", "上下文管理"],
+          "complexity": "moderate"
+        }
+      ]
+    },
+    {
+      "id": "file:src/logging/structured-logger.ts",
+      "type": "file",
+      "name": "结构化日志系统",
+      "filePath": "src/logging/structured-logger.ts",
+      "summary": "多处理器日志系统，支持 ConsoleHandler（stdout/stderr）和 FileHandler（异步批量写文件），按日志级别过滤。",
+      "tags": ["日志", "结构化", "文件IO"],
+      "complexity": "moderate",
+      "languageNotes": "6 级日志（trace/debug/info/warn/error/fatal），FileHandler 使用微任务批量写入",
+      "functions": [],
+      "classes": [
+        {
+          "id": "class:src/logging/structured-logger.ts:StructuredLogger",
+          "type": "class",
+          "name": "StructuredLogger",
+          "filePath": "src/logging/structured-logger.ts",
+          "summary": "结构化日志核心类，管理多个 LogHandler，支持动态添加/移除处理器和级别过滤。",
+          "tags": ["日志", "多处理器"],
+          "complexity": "moderate",
+          "methods": [
+            "addHandler",
+            "removeHandler",
+            "setLevel",
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "fatal",
+            "log",
+            "shouldLog"
+          ],
+          "properties": ["handlers", "level"]
+        },
+        {
+          "id": "class:src/logging/structured-logger.ts:ConsoleHandler",
+          "type": "class",
+          "name": "ConsoleHandler",
+          "filePath": "src/logging/structured-logger.ts",
+          "summary": "控制台日志处理器，error/fatal 写入 stderr，其余写入 stdout。",
+          "tags": ["日志", "控制台输出"],
+          "complexity": "simple",
+          "methods": ["constructor", "handle", "setLevel", "shouldLog", "getStream"],
+          "properties": ["level"]
+        },
+        {
+          "id": "class:src/logging/structured-logger.ts:FileHandler",
+          "type": "class",
+          "name": "FileHandler",
+          "filePath": "src/logging/structured-logger.ts",
+          "summary": "文件日志处理器，使用队列+微任务批量异步写入，失败时回退到同步写入，静默降级不会导致崩溃。",
+          "tags": ["日志", "文件IO", "异步"],
+          "complexity": "moderate",
+          "methods": [
+            "constructor",
+            "handle",
+            "setLevel",
+            "scheduleFlush",
+            "flush",
+            "shouldLog",
+            "ensureDirectoryExists"
+          ],
+          "properties": ["level", "filePath", "writeQueue", "flushing"]
+        }
+      ]
+    },
+    {
+      "id": "file:src/monitoring/metrics-collector.ts",
+      "type": "file",
+      "name": "指标收集器",
+      "filePath": "src/monitoring/metrics-collector.ts",
+      "summary": "性能指标收集类，跟踪请求延迟、成功率、token 消耗和错误类型分布，支持活跃请求计数和摘要报告。",
+      "tags": ["监控", "性能指标", "可观测性"],
+      "complexity": "simple",
+      "languageNotes": "导出 metricsCollector 单例",
+      "functions": [],
+      "classes": [
+        {
+          "id": "class:src/monitoring/metrics-collector.ts:MetricsCollector",
+          "type": "class",
+          "name": "MetricsCollector",
+          "filePath": "src/monitoring/metrics-collector.ts",
+          "summary": "收集 API 调用和工具执行的性能指标，提供延迟统计、成功率、token 消耗等汇总信息。",
+          "tags": ["监控", "指标", "性能"],
+          "complexity": "simple",
+          "methods": [
+            "startRequest",
+            "endRequest",
+            "updateMetrics",
+            "recordToolCall",
+            "getMetrics",
+            "getSummary",
+            "reset",
+            "getActiveRequestCount"
+          ],
+          "properties": ["metrics", "activeRequests"]
+        }
+      ]
+    },
+    {
+      "id": "file:src/engine/error-recovery-engine.ts",
+      "type": "file",
+      "name": "错误恢复引擎",
+      "filePath": "src/engine/error-recovery-engine.ts",
+      "summary": "实现策略模式错误恢复：网络错误重试（指数退避）、权限错误升级、校验错误中止、不可用资源跳过等 5 种恢复策略。",
+      "tags": ["错误处理", "恢复", "重试", "容错"],
+      "complexity": "complex",
+      "languageNotes": "0 外部依赖，导出 ErrorRecoveryEngine 类和 errorRecoveryEngine 单例",
+      "functions": [],
+      "classes": [
+        {
+          "id": "class:src/engine/error-recovery-engine.ts:ErrorRecoveryEngine",
+          "type": "class",
+          "name": "ErrorRecoveryEngine",
+          "filePath": "src/engine/error-recovery-engine.ts",
+          "summary": "错误分类与策略恢复引擎，检测网络/超时/限流/权限/API等错误类型，执行重试（指数退避）/回退/跳过/中止/升级策略。",
+          "tags": ["错误恢复", "重试", "容错", "策略模式"],
+          "complexity": "complex",
+          "methods": [
+            "determineStrategy",
+            "recover",
+            "executeWithRecovery",
+            "classifyError",
+            "handleRetry",
+            "handleFallback",
+            "handleSkip",
+            "handleAbort",
+            "handleEscalate",
+            "calculateRetryDelay",
+            "getDefaultFallback",
+            "delay"
+          ],
+          "properties": ["maxRetries", "baseRetryDelay"]
+        }
+      ]
+    },
+    {
+      "id": "file:src/agent/conversation.ts",
+      "type": "file",
+      "name": "对话历史管理",
+      "filePath": "src/agent/conversation.ts",
+      "summary": "管理对话消息存储、系统提示组合、上下文驱逐和会话持久化，集成 evictMessages 自动控制 token 窗口。",
+      "tags": ["对话管理", "持久化", "消息存储"],
+      "complexity": "moderate",
+      "languageNotes": "支持 DeepSeek reasoning_content 字段，含 toPlainMessages 缓存优化",
+      "functions": [],
+      "classes": [
+        {
+          "id": "class:src/agent/conversation.ts:ConversationHistory",
+          "type": "class",
+          "name": "ConversationHistory",
+          "filePath": "src/agent/conversation.ts",
+          "summary": "对话历史核心类，提供消息增删查改、自动上下文驱逐、缓存管理和文件持久化（save/load）。",
+          "tags": ["对话管理", "持久化", "缓存"],
+          "complexity": "moderate",
+          "methods": [
+            "invalidateCache",
+            "addUserMessage",
+            "addAssistantMessage",
+            "addToolResult",
+            "addToolWarning",
+            "clear",
+            "getMessagesWithSystem",
+            "toPlainMessages",
+            "length",
+            "raw",
+            "save",
+            "load"
+          ],
+          "properties": ["messages", "cachedPlain"]
+        }
+      ]
+    },
+    {
+      "id": "file:src/agent/llm-client.ts",
+      "type": "file",
+      "name": "LLM API 客户端",
+      "filePath": "src/agent/llm-client.ts",
+      "summary": "封装 OpenAI SDK 调用，通过 ErrorRecoveryEngine 包裹同步和流式 API 请求，支持 DeepSeek thinking 模式和 AbortSignal。",
+      "tags": ["LLM", "API", "DeepSeek", "流式"],
+      "complexity": "simple",
+      "languageNotes": "使用 extra_body 传递 DeepSeek 专用 thinking 参数",
+      "functions": [],
+      "classes": [
+        {
+          "id": "class:src/agent/llm-client.ts:LLMClient",
+          "type": "class",
+          "name": "LLMClient",
+          "filePath": "src/agent/llm-client.ts",
+          "summary": "LLM API 调用封装，管理同步（createSync）和流式（createStream）两模式，自动接入错误恢复。",
+          "tags": ["LLM", "API", "流式"],
+          "complexity": "simple",
+          "methods": ["constructor", "createSync", "createStream"],
+          "properties": []
+        }
+      ]
+    },
+    {
+      "id": "file:src/agent/tool-executor.ts",
+      "type": "file",
+      "name": "工具执行器",
+      "filePath": "src/agent/tool-executor.ts",
+      "summary": "批量执行模型请求的工具调用，解析参数、调用 execute、记录指标，对未知工具和异常提供优雅降级。",
+      "tags": ["工具执行", "批量处理", "指标"],
+      "complexity": "simple",
+      "languageNotes": "通过 Map 快速查找工具，集成 metricsCollector 性能记录",
+      "functions": [],
+      "classes": [
+        {
+          "id": "class:src/agent/tool-executor.ts:ToolExecutor",
+          "type": "class",
+          "name": "ToolExecutor",
+          "filePath": "src/agent/tool-executor.ts",
+          "summary": "工具批量执行器，遍历 tool_calls 数组执行每个工具并收集结果，支持回调通知和错误处理。",
+          "tags": ["工具执行", "批量"],
+          "complexity": "simple",
+          "methods": ["constructor", "executeAll"],
+          "properties": []
+        }
+      ]
+    },
+    {
+      "id": "file:src/tools.ts",
+      "type": "file",
+      "name": "基础工具集",
+      "filePath": "src/tools.ts",
+      "summary": "提供 8 个 macOS 基础工具：run_command（含危险命令检测/封锁）、system_info、process_list（含采样）、disk_usage、network_info、file_search、read_file、system_logs。",
+      "tags": ["工具", "系统诊断", "命令行", "安全"],
+      "complexity": "complex",
+      "languageNotes": "14 条危险命令正则模式，允许列表白名单机制，含进程采样功能",
+      "functions": [
+        {
+          "id": "function:src/tools.ts:checkCommand",
+          "type": "function",
+          "name": "checkCommand",
+          "filePath": "src/tools.ts",
+          "summary": "检查命令是否匹配危险模式（rm -rf、sudo、dd、diskutil erase 等 14 种），返回安全评估结果。",
+          "tags": ["安全", "命令检查"],
+          "complexity": "simple"
+        },
+        {
+          "id": "function:src/tools.ts:runCommandTool",
+          "type": "function",
+          "name": "runCommandTool",
+          "filePath": "src/tools.ts",
+          "summary": "执行 shell 命令工具，结合危险检测和允许列表的双层安全机制，支持超时控制。",
+          "tags": ["工具", "Shell", "安全"],
+          "complexity": "moderate"
+        }
+      ]
+    },
+    {
+      "id": "file:src/tools-extended.ts",
+      "type": "file",
+      "name": "扩展工具集",
+      "filePath": "src/tools-extended.ts",
+      "summary": "提供 8 个扩展工具：write_file（写入文件）、edit_file（替换文本）、open_app（启动应用）、clipboard（剪贴板读写）、brew_info（Homebrew 管理）、software_update（更新检查）、battery（电池状态）、screenshot（截图）。",
+      "tags": ["工具", "文件操作", "系统集成", "macOS"],
+      "complexity": "moderate",
+      "languageNotes": "safePath 函数限制文件操作在 HOME 目录内，clipboard 使用 spawn 支持写入",
+      "functions": [
+        {
+          "id": "function:src/tools-extended.ts:safePath",
+          "type": "function",
+          "name": "safePath",
+          "filePath": "src/tools-extended.ts",
+          "summary": "路径安全校验函数，展开 ~ 并解析绝对路径，限制操作仅能在 HOME 目录内。",
+          "tags": ["安全", "路径校验"],
+          "complexity": "simple"
+        }
+      ]
+    },
+    {
+      "id": "file:src/tools-pro.ts",
+      "type": "file",
+      "name": "专业诊断工具集",
+      "filePath": "src/tools-pro.ts",
+      "summary": "提供 4 个专业诊断工具：network_diagnostics（ping/traceroute/DNS/端口/netQuality）、system_diagnostics（进程采样/温度/磁盘IO/内存压力/sysdiagnose）、security_check（SIP/FileVault/Gatekeeper/代码签名）、power_management（电源设置/电池/睡眠断言/事件日志）。",
+      "tags": ["工具", "诊断", "网络", "安全", "电源"],
+      "complexity": "complex",
+      "languageNotes": "system_diagnostics 包含 sudo 命令需授权，network_diagnostics 集成了 Apple networkQuality 测试",
+      "functions": []
+    },
+    {
+      "id": "file:src/cli.tsx",
+      "type": "file",
+      "name": "Ink/React TUI 界面",
+      "filePath": "src/cli.tsx",
+      "summary": "基于 Ink+React 的终端 UI：含 ChatMessage、ToolCallLine、InputField、StreamingText 组件和主 App 组件，支持流式输出、工具调用展示、输入历史、60fps 流式缓冲。",
+      "tags": ["UI", "TUI", "React", "Ink", "流式输出"],
+      "complexity": "complex",
+      "languageNotes": "10 个 useState 状态，7 个事件订阅，16ms 间隔缓冲避免终端闪烁",
+      "functions": [
+        {
+          "id": "function:src/cli.tsx:ChatMessage",
+          "type": "function",
+          "name": "ChatMessage",
+          "filePath": "src/cli.tsx",
+          "summary": "渲染单条聊天消息的 React 组件，区分用户（青色）和助手（绿色）角色。",
+          "tags": ["UI", "React组件"],
+          "complexity": "simple"
+        },
+        {
+          "id": "function:src/cli.tsx:App",
+          "type": "function",
+          "name": "App",
+          "filePath": "src/cli.tsx",
+          "summary": "TUI 主应用组件，管理对话状态、事件订阅、输入历史和流式渲染，是整个 CLI 界面的核心。",
+          "tags": ["UI", "React组件", "主应用"],
+          "complexity": "complex"
+        }
+      ]
+    },
+    {
+      "id": "file:src/headless.ts",
+      "type": "file",
+      "name": "无头 CLI 入口",
+      "filePath": "src/headless.ts",
+      "summary": "基于 readline 的无头命令行界面，支持流式输出和工具调用显示，提供交互式循环提示符。",
+      "tags": ["CLI", "无头", "入口点"],
+      "complexity": "simple",
+      "languageNotes": "使用 ANSI 转义码实现彩色输出，7 个事件订阅",
+      "functions": [
+        {
+          "id": "function:src/headless.ts:prompt",
+          "type": "function",
+          "name": "prompt",
+          "filePath": "src/headless.ts",
+          "summary": "交互式对话循环函数，读取用户输入并通过 agent.send 发送，递归调用维持循环。",
+          "tags": ["CLI", "交互循环"],
+          "complexity": "simple"
+        }
+      ]
+    },
+    {
+      "id": "file:vitest.config.ts",
+      "type": "file",
+      "name": "Vitest 测试配置",
+      "filePath": "vitest.config.ts",
+      "summary": "Vitest 测试框架配置文件，定义测试文件匹配模式，包含 .test.ts 和 .bench.ts 文件。",
+      "tags": ["测试", "配置", "Vitest"],
+      "complexity": "simple",
+      "languageNotes": "仅 7 行，极简配置",
+      "functions": [],
+      "classes": []
+    },
+    {
+      "id": "class:src/agent/conversation.ts:ConversationHistory",
+      "type": "class",
+      "name": "ConversationHistory",
+      "filePath": "src/agent/conversation.ts",
+      "summary": "ConversationHistory 类，定义于 src/agent/conversation.ts，包含 12 个方法和 2 个属性",
+      "tags": ["ConversationHistory"],
+      "complexity": "moderate",
+      "methods": [
+        "invalidateCache",
+        "addUserMessage",
+        "addAssistantMessage",
+        "addToolResult",
+        "addToolWarning",
+        "clear",
+        "getMessagesWithSystem",
+        "toPlainMessages",
+        "length",
+        "raw",
+        "save",
+        "load"
+      ],
+      "properties": ["messages", "cachedPlain"]
+    },
+    {
+      "id": "class:src/agent/llm-client.ts:LLMClient",
+      "type": "class",
+      "name": "LLMClient",
+      "filePath": "src/agent/llm-client.ts",
+      "summary": "LLMClient 类，定义于 src/agent/llm-client.ts，包含 3 个方法和 0 个属性",
+      "tags": ["LLMClient"],
+      "complexity": "simple",
+      "methods": ["constructor", "createSync", "createStream"],
+      "properties": []
+    },
+    {
+      "id": "class:src/agent/tool-executor.ts:ToolExecutor",
+      "type": "class",
+      "name": "ToolExecutor",
+      "filePath": "src/agent/tool-executor.ts",
+      "summary": "ToolExecutor 类，定义于 src/agent/tool-executor.ts，包含 2 个方法和 0 个属性",
+      "tags": ["ToolExecutor"],
+      "complexity": "simple",
+      "methods": ["constructor", "executeAll"],
+      "properties": []
+    },
+    {
+      "id": "function:src/cli.tsx:ChatMessage",
+      "type": "function",
+      "name": "ChatMessage",
+      "filePath": "src/cli.tsx",
+      "summary": "ChatMessage 函数，定义于 src/cli.tsx 第 55 行",
+      "tags": ["ChatMessage"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/cli.tsx:ToolCallLine",
+      "type": "function",
+      "name": "ToolCallLine",
+      "filePath": "src/cli.tsx",
+      "summary": "ToolCallLine 函数，定义于 src/cli.tsx 第 71 行",
+      "tags": ["ToolCallLine"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/cli.tsx:InputField",
+      "type": "function",
+      "name": "InputField",
+      "filePath": "src/cli.tsx",
+      "summary": "InputField 函数，定义于 src/cli.tsx 第 83 行",
+      "tags": ["InputField"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/cli.tsx:StreamingText",
+      "type": "function",
+      "name": "StreamingText",
+      "filePath": "src/cli.tsx",
+      "summary": "StreamingText 函数，定义于 src/cli.tsx 第 126 行",
+      "tags": ["StreamingText"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/cli.tsx:App",
+      "type": "function",
+      "name": "App",
+      "filePath": "src/cli.tsx",
+      "summary": "App 函数，定义于 src/cli.tsx 第 142 行",
+      "tags": ["App"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/context-manager.ts:estimateTokens",
+      "type": "function",
+      "name": "estimateTokens",
+      "filePath": "src/context-manager.ts",
+      "summary": "estimateTokens 函数，定义于 src/context-manager.ts 第 27 行",
+      "tags": ["estimateTokens"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/context-manager.ts:estimateMessageTokens",
+      "type": "function",
+      "name": "estimateMessageTokens",
+      "filePath": "src/context-manager.ts",
+      "summary": "estimateMessageTokens 函数，定义于 src/context-manager.ts 第 47 行",
+      "tags": ["estimateMessageTokens"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/context-manager.ts:estimateSingleMessageTokens",
+      "type": "function",
+      "name": "estimateSingleMessageTokens",
+      "filePath": "src/context-manager.ts",
+      "summary": "estimateSingleMessageTokens 函数，定义于 src/context-manager.ts 第 59 行",
+      "tags": ["estimateSingleMessageTokens"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/context-manager.ts:evictMessages",
+      "type": "function",
+      "name": "evictMessages",
+      "filePath": "src/context-manager.ts",
+      "summary": "evictMessages 函数，定义于 src/context-manager.ts 第 99 行",
+      "tags": ["evictMessages"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/engine/error-recovery-engine.ts:ErrorRecoveryEngine",
+      "type": "class",
+      "name": "ErrorRecoveryEngine",
+      "filePath": "src/engine/error-recovery-engine.ts",
+      "summary": "ErrorRecoveryEngine 类，定义于 src/engine/error-recovery-engine.ts，包含 12 个方法和 2 个属性",
+      "tags": ["ErrorRecoveryEngine"],
+      "complexity": "moderate",
+      "methods": [
+        "determineStrategy",
+        "recover",
+        "executeWithRecovery",
+        "classifyError",
+        "handleRetry",
+        "handleFallback",
+        "handleSkip",
+        "handleAbort",
+        "handleEscalate",
+        "calculateRetryDelay",
+        "getDefaultFallback",
+        "delay"
+      ],
+      "properties": ["maxRetries", "baseRetryDelay"]
+    },
+    {
+      "id": "function:src/headless.ts:prompt",
+      "type": "function",
+      "name": "prompt",
+      "filePath": "src/headless.ts",
+      "summary": "prompt 函数，定义于 src/headless.ts 第 113 行",
+      "tags": ["prompt"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/logging/structured-logger.ts:ConsoleHandler",
+      "type": "class",
+      "name": "ConsoleHandler",
+      "filePath": "src/logging/structured-logger.ts",
+      "summary": "ConsoleHandler 类，定义于 src/logging/structured-logger.ts，包含 5 个方法和 1 个属性",
+      "tags": ["ConsoleHandler"],
+      "complexity": "simple",
+      "methods": ["constructor", "handle", "setLevel", "shouldLog", "getStream"],
+      "properties": ["level"]
+    },
+    {
+      "id": "class:src/logging/structured-logger.ts:FileHandler",
+      "type": "class",
+      "name": "FileHandler",
+      "filePath": "src/logging/structured-logger.ts",
+      "summary": "FileHandler 类，定义于 src/logging/structured-logger.ts，包含 7 个方法和 4 个属性",
+      "tags": ["FileHandler"],
+      "complexity": "moderate",
+      "methods": [
+        "constructor",
+        "handle",
+        "setLevel",
+        "scheduleFlush",
+        "flush",
+        "shouldLog",
+        "ensureDirectoryExists"
+      ],
+      "properties": ["level", "filePath", "writeQueue", "flushing"]
+    },
+    {
+      "id": "class:src/logging/structured-logger.ts:StructuredLogger",
+      "type": "class",
+      "name": "StructuredLogger",
+      "filePath": "src/logging/structured-logger.ts",
+      "summary": "StructuredLogger 类，定义于 src/logging/structured-logger.ts，包含 12 个方法和 2 个属性",
+      "tags": ["StructuredLogger"],
+      "complexity": "moderate",
+      "methods": [
+        "constructor",
+        "addHandler",
+        "removeHandler",
+        "setLevel",
+        "trace",
+        "debug",
+        "info",
+        "warn",
+        "error",
+        "fatal",
+        "log",
+        "shouldLog"
+      ],
+      "properties": ["handlers", "level"]
+    },
+    {
+      "id": "function:src/logging/structured-logger.ts:createDefaultLogger",
+      "type": "function",
+      "name": "createDefaultLogger",
+      "filePath": "src/logging/structured-logger.ts",
+      "summary": "createDefaultLogger 函数，定义于 src/logging/structured-logger.ts 第 200 行",
+      "tags": ["createDefaultLogger"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/monitoring/metrics-collector.ts:MetricsCollector",
+      "type": "class",
+      "name": "MetricsCollector",
+      "filePath": "src/monitoring/metrics-collector.ts",
+      "summary": "MetricsCollector 类，定义于 src/monitoring/metrics-collector.ts，包含 8 个方法和 2 个属性",
+      "tags": ["MetricsCollector"],
+      "complexity": "moderate",
+      "methods": [
+        "startRequest",
+        "endRequest",
+        "updateMetrics",
+        "recordToolCall",
+        "getMetrics",
+        "getSummary",
+        "reset",
+        "getActiveRequestCount"
+      ],
+      "properties": ["metrics", "activeRequests"]
+    },
+    {
+      "id": "class:src/shell/executor.ts:RealShellExecutor",
+      "type": "class",
+      "name": "RealShellExecutor",
+      "filePath": "src/shell/executor.ts",
+      "summary": "RealShellExecutor 类，定义于 src/shell/executor.ts，包含 1 个方法和 0 个属性",
+      "tags": ["RealShellExecutor"],
+      "complexity": "simple",
+      "methods": ["run"],
+      "properties": []
+    },
+    {
+      "id": "function:src/tools-extended.ts:run",
+      "type": "function",
+      "name": "run",
+      "filePath": "src/tools-extended.ts",
+      "summary": "run 函数，定义于 src/tools-extended.ts 第 20 行",
+      "tags": ["run"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/tools-extended.ts:safePath",
+      "type": "function",
+      "name": "safePath",
+      "filePath": "src/tools-extended.ts",
+      "summary": "safePath 函数，定义于 src/tools-extended.ts 第 24 行",
+      "tags": ["safePath"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/tools-pro.ts:run",
+      "type": "function",
+      "name": "run",
+      "filePath": "src/tools-pro.ts",
+      "summary": "run 函数，定义于 src/tools-pro.ts 第 23 行",
+      "tags": ["run"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/tools.ts:run",
+      "type": "function",
+      "name": "run",
+      "filePath": "src/tools.ts",
+      "summary": "run 函数，定义于 src/tools.ts 第 14 行",
+      "tags": ["run"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/tools.ts:setCommandAllowlist",
+      "type": "function",
+      "name": "setCommandAllowlist",
+      "filePath": "src/tools.ts",
+      "summary": "setCommandAllowlist 函数，定义于 src/tools.ts 第 88 行",
+      "tags": ["setCommandAllowlist"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/tools.ts:setSkipDangerousCheck",
+      "type": "function",
+      "name": "setSkipDangerousCheck",
+      "filePath": "src/tools.ts",
+      "summary": "setSkipDangerousCheck 函数，定义于 src/tools.ts 第 92 行",
+      "tags": ["setSkipDangerousCheck"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/tools.ts:isCommandAllowlisted",
+      "type": "function",
+      "name": "isCommandAllowlisted",
+      "filePath": "src/tools.ts",
+      "summary": "isCommandAllowlisted 函数，定义于 src/tools.ts 第 96 行",
+      "tags": ["isCommandAllowlisted"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/tools.ts:checkCommand",
+      "type": "function",
+      "name": "checkCommand",
+      "filePath": "src/tools.ts",
+      "summary": "checkCommand 函数，定义于 src/tools.ts 第 101 行",
+      "tags": ["checkCommand"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/tools.ts:runCommandTool",
+      "type": "function",
+      "name": "runCommandTool",
+      "filePath": "src/tools.ts",
+      "summary": "执行 shell 命令的核心工具函数，包含危险命令检测（14 类模式）、命令白名单、安全路径限制",
+      "tags": ["核心工具", "Shell", "安全"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/tools.ts:systemInfoTool",
+      "type": "function",
+      "name": "systemInfoTool",
+      "filePath": "src/tools.ts",
+      "summary": "获取 macOS 系统信息（型号、芯片、macOS 版本、运行时间等）的工具",
+      "tags": ["系统", "诊断"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/tools.ts:processListTool",
+      "type": "function",
+      "name": "processListTool",
+      "filePath": "src/tools.ts",
+      "summary": "列出并过滤 macOS 运行进程的工具",
+      "tags": ["进程管理", "监控"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/tools.ts:diskUsageTool",
+      "type": "function",
+      "name": "diskUsageTool",
+      "filePath": "src/tools.ts",
+      "summary": "分析磁盘使用情况的工具",
+      "tags": ["磁盘", "存储"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/tools.ts:networkInfoTool",
+      "type": "function",
+      "name": "networkInfoTool",
+      "filePath": "src/tools.ts",
+      "summary": "获取网络接口和连接信息的工具",
+      "tags": ["网络", "诊断"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/tools.ts:fileSearchTool",
+      "type": "function",
+      "name": "fileSearchTool",
+      "filePath": "src/tools.ts",
+      "summary": "基于模式的文件搜索工具",
+      "tags": ["文件操作", "搜索"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/tools.ts:readFileTool",
+      "type": "function",
+      "name": "readFileTool",
+      "filePath": "src/tools.ts",
+      "summary": "安全读取文件内容的工具，限制在 $HOME 目录内",
+      "tags": ["文件操作", "安全"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/tools.ts:systemLogsTool",
+      "type": "function",
+      "name": "systemLogsTool",
+      "filePath": "src/tools.ts",
+      "summary": "查询 macOS unified logging 系统的工具",
+      "tags": ["日志", "诊断"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/tools.ts:macOSDefaultTools",
+      "type": "function",
+      "name": "macOSDefaultTools",
+      "filePath": "src/tools.ts",
+      "summary": "注册所有基础 macOS 工具的工具集导出函数",
+      "tags": ["工具注册"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:CLAUDE.md",
+      "target": "file:AGENTS.md",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:CODE_WIKI.md",
+      "target": "file:CLAUDE.md",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:CODE_WIKI.md",
+      "target": "file:README.md",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:CODE_WIKI.md",
+      "target": "file:analysis-output.md",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:README.md",
+      "target": "file:INSTALL.md",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:README.md",
+      "target": "file:CONFIG.md",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:README.md",
+      "target": "file:USAGE.md",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:README.md",
+      "target": "file:CODE_WIKI.md",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:README.md",
+      "target": "file:package.json",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:CLAUDE.md",
+      "target": "file:README.md",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:CLAUDE.md",
+      "target": "file:INSTALL.md",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:CLAUDE.md",
+      "target": "file:CONFIG.md",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:CLAUDE.md",
+      "target": "file:USAGE.md",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:CLAUDE.md",
+      "target": "file:package.json",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:CONFIG.md",
+      "target": "file:.env.example",
+      "type": "configures",
+      "weight": 0.6,
+      "direction": "forward"
+    },
+    {
+      "source": "file:INSTALL.md",
+      "target": "file:.env.example",
+      "type": "configures",
+      "weight": 0.6,
+      "direction": "forward"
+    },
+    {
+      "source": "file:INSTALL.md",
+      "target": "file:README.md",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:USAGE.md",
+      "target": "file:README.md",
+      "type": "documents",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:USAGE.md",
+      "target": "file:CONFIG.md",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:analysis-output.md",
+      "target": "file:CODE_WIKI.md",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:package.json",
+      "target": "file:tsconfig.json",
+      "type": "configures",
+      "weight": 0.6,
+      "direction": "forward"
+    },
+    {
+      "source": "file:CLAUDE.md",
+      "target": "file:tsconfig.json",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent.ts",
+      "target": "file:src/__tests__/agent.test.ts",
+      "type": "tested_by",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent.ts",
+      "target": "file:src/__tests__/performance.test.ts",
+      "type": "tested_by",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent.ts",
+      "target": "file:src/__tests__/tool-executor.test.ts",
+      "type": "tested_by",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent.ts",
+      "target": "file:src/__tests__/llm-client.test.ts",
+      "type": "tested_by",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent.ts",
+      "target": "file:src/__tests__/conversation-typed.test.ts",
+      "type": "tested_by",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent.ts",
+      "target": "file:src/__tests__/context-manager.test.ts",
+      "type": "tested_by",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent.ts",
+      "target": "file:src/__tests__/tools.test.ts",
+      "type": "tested_by",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent.ts",
+      "target": "file:src/__tests__/tools-pro.test.ts",
+      "type": "tested_by",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent.ts",
+      "target": "file:src/__tests__/executor.test.ts",
+      "type": "tested_by",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent.ts",
+      "target": "file:docs/superpowers/specs/2026-05-21-mcagent-improvement-design.md",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/run-all.bench.ts",
+      "target": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/run-all.bench.ts",
+      "target": "file:src/__tests__/benchmarks/baseline.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/run-all.bench.ts",
+      "target": "file:src/__tests__/benchmarks/reporter.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/run-all.bench.ts",
+      "target": "file:src/__tests__/benchmarks/token-estimation.bench.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/run-all.bench.ts",
+      "target": "file:src/__tests__/benchmarks/context-eviction.bench.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/run-all.bench.ts",
+      "target": "file:src/__tests__/benchmarks/conversation-history.bench.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/run-all.bench.ts",
+      "target": "file:src/__tests__/benchmarks/error-recovery.bench.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/run-all.bench.ts",
+      "target": "file:src/__tests__/benchmarks/metrics-collector.bench.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/run-all.bench.ts",
+      "target": "file:src/__tests__/benchmarks/structured-logger.bench.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/run-all.bench.ts",
+      "target": "file:src/__tests__/benchmarks/tool-executor.bench.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/baseline.ts",
+      "target": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/reporter.ts",
+      "target": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/reporter.ts",
+      "target": "file:src/__tests__/benchmarks/baseline.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/context-eviction.bench.ts",
+      "target": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/conversation-history.bench.ts",
+      "target": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/error-recovery.bench.ts",
+      "target": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/metrics-collector.bench.ts",
+      "target": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/structured-logger.bench.ts",
+      "target": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/token-estimation.bench.ts",
+      "target": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/tool-executor.bench.ts",
+      "target": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/context-eviction.bench.ts",
+      "target": "file:src/__tests__/context-manager.test.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/token-estimation.bench.ts",
+      "target": "file:src/__tests__/context-manager.test.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/conversation-history.bench.ts",
+      "target": "file:src/__tests__/conversation-typed.test.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/tool-executor.bench.ts",
+      "target": "file:src/__tests__/tool-executor.test.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/benchmarks/tool-executor.bench.ts",
+      "target": "file:src/__tests__/benchmarks/tool-executor.bench.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/agent.test.ts",
+      "target": "file:src/__tests__/tools.test.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/agent.test.ts",
+      "target": "file:src/__tests__/tools-pro.test.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/performance.test.ts",
+      "target": "file:src/__tests__/benchmarks/framework.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/performance.test.ts",
+      "target": "file:src/__tests__/context-manager.test.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/performance.test.ts",
+      "target": "file:src/__tests__/benchmarks/context-eviction.bench.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/performance.test.ts",
+      "target": "file:src/__tests__/benchmarks/error-recovery.bench.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/__tests__/performance.test.ts",
+      "target": "file:src/__tests__/benchmarks/metrics-collector.bench.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:docs/superpowers/specs/2026-05-21-mcagent-improvement-design.md",
+      "target": "file:src/agent.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:.understand-anything/.understandignore",
+      "target": "file:.understand-anything/config.json",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:eslint.config.js",
+      "target": "file:src/agent.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/cli.tsx",
+      "target": "file:src/tools.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/cli.tsx",
+      "target": "file:src/tools-extended.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/cli.tsx",
+      "target": "file:src/tools-pro.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/cli.tsx",
+      "target": "file:src/types/events.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/cli.tsx",
+      "target": "file:src/logging/structured-logger.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/headless.ts",
+      "target": "file:src/tools.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/headless.ts",
+      "target": "file:src/tools-extended.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/headless.ts",
+      "target": "file:src/tools-pro.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/headless.ts",
+      "target": "file:src/logging/structured-logger.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "file:src/types/tool.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "file:src/shell/executor.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools-extended.ts",
+      "target": "file:src/types/tool.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools-extended.ts",
+      "target": "file:src/shell/executor.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools-pro.ts",
+      "target": "file:src/types/tool.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools-pro.ts",
+      "target": "file:src/shell/executor.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent/conversation.ts",
+      "target": "file:src/context-manager.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent/conversation.ts",
+      "target": "file:src/types/events.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent/llm-client.ts",
+      "target": "file:src/engine/error-recovery-engine.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent/tool-executor.ts",
+      "target": "file:src/types/tool.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent/tool-executor.ts",
+      "target": "file:src/monitoring/metrics-collector.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/types/config.ts",
+      "target": "file:src/types/tool.ts",
+      "type": "imports",
+      "weight": 0.7,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/cli.tsx",
+      "target": "file:src/headless.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "file:src/tools-extended.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools-extended.ts",
+      "target": "file:src/tools-pro.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "file:src/tools-pro.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/logging/structured-logger.ts",
+      "target": "file:src/monitoring/metrics-collector.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/engine/error-recovery-engine.ts",
+      "target": "file:src/monitoring/metrics-collector.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/types/config.ts",
+      "target": "file:src/types/events.ts",
+      "type": "related",
+      "weight": 0.5,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/shell/executor.ts:RealShellExecutor",
+      "target": "file:src/shell/executor.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/agent/conversation.ts:ConversationHistory",
+      "target": "file:src/agent/conversation.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/agent/llm-client.ts:LLMClient",
+      "target": "file:src/agent/llm-client.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/agent/tool-executor.ts:ToolExecutor",
+      "target": "file:src/agent/tool-executor.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/engine/error-recovery-engine.ts:ErrorRecoveryEngine",
+      "target": "file:src/engine/error-recovery-engine.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/logging/structured-logger.ts:StructuredLogger",
+      "target": "file:src/logging/structured-logger.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/logging/structured-logger.ts:ConsoleHandler",
+      "target": "file:src/logging/structured-logger.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/logging/structured-logger.ts:FileHandler",
+      "target": "file:src/logging/structured-logger.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/monitoring/metrics-collector.ts:MetricsCollector",
+      "target": "file:src/monitoring/metrics-collector.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "function:src/cli.tsx:ChatMessage",
+      "target": "file:src/cli.tsx",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "function:src/cli.tsx:App",
+      "target": "file:src/cli.tsx",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "function:src/headless.ts:prompt",
+      "target": "file:src/headless.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "function:src/context-manager.ts:estimateTokens",
+      "target": "file:src/context-manager.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "function:src/context-manager.ts:evictMessages",
+      "target": "file:src/context-manager.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "function:src/tools.ts:checkCommand",
+      "target": "file:src/tools.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "function:src/tools.ts:runCommandTool",
+      "target": "file:src/tools.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "function:src/tools-extended.ts:safePath",
+      "target": "file:src/tools-extended.ts",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/agent/conversation.ts:ConversationHistory",
+      "target": "function:src/context-manager.ts:evictMessages",
+      "type": "calls",
+      "weight": 0.8,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/agent/llm-client.ts:LLMClient",
+      "target": "class:src/engine/error-recovery-engine.ts:ErrorRecoveryEngine",
+      "type": "calls",
+      "weight": 0.8,
+      "direction": "forward"
+    },
+    {
+      "source": "class:src/agent/tool-executor.ts:ToolExecutor",
+      "target": "class:src/monitoring/metrics-collector.ts:MetricsCollector",
+      "type": "calls",
+      "weight": 0.8,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent/conversation.ts",
+      "target": "class:src/agent/conversation.ts:ConversationHistory",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent/llm-client.ts",
+      "target": "class:src/agent/llm-client.ts:LLMClient",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/agent/tool-executor.ts",
+      "target": "class:src/agent/tool-executor.ts:ToolExecutor",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/cli.tsx",
+      "target": "function:src/cli.tsx:ChatMessage",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/cli.tsx",
+      "target": "function:src/cli.tsx:ToolCallLine",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/cli.tsx",
+      "target": "function:src/cli.tsx:InputField",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/cli.tsx",
+      "target": "function:src/cli.tsx:StreamingText",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/cli.tsx",
+      "target": "function:src/cli.tsx:App",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/context-manager.ts",
+      "target": "function:src/context-manager.ts:estimateTokens",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/context-manager.ts",
+      "target": "function:src/context-manager.ts:estimateMessageTokens",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/context-manager.ts",
+      "target": "function:src/context-manager.ts:estimateSingleMessageTokens",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/context-manager.ts",
+      "target": "function:src/context-manager.ts:evictMessages",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/engine/error-recovery-engine.ts",
+      "target": "class:src/engine/error-recovery-engine.ts:ErrorRecoveryEngine",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/headless.ts",
+      "target": "function:src/headless.ts:prompt",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/logging/structured-logger.ts",
+      "target": "class:src/logging/structured-logger.ts:ConsoleHandler",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/logging/structured-logger.ts",
+      "target": "class:src/logging/structured-logger.ts:FileHandler",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/logging/structured-logger.ts",
+      "target": "class:src/logging/structured-logger.ts:StructuredLogger",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/logging/structured-logger.ts",
+      "target": "function:src/logging/structured-logger.ts:createDefaultLogger",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/monitoring/metrics-collector.ts",
+      "target": "class:src/monitoring/metrics-collector.ts:MetricsCollector",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/shell/executor.ts",
+      "target": "class:src/shell/executor.ts:RealShellExecutor",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools-extended.ts",
+      "target": "function:src/tools-extended.ts:run",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools-extended.ts",
+      "target": "function:src/tools-extended.ts:safePath",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools-pro.ts",
+      "target": "function:src/tools-pro.ts:run",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:run",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:setCommandAllowlist",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:setSkipDangerousCheck",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:isCommandAllowlisted",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:checkCommand",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:runCommandTool",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:systemInfoTool",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:processListTool",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:diskUsageTool",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:networkInfoTool",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:fileSearchTool",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:readFileTool",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:systemLogsTool",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    },
+    {
+      "source": "file:src/tools.ts",
+      "target": "function:src/tools.ts:macOSDefaultTools",
+      "type": "contains",
+      "weight": 1.0,
+      "direction": "forward"
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:types",
+      "name": "类型定义",
+      "description": "定义项目核心 TypeScript 类型与接口，包括 Tool 工具接口、McAgentEvents 事件映射、McAgentConfig 配置接口等，无运行时逻辑，是整个工具系统和智能体架构的类型基础。",
+      "nodeIds": ["file:src/types/tool.ts", "file:src/types/events.ts", "file:src/types/config.ts"]
+    },
+    {
+      "id": "layer:shell",
+      "name": "Shell 执行",
+      "description": "封装操作系统 Shell 命令执行能力，提供 ShellExecutor 接口和 RealShellExecutor 实现，支持异步执行、超时控制和大缓冲区，是工具系统与 macOS 系统交互的底层通道。",
+      "nodeIds": ["file:src/shell/executor.ts"]
+    },
+    {
+      "id": "layer:agent-core",
+      "name": "智能体核心",
+      "description": "McAgent 智能体的核心编排层，包含主 Agent 类（事件驱动对话循环、流式/同步双路径）、ConversationHistory 对话管理、LLMClient API 调用封装和 ToolExecutor 工具批量执行器，是项目的中枢模块。",
+      "nodeIds": [
+        "file:src/agent.ts",
+        "file:src/agent/conversation.ts",
+        "file:src/agent/llm-client.ts",
+        "file:src/agent/tool-executor.ts"
+      ]
+    },
+    {
+      "id": "layer:engine",
+      "name": "引擎",
+      "description": "提供自适应推理与容错能力，包含 ErrorRecoveryEngine 错误恢复引擎，实现策略模式下的网络重试（指数退避）、权限升级、校验中止等 5 种恢复策略，保障智能体调用链路的健壮性。",
+      "nodeIds": ["file:src/engine/error-recovery-engine.ts"]
+    },
+    {
+      "id": "layer:logging-monitoring",
+      "name": "日志与监控",
+      "description": "可观测性基础设施，包含 StructuredLogger 多处理器日志系统（ConsoleHandler + FileHandler 异步批量写入）和 MetricsCollector 性能指标收集器（请求延迟、成功率、Token 消耗统计），为生产运维提供支撑。",
+      "nodeIds": [
+        "file:src/logging/structured-logger.ts",
+        "file:src/monitoring/metrics-collector.ts"
+      ]
+    },
+    {
+      "id": "layer:tools",
+      "name": "工具系统",
+      "description": "20 个 macOS 系统工具的完整实现，分为三级：8 个基础工具（run_command 含危险命令检测、system_info、process_list 等）、8 个扩展工具（write_file、edit_file、clipboard 等）、4 个专业诊断工具（network_diagnostics、security_check 等），构成智能体的行动能力集。",
+      "nodeIds": ["file:src/tools.ts", "file:src/tools-extended.ts", "file:src/tools-pro.ts"]
+    },
+    {
+      "id": "layer:ui",
+      "name": "UI 入口点",
+      "description": "用户交互界面层，包含基于 Ink/React 的 TUI 界面（cli.tsx，支持流式输出、工具调用展示、60fps 缓冲渲染）和基于 readline 的无头 CLI（headless.ts，ANSI 彩色输出），是用户与智能体对话的两大入口。",
+      "nodeIds": ["file:src/cli.tsx", "file:src/headless.ts"]
+    },
+    {
+      "id": "layer:context",
+      "name": "上下文管理",
+      "description": "Token 估算与消息驱逐模块，使用字符级启发式算法（ASCII 4 字符/token、CJK 2 字符/token）近似 Token 计数，通过 evictMessages 自动淘汰旧消息以避免超出模型上下文窗口限制。",
+      "nodeIds": ["file:src/context-manager.ts"]
+    },
+    {
+      "id": "layer:tests",
+      "name": "测试",
+      "description": "完整的测试体系，包含 9 个单元/集成测试套件（覆盖 Agent、上下文管理器、Shell 执行器、LLM 客户端、对话历史、工具执行器、基础工具、专业工具）和 11 个微基准测试模块（含框架、基线管理、报告生成），使用 Vitest 框架。",
+      "nodeIds": [
+        "file:src/__tests__/agent.test.ts",
+        "file:src/__tests__/context-manager.test.ts",
+        "file:src/__tests__/conversation-typed.test.ts",
+        "file:src/__tests__/executor.test.ts",
+        "file:src/__tests__/llm-client.test.ts",
+        "file:src/__tests__/performance.test.ts",
+        "file:src/__tests__/tool-executor.test.ts",
+        "file:src/__tests__/tools-pro.test.ts",
+        "file:src/__tests__/tools.test.ts",
+        "file:src/__tests__/benchmarks/framework.ts",
+        "file:src/__tests__/benchmarks/baseline.ts",
+        "file:src/__tests__/benchmarks/reporter.ts",
+        "file:src/__tests__/benchmarks/run-all.bench.ts",
+        "file:src/__tests__/benchmarks/context-eviction.bench.ts",
+        "file:src/__tests__/benchmarks/conversation-history.bench.ts",
+        "file:src/__tests__/benchmarks/error-recovery.bench.ts",
+        "file:src/__tests__/benchmarks/metrics-collector.bench.ts",
+        "file:src/__tests__/benchmarks/structured-logger.bench.ts",
+        "file:src/__tests__/benchmarks/token-estimation.bench.ts",
+        "file:src/__tests__/benchmarks/tool-executor.bench.ts"
+      ]
+    },
+    {
+      "id": "layer:docs",
+      "name": "文档",
+      "description": "项目文档体系，包含 README 项目主页、CLAUDE.md 架构总览、CODE_WIKI 完整代码百科、INSTALL 安装指南、CONFIG 配置参考、USAGE 使用指南与工具参考、AGENTS.md 精简版 AI 指令、analysis-output.md 死代码分析报告，以及 v2.x 路线图设计文档。",
+      "nodeIds": [
+        "file:README.md",
+        "file:CLAUDE.md",
+        "file:CODE_WIKI.md",
+        "file:INSTALL.md",
+        "file:CONFIG.md",
+        "file:USAGE.md",
+        "file:AGENTS.md",
+        "file:analysis-output.md",
+        "file:docs/superpowers/specs/2026-05-21-mcagent-improvement-design.md"
+      ]
+    },
+    {
+      "id": "layer:configuration",
+      "name": "配置",
+      "description": "项目构建、运行与分析的基础配置文件，包含 NPM 包配置（package.json）、TypeScript 编译器配置（tsconfig.json）、环境变量模板（.env.example）、ESLint 代码质量配置、Vitest 测试框架配置，以及 understand-anything 分析工具配置。",
+      "nodeIds": [
+        "file:package.json",
+        "file:tsconfig.json",
+        "file:.env.example",
+        "file:eslint.config.js",
+        "file:vitest.config.ts",
+        "file:.understand-anything/.understandignore",
+        "file:.understand-anything/config.json"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "项目概览与文档导航",
+      "description": "从 README 了解 McAgent 的定位——一个 CLI 优先的 macOS AI 助手，连接 DeepSeek 模型到 Mac 操作系统，提供 20+ 内置工具、双界面（TUI/Headless）和五层安全防护。随后阅读 CLAUDE.md 获取架构速览（目录树、14 个核心类型、Agent 对话循环流程图）和编码规范约定。CODE_WIKI.md 是 10 章完整的代码百科，可作为后续深入学习的索引。package.json 展示项目元信息：v2.0.0、ES 模块、14 个 npm 脚本和核心依赖。",
+      "nodeIds": ["file:README.md", "file:CLAUDE.md", "file:CODE_WIKI.md", "file:package.json"]
+    },
+    {
+      "order": 2,
+      "title": "环境配置与项目搭建",
+      "description": "掌握项目运行所需的配置体系。INSTALL.md 提供五步安装流程（克隆→安装依赖→配置密钥→验证→编译）和故障排除指南。CONFIG.md 详列 9 个环境变量、14 个编程配置选项、三种权限模式（readonly/approve/auto）的对比。.env.example 是环境变量的配置模板，定义 DeepSeek API 密钥、模型选择、推理配置等核心参数，含三套预设方案。tsconfig.json 设定 TypeScript 编译规则：目标 ES2022、strict 模式全开、NodeNext 模块系统、JSX 支持。",
+      "nodeIds": ["file:INSTALL.md", "file:CONFIG.md", "file:.env.example", "file:tsconfig.json"]
+    },
+    {
+      "order": 3,
+      "title": "类型系统——代码的骨架",
+      "description": "理解支撑整个代码库的类型定义。Tool 接口（types/tool.ts）是工具系统的基石，定义 name、description、JSON Schema 参数和异步 execute 函数。McAgentEvents 事件映射（types/events.ts）是 UI 层与 Agent 核心之间的通信契约，包含 10 个事件类型（流式输出、工具调用、推理过程等）。McAgentConfig（types/config.ts）聚合全部配置项：API 密钥、模型选择、权限模式、推理配置和工具严格模式。这三个文件共同构成了项目的类型骨架，后续所有模块均依赖于此。",
+      "nodeIds": ["file:src/types/tool.ts", "file:src/types/events.ts", "file:src/types/config.ts"]
+    },
+    {
+      "order": 4,
+      "title": "智能体核心——事件驱动的对话引擎",
+      "description": "深入 McAgent 的核心大脑。agent.ts 包含 MacOSAgent 类（继承 EventEmitter），实现完整的对话循环：send() 异步流式 → runLoop() 构建消息/调用模型/处理工具调用/反馈结果 → executeToolCalls() 批量调度。支持并发保护、指标收集、会话持久化和动态配置切换。agent/conversation.ts 的 ConversationHistory 管理消息存储，集成 evictMessages 自动控制 token 窗口，支持 DeepSeek reasoning_content 和缓存优化。context-manager.ts 提供字符级 token 估算（ASCII 4 字符/token，CJK 2 字符/token）和消息驱逐策略。",
+      "nodeIds": [
+        "file:src/agent.ts",
+        "file:src/agent/conversation.ts",
+        "file:src/context-manager.ts"
+      ]
+    },
+    {
+      "order": 5,
+      "title": "LLM 客户端与错误恢复——可靠的 API 调用",
+      "description": "理解模型调用的底层机制。agent/llm-client.ts 封装 OpenAI SDK，提供 createSync（同步）和 createStream（流式）两个调用路径，通过 extra_body 传递 DeepSeek 专用 thinking 参数。engine/error-recovery-engine.ts 实现策略模式错误恢复：对网络错误执行指数退避重试、对权限错误升级、对校验错误中止、对不可用资源跳过，共 5 种恢复策略。LLMClient 通过 ErrorRecoveryEngine 包裹所有 API 请求，确保调用可靠性。",
+      "nodeIds": ["file:src/agent/llm-client.ts", "file:src/engine/error-recovery-engine.ts"]
+    },
+    {
+      "order": 6,
+      "title": "工具体系——三层工具与安全沙箱",
+      "description": "McAgent 的能力来源于三层工具体系。第一层 tools.ts 提供 8 个基础工具（run_command/系统信息/进程/磁盘/网络/文件搜索/文件读取/系统日志），内置 checkCommand() 检测 14 类危险命令模式和命令白名单。第二层 tools-extended.ts 提供 8 个扩展工具（文件写入/编辑/启动应用/剪贴板/Homebrew/软件更新/电池/截图），safePath() 将文件操作限制在 HOME 目录。第三层 tools-pro.ts 提供 4 个专业诊断工具（网络诊断/系统诊断/安全检查/电源管理）。agent/tool-executor.ts 的 ToolExecutor 负责批量执行工具调用、JSON 参数解析和指标记录。shell/executor.ts 的 RealShellExecutor 通过 child_process.exec 异步执行命令，支持超时和大缓冲区。",
+      "nodeIds": [
+        "file:src/tools.ts",
+        "file:src/tools-extended.ts",
+        "file:src/tools-pro.ts",
+        "file:src/agent/tool-executor.ts",
+        "file:src/shell/executor.ts"
+      ]
+    },
+    {
+      "order": 7,
+      "title": "用户界面、日志与可观测性",
+      "description": "了解 McAgent 的双界面入口和运行时支撑系统。cli.tsx 是基于 Ink+React 的终端 UI，包含 ChatMessage、ToolCallLine、InputField、StreamingText 和主 App 组件，以 16ms 间隔缓冲实现 60fps 流式渲染，10 个状态变量管理对话状态。headless.ts 是基于 readline 的无头 CLI，提供简洁的交互循环和 ANSI 彩色输出。logging/structured-logger.ts 实现多处理器日志系统（ConsoleHandler stdout/stderr + FileHandler 异步批量写文件），6 级日志和静默降级。monitoring/metrics-collector.ts 跟踪请求延迟、成功率、token 消耗和错误类型分布，导出单例供全局使用。",
+      "nodeIds": [
+        "file:src/cli.tsx",
+        "file:src/headless.ts",
+        "file:src/logging/structured-logger.ts",
+        "file:src/monitoring/metrics-collector.ts"
+      ]
+    }
+  ]
+}

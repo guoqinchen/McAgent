@@ -354,8 +354,13 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     for (let round = 0; round < this.config.maxToolRounds; round++) {
       // Break early if too many consecutive tool errors
       if (this.consecutiveErrors >= 3) {
+        logger.warn('runLoop: breaking due to too many consecutive errors');
         this.consecutiveErrors = 0;
         break;
+      }
+
+      if (round === this.config.maxToolRounds - 1) {
+        logger.warn('runLoop: reached maxToolRounds', { max: this.config.maxToolRounds });
       }
 
       // Build messages with system prompt + auto-eviction

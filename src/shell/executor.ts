@@ -28,7 +28,7 @@ export class RealShellExecutor implements ShellExecutor {
         {
           encoding: 'utf-8',
           timeout,
-          maxBuffer: 1024 * 1024, // 1 MB
+          maxBuffer: 10 * 1024 * 1024, // 10 MB (increased from 1MB to prevent truncation/errors)
         },
         (err: ExecException | null, stdout: string, stderr: string) => {
           if (err) {

@@ -11,6 +11,7 @@ import type {
   ChatCompletionMessageParam,
 } from 'openai/resources/chat/completions';
 import { errorRecoveryEngine } from '../engine/error-recovery-engine.js';
+import type { CompletionResponse, CompletionStream } from '../types/llm-provider.js';
 
 export type ThinkingBody =
   | {
@@ -41,14 +42,13 @@ export class LLMClient {
    * Create a non-streaming (sync) completion.
    * Returns the response object, or null if recovery exhausted.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async createSync(
     model: string,
     messages: ChatCompletionMessageParam[],
     tools: ChatCompletionTool[],
     thinkingBody: ThinkingBody,
     signal?: AbortSignal
-  ): Promise<any | null> {
+  ): Promise<CompletionResponse | null> {
     const params: CreateCompletionParams = {
       model,
       messages,
@@ -64,21 +64,20 @@ export class LLMClient {
     return errorRecoveryEngine.executeWithRecovery(
       () => this.client.chat.completions.create(params),
       'chat.completions.create'
-    );
+    ) as Promise<CompletionResponse | null>;
   }
 
   /**
    * Create a streaming completion.
    * Returns a stream (async iterable), or null if recovery exhausted.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async createStream(
     model: string,
     messages: ChatCompletionMessageParam[],
     tools: ChatCompletionTool[],
     thinkingBody: ThinkingBody,
     signal?: AbortSignal
-  ): Promise<any | null> {
+  ): Promise<CompletionStream | null> {
     const params: CreateCompletionParams = {
       model,
       messages,
@@ -90,6 +89,6 @@ export class LLMClient {
     return errorRecoveryEngine.executeWithRecovery(
       () => this.client.chat.completions.create(params),
       'chat.completions.create'
-    );
+    ) as Promise<CompletionStream | null>;
   }
 }

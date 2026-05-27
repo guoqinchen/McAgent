@@ -380,7 +380,8 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
         logger.warn('runLoop: reached maxToolRounds', { max: this.config.maxToolRounds });
       }
 
-      // Build messages with system prompt + auto-eviction
+      // Explicitly evict old messages first, then build message array
+      this.conversation.evictIfNeeded(this.config.maxContextTokens);
       const messages = this.conversation.getMessagesWithSystem(
         this.config.instructions,
         this.config.maxContextTokens

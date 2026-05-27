@@ -617,7 +617,7 @@ describe('MacOSAgent', () => {
   });
 
   describe('session error handling', () => {
-    it('throws on corrupted session JSON', async () => {
+    it('starts fresh on corrupted session JSON', async () => {
       const fs = await import('node:fs');
       const fsp = await import('node:fs/promises');
       (fs.existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
@@ -627,9 +627,9 @@ describe('MacOSAgent', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (agent as any).conversation.addUserMessage('preserved');
 
-      await expect(agent.loadSession('/tmp/bad.json')).rejects.toThrow();
-      // History should be preserved on error
-      expect(agent.getMessages().length).toBe(1);
+      // Should not throw — silently falls back to empty history on corrupted file
+      await agent.loadSession('/tmp/bad.json');
+      expect(agent.getMessages().length).toBe(0);
     });
   });
 

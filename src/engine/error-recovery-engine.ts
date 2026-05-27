@@ -27,9 +27,19 @@ export interface RecoveryResult {
   fallbackValue?: unknown;
 }
 
+export interface RecoveryEngineOptions {
+  maxRetries?: number;
+  baseRetryDelay?: number;
+}
+
 export class ErrorRecoveryEngine {
-  private readonly maxRetries = 3;
-  private readonly baseRetryDelay = 1000;
+  private readonly maxRetries: number;
+  private readonly baseRetryDelay: number;
+
+  constructor(options?: RecoveryEngineOptions) {
+    this.maxRetries = options?.maxRetries ?? 3;
+    this.baseRetryDelay = options?.baseRetryDelay ?? 1000;
+  }
 
   determineStrategy(context: ErrorContext): RecoveryStrategy {
     const { errorType, retryCount } = context;
@@ -263,4 +273,13 @@ export class ErrorRecoveryEngine {
   }
 }
 
+/** Default singleton instance for production use. */
 export const errorRecoveryEngine = new ErrorRecoveryEngine();
+
+/**
+ * Create a fresh ErrorRecoveryEngine instance with custom options.
+ * Useful for testing or when different retry budgets are needed.
+ */
+export function createErrorRecoveryEngine(options?: RecoveryEngineOptions): ErrorRecoveryEngine {
+  return new ErrorRecoveryEngine(options);
+}

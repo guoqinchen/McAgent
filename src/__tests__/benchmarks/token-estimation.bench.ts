@@ -63,7 +63,7 @@ describe('Micro-benchmark: Token Estimation', () => {
   it('ASCII 100B — single call latency', async () => {
     const result = await runBenchmark({
       name: 'estimateTokens — ASCII 100B',
-      fn: () => estimateTokens(ASCII_100B),
+      fn: () => void estimateTokens(ASCII_100B),
       samples: 100,
       warmupSamples: 10,
     });
@@ -78,7 +78,7 @@ describe('Micro-benchmark: Token Estimation', () => {
   it('ASCII 1KB — single call latency', async () => {
     const result = await runBenchmark({
       name: 'estimateTokens — ASCII 1KB',
-      fn: () => estimateTokens(ASCII_1KB),
+      fn: () => void estimateTokens(ASCII_1KB),
       samples: 100,
       warmupSamples: 10,
     });
@@ -93,7 +93,7 @@ describe('Micro-benchmark: Token Estimation', () => {
   it('ASCII 10KB — single call latency', async () => {
     const result = await runBenchmark({
       name: 'estimateTokens — ASCII 10KB',
-      fn: () => estimateTokens(ASCII_10KB),
+      fn: () => void estimateTokens(ASCII_10KB),
       samples: 100,
       warmupSamples: 10,
     });
@@ -108,7 +108,7 @@ describe('Micro-benchmark: Token Estimation', () => {
   it('ASCII 100KB — single call latency', async () => {
     const result = await runBenchmark({
       name: 'estimateTokens — ASCII 100KB',
-      fn: () => estimateTokens(ASCII_100KB),
+      fn: () => void estimateTokens(ASCII_100KB),
       samples: 50,
       warmupSamples: 5,
     });
@@ -123,7 +123,7 @@ describe('Micro-benchmark: Token Estimation', () => {
   it('CJK 1KB — single call latency', async () => {
     const result = await runBenchmark({
       name: 'estimateTokens — CJK 1KB',
-      fn: () => estimateTokens(CJK_1KB),
+      fn: () => void estimateTokens(CJK_1KB),
       samples: 100,
       warmupSamples: 10,
     });
@@ -138,7 +138,7 @@ describe('Micro-benchmark: Token Estimation', () => {
   it('CJK 10KB — single call latency', async () => {
     const result = await runBenchmark({
       name: 'estimateTokens — CJK 10KB',
-      fn: () => estimateTokens(CJK_10KB),
+      fn: () => void estimateTokens(CJK_10KB),
       samples: 100,
       warmupSamples: 10,
     });
@@ -153,7 +153,7 @@ describe('Micro-benchmark: Token Estimation', () => {
   it('Mixed ASCII/CJK 10KB — single call latency', async () => {
     const result = await runBenchmark({
       name: 'estimateTokens — Mixed 10KB',
-      fn: () => estimateTokens(MIXED_10KB),
+      fn: () => void estimateTokens(MIXED_10KB),
       samples: 100,
       warmupSamples: 10,
     });
@@ -168,7 +168,7 @@ describe('Micro-benchmark: Token Estimation', () => {
   it('Empty string — single call latency', async () => {
     const result = await runBenchmark({
       name: 'estimateTokens — Empty string',
-      fn: () => estimateTokens(EMPTY),
+      fn: () => void estimateTokens(EMPTY),
       samples: 200,
       warmupSamples: 20,
       iterationsPerSample: 100,
@@ -186,7 +186,7 @@ describe('Micro-benchmark: Token Estimation', () => {
   it('ASCII 100B — throughput (10K calls/sample)', async () => {
     const result = await runBenchmark({
       name: 'estimateTokens — ASCII 100B × 10K calls',
-      fn: () => estimateTokens(ASCII_100B),
+      fn: () => void estimateTokens(ASCII_100B),
       samples: 30,
       warmupSamples: 5,
       iterationsPerSample: 10_000,
@@ -205,7 +205,7 @@ describe('Micro-benchmark: Token Estimation', () => {
     const msgs = getToolCallMessages();
     const result = await runBenchmark({
       name: 'estimateMessageTokens — 201 msgs with tool_calls',
-      fn: () => estimateMessageTokens(msgs),
+      fn: () => void estimateMessageTokens(msgs),
       samples: 50,
       warmupSamples: 5,
     });

@@ -117,14 +117,19 @@ export function useLineEditor(initialValue = ''): LineEditorState & LineEditorAc
       }
 
       // ── Deletion ──────────────────────────────────────────────
-      if (key.backspace || (key.ctrl && input === 'h')) {
+      // NOTE: macOS/Linux terminals send DEL (\x7f) for Backspace, not BS (\b).
+      // Ink's parseKeypress maps \x7f → name:'delete', so key.delete is the
+      // backspace key on most terminals.  We treat both key.backspace and
+      // key.delete as "delete char before cursor".  Forward-delete-at-cursor
+      // is still available via Ctrl+D.
+      if (key.backspace || key.delete || (key.ctrl && input === 'h') || input === '\b') {
         if (cursor > 0) {
           setValueRaw((v) => v.slice(0, cursor - 1) + v.slice(cursor));
           setCursor((c) => c - 1);
         }
         return;
       }
-      if (key.delete || (key.ctrl && input === 'd')) {
+      if (key.ctrl && input === 'd') {
         if (cursor < value.length) {
           setValueRaw((v) => v.slice(0, cursor) + v.slice(cursor + 1));
         }

@@ -61,9 +61,7 @@ agent.on('thinking:start', function onThinkingStart() {
 });
 
 agent.on('tool:call', function onToolCall(name, args) {
-  process.stdout.write(
-    `  ${c.toolCall}🔧 ${name}${c.reset}(${JSON.stringify(args, null, 2)})\n`
-  );
+  process.stdout.write(`  ${c.toolCall}🔧 ${name}${c.reset}(${JSON.stringify(args, null, 2)})\n`);
 });
 
 agent.on('stream:delta', function onStreamDelta(delta) {

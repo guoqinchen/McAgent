@@ -87,10 +87,7 @@ const DEEPSEEK_BETA_URL = 'https://api.deepseek.com/beta'; // Beta features (str
 const DEEPSEEK_MODEL = 'deepseek-v4-flash'; // Default: fast/economical
 
 /** Result of a single round in the agent loop. */
-type RoundResult =
-  | { type: 'continue' }
-  | { type: 'done'; text: string }
-  | { type: 'break' };
+type RoundResult = { type: 'continue' } | { type: 'done'; text: string } | { type: 'break' };
 
 // ─── Thinking body builder ──────────────────────────────────────────────────
 
@@ -99,10 +96,7 @@ interface ThinkingBody {
   reasoning_effort: 'high' | 'max';
 }
 
-function buildThinkingBody(
-  enabled: boolean,
-  effort: 'high' | 'max'
-): ThinkingBody {
+function buildThinkingBody(enabled: boolean, effort: 'high' | 'max'): ThinkingBody {
   return enabled
     ? { thinking: { type: 'enabled' }, reasoning_effort: effort }
     : { reasoning_effort: effort };
@@ -388,7 +382,10 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
       );
 
       // Build common API params with thinking mode
-      const thinkingBody = buildThinkingBody(this.config.thinkingEnabled, this.config.reasoningEffort);
+      const thinkingBody = buildThinkingBody(
+        this.config.thinkingEnabled,
+        this.config.reasoningEffort
+      );
 
       // Dispatch to sync or streaming round handler
       const roundResult = sync
@@ -417,9 +414,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
    */
   private buildActiveTools(): ChatCompletionTool[] {
     if (this.config.permissionMode === 'readonly') {
-      return this.config.tools
-        .filter((t) => t.readonly === true)
-        .map(toolToOpenAI);
+      return this.config.tools.filter((t) => t.readonly === true).map(toolToOpenAI);
     }
     return this.config.tools.map(toolToOpenAI);
   }
@@ -526,11 +521,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
         accumulator.processDelta(delta.tool_calls);
       }
 
-      if (
-        finishReason === 'tool_calls' ||
-        finishReason === 'stop' ||
-        finishReason === 'length'
-      ) {
+      if (finishReason === 'tool_calls' || finishReason === 'stop' || finishReason === 'length') {
         if (accumulator.hasToolCalls()) {
           // Add assistant message with tool calls to history
           this.conversation.addAssistantMessage(

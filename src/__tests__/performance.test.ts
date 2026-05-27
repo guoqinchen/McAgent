@@ -563,7 +563,9 @@ describe('Performance: ToolExecutor', () => {
       } as ChatCompletionMessageFunctionToolCall);
     }
 
-    const elapsed = await measureAsync(async () => { await executor.executeAll(calls); }, 1);
+    const elapsed = await measureAsync(async () => {
+      await executor.executeAll(calls);
+    }, 1);
     expect(elapsed).toBeLessThan(200);
   });
 
@@ -580,7 +582,9 @@ describe('Performance: ToolExecutor', () => {
       } as ChatCompletionMessageFunctionToolCall);
     }
 
-    const elapsed = await measureAsync(async () => { await executor.executeAll(calls); }, 1);
+    const elapsed = await measureAsync(async () => {
+      await executor.executeAll(calls);
+    }, 1);
     expect(elapsed).toBeLessThan(100);
   });
 

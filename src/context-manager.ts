@@ -16,12 +16,12 @@ import type { ChatCompletionMessageParam } from 'openai/resources/chat/completio
  */
 function isWideChar(code: number): boolean {
   return (
-    (code >= 0x4E00 && code <= 0x9FFF) ||  // CJK Unified Ideographs
-    (code >= 0x3400 && code <= 0x4DBF) ||  // CJK Extension A
-    (code >= 0xAC00 && code <= 0xD7AF) ||  // Hangul Syllables
-    (code >= 0x3040 && code <= 0x309F) ||  // Hiragana
-    (code >= 0x30A0 && code <= 0x30FF) ||  // Katakana
-    (code >= 0xFF00 && code <= 0xFFEF)     // Full-width forms
+    (code >= 0x4e00 && code <= 0x9fff) || // CJK Unified Ideographs
+    (code >= 0x3400 && code <= 0x4dbf) || // CJK Extension A
+    (code >= 0xac00 && code <= 0xd7af) || // Hangul Syllables
+    (code >= 0x3040 && code <= 0x309f) || // Hiragana
+    (code >= 0x30a0 && code <= 0x30ff) || // Katakana
+    (code >= 0xff00 && code <= 0xffef) // Full-width forms
   );
 }
 
@@ -134,24 +134,28 @@ export function evictMessages(
       keptCount--;
 
       // Evict subsequent assistant/tool messages until next user
-       let j = i + 1;
-       while (j < messages.length && remainingTokens > maxTokens) {
-         const next = messages[j];
-         if (next?.role === 'assistant' || next?.role === 'tool') {
-           keep[j] = false;
-           remainingTokens -= perMsgTokens[j]!;
-           keptCount--;
-           j++;
-         } else {
-           break;
-         }
-       }
+      let j = i + 1;
+      while (j < messages.length && remainingTokens > maxTokens) {
+        const next = messages[j];
+        if (next?.role === 'assistant' || next?.role === 'tool') {
+          keep[j] = false;
+          remainingTokens -= perMsgTokens[j]!;
+          keptCount--;
+          j++;
+        } else {
+          break;
+        }
+      }
     }
   }
 
   // Phase 2: evict remaining tool messages from the end if still over
   if (remainingTokens > maxTokens) {
-    for (let i = messages.length - 1; i >= 1 && remainingTokens > maxTokens && keptCount > minKeep; i--) {
+    for (
+      let i = messages.length - 1;
+      i >= 1 && remainingTokens > maxTokens && keptCount > minKeep;
+      i--
+    ) {
       if (keep[i] && messages[i]?.role === 'tool') {
         keep[i] = false;
         remainingTokens -= perMsgTokens[i]!;

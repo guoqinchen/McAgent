@@ -56,45 +56,46 @@ function inkToAnsi(inkColor: string): string {
 export function createAnsiTheme(mode?: ThemeMode): AnsiColors {
   const themeMode = mode || detectThemeMode();
 
-  const tokens = themeMode === 'light'
-    ? {
-        userLabel: 'blueBright',
-        assistantLabel: 'green',
-        toolCall: 'yellow',
-        inputPrompt: 'yellow',
-        border: 'gray',
-        status: 'gray',
-        error: 'redBright',
-        muted: 'gray',
-        header: 'magentaBright',
-        heading: 'blueBright',
-        codeBlock: 'blue',
-        inlineCode: 'magenta',
-        link: 'blueBright',
-        listMarker: 'gray',
-        success: 'green',
-        warning: 'yellow',
-        reasoning: 'gray',
-      }
-    : {
-        userLabel: 'cyan',
-        assistantLabel: 'green',
-        toolCall: 'yellow',
-        inputPrompt: 'yellow',
-        border: 'gray',
-        status: 'gray',
-        error: 'redBright',
-        muted: 'gray',
-        header: 'magenta',
-        heading: 'cyanBright',
-        codeBlock: 'cyan',
-        inlineCode: 'yellow',
-        link: 'blueBright',
-        listMarker: 'gray',
-        success: 'greenBright',
-        warning: 'yellowBright',
-        reasoning: 'gray',
-      };
+  const tokens =
+    themeMode === 'light'
+      ? {
+          userLabel: 'blueBright',
+          assistantLabel: 'green',
+          toolCall: 'yellow',
+          inputPrompt: 'yellow',
+          border: 'gray',
+          status: 'gray',
+          error: 'redBright',
+          muted: 'gray',
+          header: 'magentaBright',
+          heading: 'blueBright',
+          codeBlock: 'blue',
+          inlineCode: 'magenta',
+          link: 'blueBright',
+          listMarker: 'gray',
+          success: 'green',
+          warning: 'yellow',
+          reasoning: 'gray',
+        }
+      : {
+          userLabel: 'cyan',
+          assistantLabel: 'green',
+          toolCall: 'yellow',
+          inputPrompt: 'yellow',
+          border: 'gray',
+          status: 'gray',
+          error: 'redBright',
+          muted: 'gray',
+          header: 'magenta',
+          heading: 'cyanBright',
+          codeBlock: 'cyan',
+          inlineCode: 'yellow',
+          link: 'blueBright',
+          listMarker: 'gray',
+          success: 'greenBright',
+          warning: 'yellowBright',
+          reasoning: 'gray',
+        };
 
   const colors: Record<string, string> = {};
   for (const [key, inkColor] of Object.entries(tokens)) {

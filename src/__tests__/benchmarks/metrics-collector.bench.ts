@@ -70,7 +70,7 @@ describe('Micro-benchmark: MetricsCollector', () => {
 
     const result = await runBenchmark({
       name: 'MetricsCollector.getMetrics — defensive copy',
-      fn: () => collector.getMetrics(),
+      fn: () => void collector.getMetrics(),
       samples: 200,
       warmupSamples: 20,
       iterationsPerSample: 100,

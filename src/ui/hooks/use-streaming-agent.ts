@@ -13,8 +13,16 @@ import type { Message } from '../../types/events.js';
 export interface UseStreamingAgentOptions {
   agent: MacOSAgent;
   setStreamingText: (text: string) => void;
-  setToolCalls: (updater: (prev: Array<{ name: string; args: unknown }>) => Array<{ name: string; args: unknown }>) => void;
-  setToolResults: (updater: (prev: Array<{ name: string; result: string; success: boolean }>) => Array<{ name: string; result: string; success: boolean }>) => void;
+  setToolCalls: (
+    updater: (
+      prev: Array<{ name: string; args: unknown }>
+    ) => Array<{ name: string; args: unknown }>
+  ) => void;
+  setToolResults: (
+    updater: (
+      prev: Array<{ name: string; result: string; success: boolean }>
+    ) => Array<{ name: string; result: string; success: boolean }>
+  ) => void;
   setStatus: (status: string) => void;
   setErrorMessage: (message: string) => void;
   setMessages: (messages: Message[]) => void;
@@ -85,7 +93,9 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
 
     const onToolResult = (name: string, result: unknown) => {
       const resultStr = typeof result === 'string' ? result : JSON.stringify(result);
-      const isSuccess = !resultStr.toLowerCase().startsWith('error') && !resultStr.toLowerCase().includes('command not found');
+      const isSuccess =
+        !resultStr.toLowerCase().startsWith('error') &&
+        !resultStr.toLowerCase().includes('command not found');
       optionsRef.current.setToolResults((prev) => [
         ...prev,
         { name, result: resultStr, success: isSuccess },

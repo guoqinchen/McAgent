@@ -5,10 +5,7 @@
  * replacing raw `any` usage in LLMClient.
  */
 
-import type {
-  ChatCompletion,
-  ChatCompletionChunk,
-} from 'openai/resources/chat/completions';
+import type { ChatCompletion, ChatCompletionChunk } from 'openai/resources/chat/completions';
 
 /** Non-streaming completion response. */
 export type CompletionResponse = ChatCompletion;

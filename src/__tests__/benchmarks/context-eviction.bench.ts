@@ -73,7 +73,7 @@ describe('Micro-benchmark: Context Eviction (evictMessages)', () => {
   it('200 messages — moderate budget', async () => {
     const result = await runBenchmark({
       name: 'evictMessages — 200 msgs, moderate budget',
-      fn: () => evictMessages(MSG_200, 500),
+      fn: () => void evictMessages(MSG_200, 500),
       samples: 30,
       warmupSamples: 3,
     });
@@ -103,7 +103,7 @@ describe('Micro-benchmark: Context Eviction (evictMessages)', () => {
   it('1000 messages — moderate budget', async () => {
     const result = await runBenchmark({
       name: 'evictMessages — 1000 msgs, moderate budget',
-      fn: () => evictMessages(MSG_1000, 1000),
+      fn: () => void evictMessages(MSG_1000, 1000),
       samples: 20,
       warmupSamples: 3,
     });
@@ -133,7 +133,7 @@ describe('Micro-benchmark: Context Eviction (evictMessages)', () => {
   it('2000 messages — extreme budget (max eviction)', async () => {
     const result = await runBenchmark({
       name: 'evictMessages — 2000 msgs, extreme budget',
-      fn: () => evictMessages(MSG_2000, 5),
+      fn: () => void evictMessages(MSG_2000, 5),
       samples: 10,
       warmupSamples: 2,
     });

@@ -20,8 +20,9 @@ function generateLongConversation(
     const userContent = 'Test question '.repeat(avgContentLen / 15);
     messages.push({ role: 'user', content: userContent });
     const assistantContent =
-      '# Heading\n\n**Bold** text with `code` and [links](https://example.com).\n\n- List item 1\n- List item 2\n\n```\nconst x = 42;\nconsole.log(x);\n```\n\n'
-        .repeat(avgContentLen / 200);
+      '# Heading\n\n**Bold** text with `code` and [links](https://example.com).\n\n- List item 1\n- List item 2\n\n```\nconst x = 42;\nconsole.log(x);\n```\n\n'.repeat(
+        avgContentLen / 200
+      );
     messages.push({ role: 'assistant', content: assistantContent });
   }
   return messages;
@@ -203,7 +204,9 @@ results.push(
 
 // 6. Markdown parseBlocks
 const mdContent =
-  '# Heading\n\n**Bold** with `code`.\n\n- Item 1\n- Item 2\n\n```\ncode\n```\n\nParagraph. '.repeat(5);
+  '# Heading\n\n**Bold** with `code`.\n\n- Item 1\n- Item 2\n\n```\ncode\n```\n\nParagraph. '.repeat(
+    5
+  );
 results.push(
   measure('parseBlocks (md parsing)', () => {
     parseBlocks(mdContent);

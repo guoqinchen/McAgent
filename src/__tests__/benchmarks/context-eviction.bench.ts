@@ -43,7 +43,7 @@ describe('Micro-benchmark: Context Eviction (evictMessages)', () => {
   it('50 messages — generous budget (no eviction)', async () => {
     const result = await runBenchmark({
       name: 'evictMessages — 50 msgs, generous budget',
-      fn: () => evictMessages(MSG_50, 999_999),
+      fn: () => void evictMessages(MSG_50, 999_999),
       samples: 50,
       warmupSamples: 5,
     });
@@ -58,7 +58,7 @@ describe('Micro-benchmark: Context Eviction (evictMessages)', () => {
   it('50 messages — tight budget (moderate eviction)', async () => {
     const result = await runBenchmark({
       name: 'evictMessages — 50 msgs, tight budget',
-      fn: () => evictMessages(MSG_50, 100),
+      fn: () => void evictMessages(MSG_50, 100),
       samples: 50,
       warmupSamples: 5,
     });
@@ -88,7 +88,7 @@ describe('Micro-benchmark: Context Eviction (evictMessages)', () => {
   it('500 messages — tight budget (aggressive eviction)', async () => {
     const result = await runBenchmark({
       name: 'evictMessages — 500 msgs, tight budget',
-      fn: () => evictMessages(MSG_500, 100),
+      fn: () => void evictMessages(MSG_500, 100),
       samples: 30,
       warmupSamples: 3,
     });
@@ -118,7 +118,7 @@ describe('Micro-benchmark: Context Eviction (evictMessages)', () => {
   it('2000 messages — generous budget (scan only)', async () => {
     const result = await runBenchmark({
       name: 'evictMessages — 2000 msgs, generous budget',
-      fn: () => evictMessages(MSG_2000, 999_999),
+      fn: () => void evictMessages(MSG_2000, 999_999),
       samples: 10,
       warmupSamples: 2,
     });
@@ -148,7 +148,7 @@ describe('Micro-benchmark: Context Eviction (evictMessages)', () => {
   it('Empty array — fast path', async () => {
     const result = await runBenchmark({
       name: 'evictMessages — empty array',
-      fn: () => evictMessages([], 1000),
+      fn: () => void evictMessages([], 1000),
       samples: 200,
       warmupSamples: 20,
       iterationsPerSample: 10,

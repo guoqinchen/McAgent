@@ -63,7 +63,7 @@ describe('Micro-benchmark: ConversationHistory', () => {
 
     const result = await runBenchmark({
       name: 'ConversationHistory.toPlainMessages — cache hit',
-      fn: () => conv.toPlainMessages(),
+      fn: () => void conv.toPlainMessages(),
       samples: 200,
       warmupSamples: 20,
       iterationsPerSample: 100,
@@ -112,7 +112,7 @@ describe('Micro-benchmark: ConversationHistory', () => {
 
     const result = await runBenchmark({
       name: 'ConversationHistory.getMessagesWithSystem — 50 msgs',
-      fn: () => conv.getMessagesWithSystem('You are a bot.', 96_000),
+      fn: () => void conv.getMessagesWithSystem('You are a bot.', 96_000),
       samples: 50,
       warmupSamples: 5,
     });

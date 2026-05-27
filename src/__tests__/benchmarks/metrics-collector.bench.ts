@@ -49,7 +49,7 @@ describe('Micro-benchmark: MetricsCollector', () => {
 
     const result = await runBenchmark({
       name: 'MetricsCollector.getSummary — after 1K requests',
-      fn: () => collector.getSummary(),
+      fn: () => void collector.getSummary(),
       samples: 200,
       warmupSamples: 20,
       iterationsPerSample: 100,
@@ -137,7 +137,7 @@ describe('Micro-benchmark: MetricsCollector', () => {
 
     const result = await runBenchmark({
       name: 'MetricsCollector.getActiveRequestCount — single call',
-      fn: () => collector.getActiveRequestCount(),
+      fn: () => void collector.getActiveRequestCount(),
       samples: 200,
       warmupSamples: 20,
       iterationsPerSample: 100,

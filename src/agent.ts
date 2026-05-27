@@ -18,6 +18,7 @@ import { setCommandAllowlist, setSkipDangerousCheck } from './tools.js';
 import { ConversationHistory } from './agent/conversation.js';
 import { LLMClient } from './agent/llm-client.js';
 import { ToolExecutor } from './agent/tool-executor.js';
+import { ToolCallAccumulator } from './agent/tool-accumulator.js';
 import { DEFAULT_MAX_CONTEXT_TOKENS } from './context-manager.js';
 import { logger } from './logging/structured-logger.js';
 import { metricsCollector } from './monitoring/metrics-collector.js';
@@ -84,6 +85,28 @@ function hasReasoning(input: unknown): input is { reasoning_content: string } {
 const DEEPSEEK_BASE_URL = 'https://api.deepseek.com'; // OpenAI-compatible
 const DEEPSEEK_BETA_URL = 'https://api.deepseek.com/beta'; // Beta features (strict mode)
 const DEEPSEEK_MODEL = 'deepseek-v4-flash'; // Default: fast/economical
+
+/** Result of a single round in the agent loop. */
+type RoundResult =
+  | { type: 'continue' }
+  | { type: 'done'; text: string }
+  | { type: 'break' };
+
+// ─── Thinking body builder ──────────────────────────────────────────────────
+
+interface ThinkingBody {
+  thinking?: { type: 'enabled' };
+  reasoning_effort: 'high' | 'max';
+}
+
+function buildThinkingBody(
+  enabled: boolean,
+  effort: 'high' | 'max'
+): ThinkingBody {
+  return enabled
+    ? { thinking: { type: 'enabled' }, reasoning_effort: effort }
+    : { reasoning_effort: effort };
+}
 
 // ─── Agent class ─────────────────────────────────────────────────────────────
 
@@ -343,13 +366,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
    */
   private async runLoop(sync = false, signal?: AbortSignal): Promise<string> {
     // Filter tools based on permission mode
-    let activeTools = this.config.tools;
-    if (this.config.permissionMode === 'readonly') {
-      activeTools = this.config.tools.filter((t) => t.readonly === true);
-    }
-    const tools: ChatCompletionTool[] = activeTools.map(toolToOpenAI);
-
-    let fullText = '';
+    const tools = this.buildActiveTools();
 
     for (let round = 0; round < this.config.maxToolRounds; round++) {
       // Break early if too many consecutive tool errors
@@ -370,181 +387,204 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
       );
 
       // Build common API params with thinking mode
-      // DeepSeek-V4: thinking + reasoning_effort via extra_body (OpenAI SDK compat)
-      const thinkingBody = this.config.thinkingEnabled
-        ? { thinking: { type: 'enabled' as const }, reasoning_effort: this.config.reasoningEffort }
-        : { reasoning_effort: this.config.reasoningEffort };
+      const thinkingBody = buildThinkingBody(this.config.thinkingEnabled, this.config.reasoningEffort);
 
-      if (sync) {
-        // ── Non-streaming call ─────────────────────────────────────────────
-        const response = await this.llmClient.createSync(
-          this.config.model,
-          messages,
-          tools,
-          thinkingBody,
-          signal
+      // Dispatch to sync or streaming round handler
+      const roundResult = sync
+        ? await this.executeSyncRound(messages, tools, thinkingBody, signal)
+        : await this.executeStreamRound(messages, tools, thinkingBody, signal);
+
+      if (roundResult.type === 'continue') {
+        continue;
+      }
+
+      if (roundResult.type === 'done') {
+        return roundResult.text;
+      }
+
+      // type === 'break'
+      break;
+    }
+
+    // Max rounds reached or break
+    return this.handleMaxRoundsReached();
+  }
+
+  /**
+   * Build the active tools array based on permission mode.
+   * In readonly mode, only tools marked readonly are included.
+   */
+  private buildActiveTools(): ChatCompletionTool[] {
+    if (this.config.permissionMode === 'readonly') {
+      return this.config.tools
+        .filter((t) => t.readonly === true)
+        .map(toolToOpenAI);
+    }
+    return this.config.tools.map(toolToOpenAI);
+  }
+
+  /**
+   * Execute a single non-streaming (sync) round.
+   * Returns a RoundResult indicating whether to continue, return, or break.
+   */
+  private async executeSyncRound(
+    messages: ReturnType<ConversationHistory['getMessagesWithSystem']>,
+    tools: ChatCompletionTool[],
+    thinkingBody: ThinkingBody,
+    signal?: AbortSignal
+  ): Promise<RoundResult> {
+    const response = await this.llmClient.createSync(
+      this.config.model,
+      messages,
+      tools,
+      thinkingBody,
+      signal
+    );
+    if (!response) return { type: 'break' };
+
+    const choice = response.choices[0];
+    if (!choice) return { type: 'break' };
+
+    const msg = choice.message;
+    let reasoningContent = '';
+
+    // Handle reasoning content (DeepSeek-specific)
+    if (hasReasoning(msg)) {
+      reasoningContent = msg.reasoning_content;
+      this.emit('reasoning:delta', msg.reasoning_content);
+    }
+
+    const content = msg.content || '';
+
+    // Handle tool calls
+    if (msg.tool_calls && msg.tool_calls.length > 0) {
+      const functionCalls = msg.tool_calls.filter(isFunctionToolCall);
+      if (functionCalls.length > 0) {
+        this.emit('stream:delta', content, content);
+        // Push assistant message with tool calls before executing tools
+        this.conversation.addAssistantMessage(
+          msg.content ?? null,
+          msg.tool_calls,
+          reasoningContent
         );
-        if (!response) break;
-
-        const choice = response.choices[0];
-        if (!choice) break;
-
-        const msg = choice.message;
-        let reasoningContent = '';
-
-        // Handle reasoning content (DeepSeek-specific)
-        if (hasReasoning(msg)) {
-          reasoningContent = msg.reasoning_content;
-          this.emit('reasoning:delta', msg.reasoning_content);
-        }
-
-        if (msg.content) {
-          fullText += msg.content;
-        }
-
-        // Handle tool calls
-        if (msg.tool_calls && msg.tool_calls.length > 0) {
-          const functionCalls = msg.tool_calls.filter(isFunctionToolCall);
-          if (functionCalls.length > 0) {
-            this.emit('stream:delta', msg.content || '', fullText);
-            // Push assistant message with tool calls before executing tools
-            this.conversation.addAssistantMessage(
-              msg.content ?? null,
-              msg.tool_calls,
-              reasoningContent
-            );
-            await this.executeToolCalls(functionCalls);
-            continue;
-          }
-        }
-
-        // No tool calls → done
-        this.emit('stream:end', fullText);
-        this.conversation.addAssistantMessage(msg.content, undefined, reasoningContent);
-        this.emit('message:assistant', { role: 'assistant', content: fullText });
-        return fullText;
-      } else {
-        // ── Streaming call ─────────────────────────────────────────────────
-        // OpenAI SDK timeout (60s, set in constructor) already guards against
-        // streaming hangs. No separate AbortSignal needed — the SDK's
-        // internal timeout handles abort.
-        const stream = await this.llmClient.createStream(
-          this.config.model,
-          messages,
-          tools,
-          thinkingBody,
-          signal
-        );
-        if (!stream) break;
-
-        // Accumulate tool calls across chunks by index
-        const toolCallAccumulators = new Map<
-          number,
-          { id: string; name: string; arguments: string }
-        >();
-        let streamingContent = fullText;
-        let reasoningContent = '';
-        let finished = false;
-
-        for await (const chunk of stream) {
-          const delta = chunk.choices[0]?.delta;
-          const finishReason = chunk.choices[0]?.finish_reason;
-
-          if (!delta) continue;
-
-          // Text content
-          if (delta.content) {
-            streamingContent += delta.content;
-            this.emit('stream:delta', delta.content, streamingContent);
-          }
-
-          // DeepSeek-specific: reasoning_content in delta
-          if (hasReasoning(delta)) {
-            reasoningContent += delta.reasoning_content;
-            this.emit('reasoning:delta', delta.reasoning_content);
-          }
-
-          // Tool calls (accumulate by index — Delta.ToolCall has function)
-          if (delta.tool_calls) {
-            for (const tc of delta.tool_calls) {
-              const idx = tc.index;
-              if (!toolCallAccumulators.has(idx)) {
-                toolCallAccumulators.set(idx, {
-                  id: '',
-                  name: '',
-                  arguments: '',
-                });
-              }
-              const acc = toolCallAccumulators.get(idx)!;
-              if (tc.id) acc.id = tc.id;
-              if (tc.function?.name) acc.name = tc.function.name;
-              if (tc.function?.arguments) acc.arguments += tc.function.arguments;
-            }
-          }
-
-          if (
-            finishReason === 'tool_calls' ||
-            finishReason === 'stop' ||
-            finishReason === 'length'
-          ) {
-            if (toolCallAccumulators.size > 0) {
-              // Add assistant message with tool calls to history
-              this.conversation.addAssistantMessage(
-                streamingContent.slice(fullText.length) || null,
-                Array.from(toolCallAccumulators.entries()).map(([, acc]) => ({
-                  id: acc.id,
-                  type: 'function' as const,
-                  function: { name: acc.name, arguments: acc.arguments },
-                })),
-                reasoningContent
-              );
-              fullText = streamingContent;
-
-              // All accumulated calls are 'function' type (checked during accumulation)
-              const accumulatedCalls: ChatCompletionMessageFunctionToolCall[] = Array.from(
-                toolCallAccumulators.entries()
-              ).map(([, acc]) => ({
-                id: acc.id,
-                type: 'function' as const,
-                function: { name: acc.name, arguments: acc.arguments },
-              }));
-              await this.executeToolCalls(accumulatedCalls);
-
-              // If the response was truncated, warn the model
-              if (finishReason === 'length') {
-                this.conversation.addToolWarning(
-                  toolCallAccumulators.values().next().value?.id || 'n/a',
-                  'Response was truncated due to context length limit. Tool calls may have been cut off.'
-                );
-              }
-
-              finished = true;
-            }
-            break; // exit for-await loop
-          }
-        }
-
-        if (!finished) {
-          // No tool calls — assistant is done
-          fullText = streamingContent;
-          this.emit('stream:end', fullText);
-          this.conversation.addAssistantMessage(streamingContent, undefined, reasoningContent);
-          this.emit('message:assistant', {
-            role: 'assistant',
-            content: fullText,
-          });
-          return fullText;
-        }
-        // Continue the loop for the next round (tool results were added)
+        await this.executeToolCalls(functionCalls);
+        return { type: 'continue' };
       }
     }
 
-    // Max rounds reached
-    this.emit('stream:end', fullText);
-    if (fullText) {
-      this.conversation.addAssistantMessage(fullText);
-      this.emit('message:assistant', { role: 'assistant', content: fullText });
+    // No tool calls → done
+    this.finalizeResponse(content, reasoningContent);
+    return { type: 'done', text: content };
+  }
+
+  /**
+   * Execute a single streaming round.
+   * Returns a RoundResult indicating whether to continue, return, or break.
+   */
+  private async executeStreamRound(
+    messages: ReturnType<ConversationHistory['getMessagesWithSystem']>,
+    tools: ChatCompletionTool[],
+    thinkingBody: ThinkingBody,
+    signal?: AbortSignal
+  ): Promise<RoundResult> {
+    const stream = await this.llmClient.createStream(
+      this.config.model,
+      messages,
+      tools,
+      thinkingBody,
+      signal
+    );
+    if (!stream) return { type: 'break' };
+
+    // Accumulate tool calls across chunks using the dedicated accumulator
+    const accumulator = new ToolCallAccumulator();
+    let streamingContent = '';
+    let reasoningContent = '';
+    let finished = false;
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta;
+      const finishReason = chunk.choices[0]?.finish_reason;
+
+      if (!delta) continue;
+
+      // Text content
+      if (delta.content) {
+        streamingContent += delta.content;
+        this.emit('stream:delta', delta.content, streamingContent);
+      }
+
+      // DeepSeek-specific: reasoning_content in delta
+      if (hasReasoning(delta)) {
+        reasoningContent += delta.reasoning_content;
+        this.emit('reasoning:delta', delta.reasoning_content);
+      }
+
+      // Tool calls (accumulate by index via ToolCallAccumulator)
+      if (delta.tool_calls) {
+        accumulator.processDelta(delta.tool_calls);
+      }
+
+      if (
+        finishReason === 'tool_calls' ||
+        finishReason === 'stop' ||
+        finishReason === 'length'
+      ) {
+        if (accumulator.hasToolCalls()) {
+          // Add assistant message with tool calls to history
+          this.conversation.addAssistantMessage(
+            streamingContent || null,
+            accumulator.getEntries().map(([, acc]) => ({
+              id: acc.id,
+              type: 'function' as const,
+              function: { name: acc.name, arguments: acc.arguments },
+            })),
+            reasoningContent
+          );
+
+          const accumulatedCalls = accumulator.getToolCalls();
+          await this.executeToolCalls(accumulatedCalls);
+
+          // If the response was truncated, warn the model
+          if (finishReason === 'length') {
+            const firstId = accumulatedCalls[0]?.id || 'n/a';
+            this.conversation.addToolWarning(
+              firstId,
+              'Response was truncated due to context length limit. Tool calls may have been cut off.'
+            );
+          }
+
+          finished = true;
+        }
+        break; // exit for-await loop
+      }
     }
+
+    if (finished) {
+      return { type: 'continue' };
+    }
+
+    // No tool calls — assistant is done
+    this.finalizeResponse(streamingContent, reasoningContent);
+    return { type: 'done', text: streamingContent };
+  }
+
+  /**
+   * Finalize a completed response (no tool calls): emit events, add to history.
+   */
+  private finalizeResponse(content: string, reasoningContent?: string): void {
+    this.emit('stream:end', content);
+    this.conversation.addAssistantMessage(content, undefined, reasoningContent);
+    this.emit('message:assistant', { role: 'assistant', content });
+  }
+
+  /**
+   * Handle the case when max rounds are reached or the loop breaks
+   * without producing a final response.
+   */
+  private handleMaxRoundsReached(): string {
+    const fullText = '';
+    this.emit('stream:end', fullText);
     return fullText;
   }
 

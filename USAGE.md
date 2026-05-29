@@ -9,6 +9,9 @@
 ### Launching McAgent
 
 ```bash
+# Interactive setup wizard — generate ~/.mcagent/config.yaml
+npm run init
+
 # TUI mode — interactive terminal UI with real-time streaming
 npm start
 
@@ -230,6 +233,9 @@ McAgent has three permission modes:
 ### 启动 McAgent
 
 ```bash
+# 交互式配置向导 — 生成 ~/.mcagent/config.yaml
+npm run init
+
 # TUI 模式 — 交互式终端界面，支持实时流式输出
 npm start
 
@@ -523,13 +529,20 @@ agent.addTool(myTool);
 
 ### TUI Mode
 
-| Key       | Action                 |
-| --------- | ---------------------- |
-| `Enter`   | Send message           |
-| `↑` / `↓` | Navigate input history |
-| `Esc`     | Exit                   |
-| `Ctrl+C`  | Exit                   |
-| Backspace | Delete character       |
+| Key            | Action                   |
+| -------------- | ------------------------ |
+| `Enter`        | Send message             |
+| `↑` / `↓`      | Navigate input history   |
+| `PgUp` / `PgDn`| Scroll message history   |
+| `Home` / `End` | Jump to top/bottom       |
+| `Ctrl+A` / `E` | Beginning/end of line    |
+| `Alt+B` / `F`  | Back/forward one word    |
+| `Ctrl+K` / `U` | Cut to end/start of line |
+| `Ctrl+Y`       | Paste last cut text      |
+| `Ctrl+L`       | Clear screen             |
+| `Ctrl+C` / Esc | Exit                     |
+| `Ctrl+D`       | Exit (empty input)       |
+| `?`            | Show help overlay        |
 
 ---
 

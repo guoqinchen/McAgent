@@ -5,8 +5,8 @@
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License">
     <img src="https://img.shields.io/badge/macOS-13.0%2B-brightgreen" alt="macOS 13.0+">
     <img src="https://img.shields.io/badge/TypeScript-5.6%2B-3178C6" alt="TypeScript">
-    <img src="https://img.shields.io/badge/tests-100%20passed-brightgreen" alt="100 tests">
-    <img src="https://img.shields.io/badge/version-2.0.0-blue" alt="Version 2.0.0">
+    <img src="https://img.shields.io/badge/tests-306%20passed-brightgreen" alt="306 tests">
+    <img src="https://img.shields.io/badge/version-2.2.0-blue" alt="Version 2.2.0">
   </p>
   <p>
     <a href="#english">English</a> ·
@@ -28,8 +28,10 @@
 - **Two interfaces** — Ink/React TUI (interactive) and headless CLI (scriptable)
 - **Safety-first** — 14-class dangerous command detection, path-scoped write restrictions, configurable permission modes
 - **Context-aware** — automatic message eviction prevents context window overflow
+- **Configurable** — YAML config file (`~/.mcagent/config.yaml`) + interactive init wizard (`npm run init`)
 - **Extensible** — simple `Tool` interface for adding custom tools
-- **DeepSeek-powered** — supports streaming, reasoning (R1), and configurable models
+- **CI/CD** — GitHub Actions pipeline with lint, test matrix, type-check, and benchmark regression
+- **DeepSeek-powered** — supports streaming, reasoning, and configurable models
 
 ### Tools Overview
 
@@ -89,6 +91,9 @@ npm install
 # Configure / 配置
 export DEEPSEEK_API_KEY=sk-your-key-here
 
+# Interactive setup wizard / 交互式配置向导
+npm run init
+
 # Launch TUI / 启动 TUI 界面
 npm start
 
@@ -111,10 +116,11 @@ npm run start:headless
 ## 🧪 Test Suite / 测试套件
 
 ```bash
-npm test            # 99 tests across 4 files
+npm test            # 306 tests across 20 files
 npm run test:watch  # Watch mode / 监听模式
 npm run lint        # ESLint / 代码检查
 npm run format      # Prettier / 格式化
+npm run init        # Interactive setup wizard / 初始化向导
 ```
 
 ---
@@ -128,8 +134,11 @@ src/
 ├── tools-extended.ts        # 8 extended tools (write_file, clipboard, etc.)
 ├── tools-pro.ts             # 4 pro diagnostic tools (network, security, etc.)
 ├── context-manager.ts       # Context window management (token estimation + eviction)
+├── init.ts                  # Interactive setup wizard
 ├── cli.tsx                  # Ink/React TUI
 ├── headless.ts              # Readline headless CLI
+├── config/                  # Config resolver
+│   └── resolver.ts           # YAML + env var config resolution
 ├── agent/                   # Agent submodules
 │   ├── conversation.ts       # Conversation history management
 │   ├── llm-client.ts         # OpenAI SDK wrapper with error recovery
@@ -143,7 +152,8 @@ src/
 ├── monitoring/
 │   └── metrics-collector.ts  # Performance metrics collection
 ├── types/                    # Shared type definitions
-└── __tests__/                # Vitest tests (126 tests)
+├── .github/                  # CI/CD workflows
+└── __tests__/                # Vitest tests (306 tests)
 ```
 
 ---

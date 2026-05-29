@@ -6,9 +6,43 @@
 
 ## 🔧 Configuration
 
+McAgent supports three configuration layers (highest priority first):
+
+```
+Environment Variables  >  ~/.mcagent/config.yaml  >  Built-in Defaults
+```
+
+### Quick Setup
+
+Run the interactive wizard to generate a config file:
+
+```bash
+npm run init
+```
+
+This saves `~/.mcagent/config.yaml`. You can edit it manually at any time.
+
+### YAML Configuration File
+
+`~/.mcagent/config.yaml` example:
+
+```yaml
+model: deepseek-v4-flash
+thinking:
+  enabled: true
+  reasoningEffort: high
+permission:
+  mode: approve
+  autoAllowlist: [git, npm, brew, ls, cat, find]
+context:
+  maxTokens: 96000
+```
+
+Environment variables override any YAML value.
+
 ### Environment Variables
 
-McAgent is configured primarily through environment variables:
+McAgent also accepts these environment variables:
 
 | Variable                    | Required    | Default                    | Description                                                                           |
 | --------------------------- | ----------- | -------------------------- | ------------------------------------------------------------------------------------- |
@@ -220,6 +254,7 @@ agent.addTool({
 ## 📝 Scripts / 脚本命令
 
 ```bash
+npm run init           # Interactive setup wizard / 交互式配置向导
 npm start              # Launch TUI / 启动 TUI 界面
 npm run start:headless # Launch headless CLI / 启动纯文本模式
 npm run dev            # Auto-reload development / 开发模式（自动重载）

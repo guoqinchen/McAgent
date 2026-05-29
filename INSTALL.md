@@ -51,6 +51,14 @@ cp .env.example .env
 # Then edit .env with your key
 ```
 
+Or use the interactive setup wizard (recommended):
+
+```bash
+npm run init
+```
+
+This walks you through model selection, thinking mode, permission mode, and more — then saves a `~/.mcagent/config.yaml` file.
+
 **4. Verify / 验证**
 
 ```bash
@@ -128,6 +136,14 @@ cp .env.example .env
 # 编辑 .env 文件填入你的密钥
 ```
 
+或使用交互式配置向导（推荐）：
+
+```bash
+npm run init
+```
+
+向导会引导你选择模型、启用以太模式、设置权限模式等，最终生成 `~/.mcagent/config.yaml` 配置文件。
+
 **4. 验证安装**
 
 ```bash
@@ -164,4 +180,5 @@ npm run start:headless
 | `DEEPSEEK_API_KEY is required`       | Set the environment variable before running (see step 3)                                              |
 | `Cannot find module 'ink'`           | Optional dependency not installed. Run `npm install ink react` manually, or use headless mode instead |
 | TUI display broken / 界面显示异常    | Use headless mode: `npm run start:headless`                                                           |
-| Tests fail with `99 passed` expected | Make sure you're running `npm test` from the project root                                             |
+| Tests fail with `306 passed` expected | Make sure you're running `npm test` from the project root                                             |
+| Config not being applied              | Run `npm run init` to regenerate `~/.mcagent/config.yaml`. Env vars always take precedence over file   |

@@ -14,6 +14,7 @@ import { macOSProTools } from './tools-pro.js';
 import { createInterface } from 'node:readline';
 import { logger } from './logging/structured-logger.js';
 import { createAnsiTheme } from './ui/ansi-theme.js';
+import { resolveConfig } from './config/resolver.js';
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
@@ -26,18 +27,17 @@ if (!apiKey) {
 
 // ─── Agent setup ─────────────────────────────────────────────────────────────
 
+const config = resolveConfig();
+
 logger.info('Headless CLI starting', {
-  model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
-  thinkingEnabled: process.env.DEEPSEEK_THINKING_ENABLED !== 'false',
+  model: config.model ?? 'deepseek-v4-flash',
+  thinkingEnabled: config.thinkingEnabled ?? true,
   logDir: `${process.env.HOME}/.mcagent/logs/`,
 });
 
 const agent = createMacOSAgent({
   apiKey,
-  model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
-  thinkingEnabled: process.env.DEEPSEEK_THINKING_ENABLED !== 'false',
-  reasoningEffort: (process.env.DEEPSEEK_REASONING_EFFORT as 'high' | 'max') || 'high',
-  maxContextTokens: Number(process.env.DEEPSEEK_MAX_TOKENS) || undefined,
+  ...config,
   instructions: [
     `You are a macOS expert assistant. Help the user operate their Mac efficiently `,
     `using CLI commands, system utilities, and automation.`,
@@ -56,12 +56,27 @@ const agent = createMacOSAgent({
 
 const c = createAnsiTheme();
 
+let isStreaming = false;
+
 agent.on('thinking:start', function onThinkingStart() {
+  isStreaming = true;
   process.stdout.write(`${c.header}⏳  Processing...${c.reset}\n`);
 });
 
+agent.on('thinking:end', function onThinkingEnd() {
+  isStreaming = false;
+});
+
 agent.on('tool:call', function onToolCall(name, args) {
-  process.stdout.write(`  ${c.toolCall}🔧 ${name}${c.reset}(${JSON.stringify(args, null, 2)})\n`);
+  process.stdout.write(`  ${c.toolCall}🔧 ${name}${c.reset}(${JSON.stringify(args)}\n`);
+});
+
+agent.on('tool:result', function onToolResult(name, result) {
+  const preview =
+    typeof result === 'string' && result.length > 120
+      ? result.slice(0, 120) + '…'
+      : String(result);
+  process.stdout.write(`  ${c.success}✓ ${name}${c.reset}: ${preview}\n`);
 });
 
 agent.on('stream:delta', function onStreamDelta(delta) {

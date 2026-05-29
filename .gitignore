@@ -8,3 +8,4 @@ dist/
 docs/superpowers/plans/
 .deepseek/
 .benchmark-baselines/
+.reasonix/

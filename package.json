@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/cli.tsx",
     "start:headless": "tsx src/headless.ts",
+    "init": "tsx src/init.ts",
     "dev": "tsx watch src/cli.tsx",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
@@ -25,7 +26,8 @@
   "license": "MIT",
   "dependencies": {
     "eventemitter3": "^5.0.1",
-    "openai": "^6.38.0"
+    "openai": "^6.38.0",
+    "yaml": "^2.9.0"
   },
   "optionalDependencies": {
     "ink": "^5.0.0",

@@ -23,6 +23,7 @@ import { macOSDefaultTools } from './tools.js';
 import { macOSExtendedTools } from './tools-extended.js';
 import { macOSProTools } from './tools-pro.js';
 import { logger } from './logging/structured-logger.js';
+import { resolveConfig } from './config/resolver.js';
 
 // ─── Agent ───────────────────────────────────────────────────────────────────
 
@@ -32,18 +33,17 @@ if (!apiKey) {
   process.exit(1);
 }
 
+const config = resolveConfig();
+
 logger.info('TUI starting', {
-  model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
-  thinkingEnabled: process.env.DEEPSEEK_THINKING_ENABLED !== 'false',
+  model: config.model ?? 'deepseek-v4-flash',
+  thinkingEnabled: config.thinkingEnabled ?? true,
   logDir: `${process.env.HOME}/.mcagent/logs/`,
 });
 
 const agent = createMacOSAgent({
   apiKey,
-  model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
-  thinkingEnabled: process.env.DEEPSEEK_THINKING_ENABLED !== 'false',
-  reasoningEffort: (process.env.DEEPSEEK_REASONING_EFFORT as 'high' | 'max') || 'high',
-  maxContextTokens: Number(process.env.DEEPSEEK_MAX_TOKENS) || undefined,
+  ...config,
   instructions: [
     `You are a macOS expert assistant. Help the user operate their Mac efficiently `,
     `using CLI commands, system utilities, and automation.`,

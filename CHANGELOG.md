@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- <!-- next-release-placeholder -->
+
+### Changed
+
+- <!-- next-release-placeholder -->
+
+## [2.2.0] — 2026-05-27
+
+### Added
+
 - **CI/CD pipeline**: GitHub Actions workflow with lint, test matrix (Node 18/20/22), type-check, and benchmark regression jobs ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 - **YAML config resolver**: `~/.mcagent/config.yaml` declarative configuration with env var override priority ([`src/config/resolver.ts`](src/config/resolver.ts)).
 - **Interactive init wizard**: `npm run init` walks through model, thinking mode, permission, allowlist, and API key setup ([`src/init.ts`](src/init.ts)).
@@ -75,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 99 unit and integration tests.
 - Bilingual documentation (Chinese/English): README, INSTALL, CONFIG, USAGE, LICENSE.
 
-[Unreleased]: https://github.com/guoqinchen/mcagent/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/guoqinchen/mcagent/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/guoqinchen/mcagent/releases/tag/v2.2.0
 [2.1.0]: https://github.com/guoqinchen/mcagent/releases/tag/v2.1.0
 [2.0.0]: https://github.com/guoqinchen/mcagent/releases/tag/v2.0.0

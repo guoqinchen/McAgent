@@ -39,8 +39,8 @@ export interface McAgentConfig {
   maxToolRounds?: number;
   /**
    * Context window token limit.
-   * DeepSeek-V4 supports up to 1M tokens. Default: 96_000 (leaves headroom
-   * for the response; set higher if you need more history).
+   * DeepSeek-V4 supports up to 1,048,576 (1M) tokens.
+   * Default: 900_000 (leaves ~148K headroom for response + thinking tokens).
    * Set to 0 to disable automatic eviction.
    */
   maxContextTokens?: number;

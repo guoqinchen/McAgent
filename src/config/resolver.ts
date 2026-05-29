@@ -51,7 +51,7 @@ const DEFAULTS: Partial<McAgentConfig> = {
   thinkingEnabled: true,
   reasoningEffort: 'high',
   permissionMode: 'approve',
-  maxContextTokens: 96_000,
+  maxContextTokens: 900_000, // DeepSeek V4: 1M total, 100K headroom
 };
 
 // ─── YAML file loading ─────────────────────────────────────────────────────

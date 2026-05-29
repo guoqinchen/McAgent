@@ -363,7 +363,7 @@ describe('MacOSAgent', () => {
       const agent = createTestAgent({ maxContextTokens: 10 });
 
       // Push many long messages to exceed the tiny token limit
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 30; i++) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (agent as any).conversation.addUserMessage(`Message number ${i} `.repeat(20));
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -371,7 +371,7 @@ describe('MacOSAgent', () => {
       }
 
       // Verify that many messages were added
-      expect(agent.getMessages().length).toBe(20); // 10 pairs
+      expect(agent.getMessages().length).toBe(60); // 30 pairs
 
       // Mock API to return a simple response, triggering runLoop → eviction
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -388,7 +388,7 @@ describe('MacOSAgent', () => {
 
       // After eviction with very low maxContextTokens, messages should be fewer
       const msgsAfter = agent.getMessages();
-      expect(msgsAfter.length).toBeLessThan(20);
+      expect(msgsAfter.length).toBeLessThan(60);
     });
   });
 

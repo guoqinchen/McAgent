@@ -19,7 +19,11 @@ import { ConversationHistory } from './agent/conversation.js';
 import { LLMClient } from './agent/llm-client.js';
 import { ToolExecutor } from './agent/tool-executor.js';
 import { ToolCallAccumulator } from './agent/tool-accumulator.js';
-import { DEFAULT_MAX_CONTEXT_TOKENS } from './context-manager.js';
+import {
+  DEFAULT_MAX_CONTEXT_TOKENS,
+  getContextUsage,
+  formatContextUsage,
+} from './context-manager.js';
 import { logger } from './logging/structured-logger.js';
 import { metricsCollector } from './monitoring/metrics-collector.js';
 
@@ -380,6 +384,12 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
         this.config.instructions,
         this.config.maxContextTokens
       );
+
+      // Log context usage stats (helpful for debugging DeepSeek-V4 1M context)
+      if (round === 0) {
+        const usage = getContextUsage(messages, this.config.maxContextTokens);
+        logger.debug(formatContextUsage(usage));
+      }
 
       // Build common API params with thinking mode
       const thinkingBody = buildThinkingBody(

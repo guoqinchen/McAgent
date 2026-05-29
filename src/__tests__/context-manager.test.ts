@@ -78,8 +78,8 @@ describe('evictMessages', () => {
       { role: 'user', content: 'latest user' },
     ];
 
-    // Very low limit forces eviction of oldest pair
-    const result = evictMessages(msgs, 5);
+    // Very low limit + low minKeep forces eviction of oldest pair
+    const result = evictMessages(msgs, 5, 3);
     expect(result.map((m) => m.content)).not.toContain('old user');
     expect(result.map((m) => m.content)).not.toContain('old asst');
   });
@@ -130,7 +130,7 @@ describe('evictMessages', () => {
 });
 
 describe('DEFAULT_MAX_CONTEXT_TOKENS', () => {
-  it('is 96_000 (leaving headroom for DeepSeek 128K)', () => {
-    expect(DEFAULT_MAX_CONTEXT_TOKENS).toBe(96_000);
+  it('is 900_000 (leaving ~148K headroom for DeepSeek V4 1M context)', () => {
+    expect(DEFAULT_MAX_CONTEXT_TOKENS).toBe(900_000);
   });
 });

@@ -676,7 +676,8 @@ describe('Performance: Edge cases & regression guards', () => {
 
   it('DEFAULT_MAX_CONTEXT_TOKENS remains at expected value', () => {
     // This guards against accidental changes to the context limit
-    expect(DEFAULT_MAX_CONTEXT_TOKENS).toBe(96_000);
+    // DeepSeek-V4 supports 1M context; we default to 900K with ~148K headroom
+    expect(DEFAULT_MAX_CONTEXT_TOKENS).toBe(900_000);
   });
 
   it('ErrorRecoveryEngine maxRetries is 3', () => {

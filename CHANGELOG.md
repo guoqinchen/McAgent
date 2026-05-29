@@ -9,15 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- <!-- next-release-placeholder -->
+- **CI/CD pipeline**: GitHub Actions workflow with lint, test matrix (Node 18/20/22), type-check, and benchmark regression jobs ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+- **YAML config resolver**: `~/.mcagent/config.yaml` declarative configuration with env var override priority ([`src/config/resolver.ts`](src/config/resolver.ts)).
+- **Interactive init wizard**: `npm run init` walks through model, thinking mode, permission, allowlist, and API key setup ([`src/init.ts`](src/init.ts)).
+- **Tool result display (headless)**: headless CLI now shows tool execution results with preview and success indicator.
 
 ### Changed
 
-- <!-- next-release-placeholder -->
-
-### Fixed
-
-- <!-- next-release-placeholder -->
+- **CLI entry points migrated to config resolver**: `src/cli.tsx` and `src/headless.ts` now use `resolveConfig()` instead of raw env var reads — env vars remain fully backward-compatible.
+- **`.reasonix/` added to `.gitignore`**: prevents internal tool artifacts from leaking into commits.
 
 ## [2.1.0] — 2026-05-27
 

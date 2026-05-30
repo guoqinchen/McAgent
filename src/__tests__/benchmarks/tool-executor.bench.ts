@@ -9,7 +9,7 @@
  *   - Callback dispatch overhead
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, vi, beforeEach } from 'vitest';
 import { runBenchmark, formatResult, sanityCheck } from './framework.js';
 import { ToolExecutor } from '../../agent/tool-executor.js';
 import type { ChatCompletionMessageFunctionToolCall } from 'openai/resources/chat/completions';

@@ -5,7 +5,7 @@
  * ASCII, CJK, mixed, empty, short, long, tool-call-laden messages.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { runBenchmark, formatResult, sanityCheck } from './framework.js';
 import { estimateTokens, estimateMessageTokens } from '../../context-manager.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
@@ -17,11 +17,10 @@ const ASCII_1KB = 'The quick brown fox jumps over the lazy dog. '.repeat(25); //
 const ASCII_10KB = 'The quick brown fox jumps over the lazy dog. '.repeat(250); // ~10KB
 const ASCII_100KB = 'The quick brown fox jumps over the lazy dog. '.repeat(2500); // ~100KB
 
-const CJK_100B = '你好世界这是一个性能测试中文字符串'.repeat(2);
 const CJK_1KB = '你好世界这是一个性能测试中文字符串'.repeat(25);
 const CJK_10KB = '你好世界这是一个性能测试中文字符串'.repeat(250);
 
-const MIXED_1KB = 'Hello 你好 World 世界 Test 测试 '.repeat(34);
+const _MIXED_1KB = 'Hello 你好 World 世界 Test 测试 '.repeat(34);
 const MIXED_10KB = 'Hello 你好 World 世界 Test 测试 '.repeat(334);
 
 const EMPTY = '';

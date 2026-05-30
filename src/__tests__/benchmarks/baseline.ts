@@ -5,9 +5,9 @@
  * against stored baselines, flagging regressions over a configurable threshold.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { BenchmarkResult, BenchmarkStatistics } from './framework.js';
+import type { BenchmarkResult } from './framework.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -132,7 +132,6 @@ export function loadBaseline(name: string): BaselineFile | null {
  */
 export function listBaselines(): string[] {
   if (!existsSync(BASELINE_DIR)) return [];
-  const { readdirSync } = require('node:fs');
   return readdirSync(BASELINE_DIR)
     .filter((f: string) => f.endsWith('.json'))
     .map((f: string) => f.replace('.json', ''));

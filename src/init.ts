@@ -84,22 +84,20 @@ async function run(): Promise<void> {
 
   header('🔹 Command Allowlist');
   info('  Commands prefixed with these are auto-approved (comma-separated)');
-  const allowlistInput = await question(
-    rl,
-    '  [git, npm, brew, ls, cat, find, npx, node, tsx]: '
-  );
+  const allowlistInput = await question(rl, '  [git, npm, brew, ls, cat, find, npx, node, tsx]: ');
   const autoAllowlist =
     allowlistInput.length > 0
-      ? allowlistInput.split(',').map((s) => s.trim()).filter(Boolean)
+      ? allowlistInput
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
       : ['git', 'npm', 'brew', 'ls', 'cat', 'find', 'npx', 'node', 'tsx'];
 
   // ── API Key ──────────────────────────────────────────────────────────────
 
   header('🔹 API Key');
   info('  Your DeepSeek API key (stored as DEEPSEEK_API_KEY env var is recommended)');
-  info(
-    '  Get one at: https://platform.deepseek.com/api-docs'
-  );
+  info('  Get one at: https://platform.deepseek.com/api-docs');
 
   if (process.env.DEEPSEEK_API_KEY) {
     success('  ✓ Found DEEPSEEK_API_KEY in environment');

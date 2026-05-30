@@ -11,7 +11,7 @@
  */
 
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { parse as parseYaml } from 'yaml';
 import type { McAgentConfig, PermissionMode, ReasoningEffort } from '../types/config.js';

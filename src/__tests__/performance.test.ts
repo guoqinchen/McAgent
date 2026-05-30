@@ -23,14 +23,9 @@ import {
   DEFAULT_MAX_CONTEXT_TOKENS,
 } from '../context-manager.js';
 import { ConversationHistory } from '../agent/conversation.js';
-import { ErrorRecoveryEngine, errorRecoveryEngine } from '../engine/error-recovery-engine.js';
+import { ErrorRecoveryEngine } from '../engine/error-recovery-engine.js';
 import { MetricsCollector } from '../monitoring/metrics-collector.js';
-import {
-  StructuredLogger,
-  ConsoleHandler,
-  FileHandler,
-  LogLevel,
-} from '../logging/structured-logger.js';
+import { StructuredLogger, ConsoleHandler } from '../logging/structured-logger.js';
 import { ToolExecutor } from '../agent/tool-executor.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import type { ChatCompletionMessageFunctionToolCall } from 'openai/resources/chat/completions';
@@ -310,7 +305,7 @@ describe('Performance: ErrorRecoveryEngine', () => {
     const elapsed = measureSync(() => {
       for (const err of errors) {
         // Access private method via prototype for testing
-        (engine as any).classifyError(err);
+        (engine as unknown as { classifyError: (err: Error) => string }).classifyError(err);
       }
     }, 1);
 
@@ -343,9 +338,15 @@ describe('Performance: ErrorRecoveryEngine', () => {
 
   it('retry delay increases exponentially', () => {
     // Check the private method for correctness via prototype
-    const delay1 = (engine as any).calculateRetryDelay(0); // 1000ms
-    const delay2 = (engine as any).calculateRetryDelay(1); // 2000ms
-    const delay3 = (engine as any).calculateRetryDelay(2); // 4000ms
+    const delay1 = (
+      engine as unknown as { calculateRetryDelay: (n: number) => number }
+    ).calculateRetryDelay(0); // 1000ms
+    const delay2 = (
+      engine as unknown as { calculateRetryDelay: (n: number) => number }
+    ).calculateRetryDelay(1); // 2000ms
+    const delay3 = (
+      engine as unknown as { calculateRetryDelay: (n: number) => number }
+    ).calculateRetryDelay(2); // 4000ms
 
     expect(delay1).toBe(1000);
     expect(delay2).toBe(2000);
@@ -353,12 +354,16 @@ describe('Performance: ErrorRecoveryEngine', () => {
   });
 
   it('returns null fallback for fetch operations', () => {
-    const fallback = (engine as any).getDefaultFallback('fetch_data');
+    const fallback = (
+      engine as unknown as { getDefaultFallback: (op: string) => unknown }
+    ).getDefaultFallback('fetch_data');
     expect(fallback).toBeNull();
   });
 
   it('returns empty array fallback for list operations', () => {
-    const fallback = (engine as any).getDefaultFallback('list_items');
+    const fallback = (
+      engine as unknown as { getDefaultFallback: (op: string) => unknown }
+    ).getDefaultFallback('list_items');
     expect(fallback).toEqual([]);
   });
 });
@@ -678,12 +683,12 @@ describe('Performance: Edge cases & regression guards', () => {
 
   it('ErrorRecoveryEngine maxRetries is 3', () => {
     const engine = new ErrorRecoveryEngine();
-    expect((engine as any).maxRetries).toBe(3);
+    expect((engine as unknown as { maxRetries: number }).maxRetries).toBe(3);
   });
 
   it('ErrorRecoveryEngine baseRetryDelay is 1000ms', () => {
     const engine = new ErrorRecoveryEngine();
-    expect((engine as any).baseRetryDelay).toBe(1000);
+    expect((engine as unknown as { baseRetryDelay: number }).baseRetryDelay).toBe(1000);
   });
 
   it('MetricsCollector returns 0 avg/min/max for unused collector', () => {

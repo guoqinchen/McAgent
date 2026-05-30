@@ -143,7 +143,7 @@ export const runCommandTool: Tool = {
       };
     }
 
-    const isAllowlisted = isCommandAllowlisted(cmd);
+    const _isAllowlisted = isCommandAllowlisted(cmd);
 
     // ─── Safety Check ────────────────────────────────────────────────────────
     // Always check dangerous patterns unless explicitly skipped in 'auto' mode.

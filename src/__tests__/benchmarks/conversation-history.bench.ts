@@ -8,7 +8,7 @@
  *   - clear/reset throughput
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, beforeEach } from 'vitest';
 import { runBenchmark, formatResult, sanityCheck } from './framework.js';
 import { ConversationHistory } from '../../agent/conversation.js';
 
@@ -83,7 +83,7 @@ describe('Micro-benchmark: ConversationHistory', () => {
       name: 'ConversationHistory.toPlainMessages — cache miss',
       fn: () => {
         conv.addUserMessage('new');
-        const p = conv.toPlainMessages();
+        conv.toPlainMessages();
         conv.clear();
         conv.addUserMessage('hello');
       },

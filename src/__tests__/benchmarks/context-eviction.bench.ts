@@ -7,7 +7,7 @@
  * and edge cases (empty, already-under-limit, all-eviction).
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { runBenchmark, formatResult, sanityCheck } from './framework.js';
 import { evictMessages } from '../../context-manager.js';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';

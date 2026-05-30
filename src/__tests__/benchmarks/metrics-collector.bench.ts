@@ -9,7 +9,7 @@
  *   - Active request tracking overhead
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, beforeEach } from 'vitest';
 import { runBenchmark, formatResult, sanityCheck } from './framework.js';
 import { MetricsCollector } from '../../monitoring/metrics-collector.js';
 

@@ -113,6 +113,10 @@ export interface ThemeTokens {
   function: string;
   /** Type/class highlight (in code) */
   type: string;
+  /** Permission request highlight color */
+  permissionHighlight: string;
+  /** Progress bar fill color */
+  progressBar: string;
 }
 
 // ─── Color palettes ───────────────────────────────────────────────────────────
@@ -168,6 +172,8 @@ const darkTokens: ThemeTokens = {
   string: 'green',
   function: 'yellowBright',
   type: 'cyanBright',
+  permissionHighlight: 'yellow',
+  progressBar: 'greenBright',
 };
 
 const lightTokens: ThemeTokens = {
@@ -221,6 +227,8 @@ const lightTokens: ThemeTokens = {
   string: 'green',
   function: 'yellow',
   type: 'blueBright',
+  permissionHighlight: 'yellowBright',
+  progressBar: 'green',
 };
 
 // ─── Detection ────────────────────────────────────────────────────────────────

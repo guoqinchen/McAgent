@@ -59,22 +59,17 @@ export const ThinkingIndicator = memo(function ThinkingIndicator({
       <Box>
         <Text color={theme.thinkingSpinner}>{SPINNER_FRAMES[frameIdx]}</Text>
         <Text color={theme.thinkingLabel} bold>
-          {' '}{label}
+          {' '}
+          {label}
         </Text>
-        {elapsedStr && (
-          <Text color={theme.thinkingTimer}>
-            {' '}({elapsedStr})
-          </Text>
-        )}
+        {elapsedStr && <Text color={theme.thinkingTimer}> ({elapsedStr})</Text>}
       </Box>
 
       {/* Reasoning content */}
       {reasoningText && (
         <Box paddingLeft={2} marginTop={0}>
           <Text color={theme.reasoning} italic dimColor>
-            {reasoningText.length > 120
-              ? reasoningText.slice(0, 120) + '…'
-              : reasoningText}
+            {reasoningText.length > 120 ? reasoningText.slice(0, 120) + '…' : reasoningText}
           </Text>
         </Box>
       )}

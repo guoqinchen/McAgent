@@ -40,8 +40,8 @@ describe('Micro-benchmark: Baseline & Report', () => {
     const r1 = await runBenchmark({
       name: 'baseline-test — fast operation',
       fn: () => {
-        let sum = 0;
-        for (let i = 0; i < 100; i++) sum += i;
+        let _sum = 0;
+        for (let i = 0; i < 100; i++) _sum += i;
       },
       samples: 30,
       warmupSamples: 5,

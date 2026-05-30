@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ToolExecutor } from '../agent/tool-executor.js';
 import type { ChatCompletionMessageFunctionToolCall } from 'openai/resources/chat/completions';
-
 // Mock metricsCollector to test it's called
 vi.mock('../monitoring/metrics-collector.js', () => ({
   metricsCollector: {
@@ -26,6 +25,7 @@ function makeToolCall(
 
 describe('ToolExecutor', () => {
   let executor: ToolExecutor;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let toolsByName: Map<string, any>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let onCall: any;

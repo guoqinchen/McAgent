@@ -1,5 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { exec } from 'node:child_process';
+import { describe, it, expect } from 'vitest';
 
 // We test the RealShellExecutor logic directly by examining how it
 // constructs its Promise resolve/reject, without actually spawning processes.

@@ -9,7 +9,7 @@
  *   - Error-level log with stack trace overhead
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, beforeEach } from 'vitest';
 import { runBenchmark, formatResult, sanityCheck } from './framework.js';
 import { StructuredLogger, ConsoleHandler } from '../../logging/structured-logger.js';
 
@@ -92,7 +92,7 @@ describe('Micro-benchmark: StructuredLogger', () => {
       warmupSamples: 5,
     });
     console.log(formatResult(result));
-    const warnings = sanityCheck(result);
+    const _warnings = sanityCheck(result);
     // ConsoleHandler writes to stdout — may have variance, so don't fail on warnings
   });
 
@@ -114,7 +114,7 @@ describe('Micro-benchmark: StructuredLogger', () => {
       warmupSamples: 5,
     });
     console.log(formatResult(result));
-    const warnings = sanityCheck(result);
+    const _warnings = sanityCheck(result);
     // stdout writes may cause variance
   });
 

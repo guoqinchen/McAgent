@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LLMClient } from '../agent/llm-client.js';
 
-function createMockClient() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function createMockClient(): any {
   return {
     chat: {
       completions: {
         create: vi.fn(),
       },
     },
-  } as any;
+  };
 }
 
 describe('LLMClient', () => {
@@ -22,6 +23,7 @@ describe('LLMClient', () => {
 
   const model = 'deepseek-v4-flash';
   const messages = [{ role: 'user' as const, content: 'hello' }];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tools: any[] = [];
   const body = { reasoning_effort: 'high' as const };
 
@@ -43,6 +45,7 @@ describe('LLMClient', () => {
   });
 
   it('createSync passes tools array when non-empty', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const toolList: any[] = [{ type: 'function', function: { name: 'test' } }];
     mockOpenAI.chat.completions.create.mockResolvedValue({ choices: [] });
 

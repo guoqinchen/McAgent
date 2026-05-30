@@ -78,7 +78,8 @@ export class ToolExecutor {
         progressTimer = setInterval(() => {
           const elapsed = Date.now() - start;
           const remaining = Math.max(0, estimatedTotal - elapsed);
-          const pct = elapsed < 2000 ? null : Math.min(95, Math.round((elapsed / estimatedTotal) * 100));
+          const pct =
+            elapsed < 2000 ? null : Math.min(95, Math.round((elapsed / estimatedTotal) * 100));
           const status = buildProgressStatus(toolName, elapsed, remaining);
           onProgress({
             name: toolName,

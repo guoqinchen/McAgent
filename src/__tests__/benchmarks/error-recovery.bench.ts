@@ -8,7 +8,7 @@
  *   - Recovery path (retry → fallback) latency
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, beforeEach } from 'vitest';
 import { runBenchmark, formatResult, sanityCheck } from './framework.js';
 import { ErrorRecoveryEngine } from '../../engine/error-recovery-engine.js';
 
@@ -50,7 +50,9 @@ describe('Micro-benchmark: ErrorRecoveryEngine', () => {
     const result = await runBenchmark({
       name: 'ErrorRecoveryEngine.classifyError — mixed types',
       fn: () => {
-        (engine as any).classifyError(ERRORS[idx % ERRORS.length]);
+        (engine as unknown as { classifyError: (err: Error) => unknown }).classifyError(
+          ERRORS[idx % ERRORS.length]
+        );
         idx++;
       },
       samples: 200,

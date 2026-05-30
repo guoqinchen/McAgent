@@ -116,15 +116,12 @@ const ToolCallRow = memo(function ToolCallRow({
       <Box>
         <StatusBadge status={call.status} color={statusColor} />
         <Text color={theme.toolName} bold>
-          {' '}{call.name}
+          {' '}
+          {call.name}
         </Text>
-        <Text color={theme.toolCall}>
-          {' '}({truncatedArgs})
-        </Text>
+        <Text color={theme.toolCall}> ({truncatedArgs})</Text>
         {call.durationMs !== undefined && (
-          <Text color={theme.toolDuration}>
-            {' '}[{formatDuration(call.durationMs)}]
-          </Text>
+          <Text color={theme.toolDuration}> [{formatDuration(call.durationMs)}]</Text>
         )}
       </Box>
 
@@ -169,9 +166,7 @@ export const ToolVisualizer = memo(function ToolVisualizer({
         <Text color={theme.toolCall} bold>
           {anyRunning ? '🔧 Tools' : '🔧 Tools'}
         </Text>
-        <Text color={theme.muted}>
-          {' '}({calls.length})
-        </Text>
+        <Text color={theme.muted}> ({calls.length})</Text>
       </Box>
 
       {/* Tool calls */}

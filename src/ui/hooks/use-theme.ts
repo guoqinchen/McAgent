@@ -113,6 +113,8 @@ export interface ThemeTokens {
   function: string;
   /** Type/class highlight (in code) */
   type: string;
+  /** Status bar background */
+  statusBar: string;
 }
 
 // ─── Color palettes ───────────────────────────────────────────────────────────
@@ -168,6 +170,7 @@ const darkTokens: ThemeTokens = {
   string: 'green',
   function: 'yellowBright',
   type: 'cyanBright',
+  statusBar: 'gray',
 };
 
 const lightTokens: ThemeTokens = {
@@ -221,6 +224,7 @@ const lightTokens: ThemeTokens = {
   string: 'green',
   function: 'yellow',
   type: 'blueBright',
+  statusBar: 'gray',
 };
 
 // ─── Detection ────────────────────────────────────────────────────────────────

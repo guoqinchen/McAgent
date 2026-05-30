@@ -29,6 +29,7 @@ export interface MessageListProps {
   streamingText: string;
   toolCalls: Array<{ name: string; args: unknown }>;
   toolResults: Array<{ name: string; result: string; success: boolean }>;
+  /** Tool progress for the progress bar display. */
   toolProgress: ToolProgress | null;
   status: string;
   errorMessage: string;

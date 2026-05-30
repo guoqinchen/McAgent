@@ -212,14 +212,14 @@ export const ToolVisualizer = memo(function ToolVisualizer({
 }: ToolVisualizerProps) {
   const theme = useTheme();
 
-  if (calls.length === 0) return null;
-
-  const anyRunning = calls.some((c) => c.status === 'running' || c.status === 'pending');
-
-  // Get elapsed time for the running tool
+  // MUST call hooks before any early return to comply with React Rules of Hooks
   const runningCall = calls.find((c) => c.status === 'running');
   const elapsed = useElapsed(!!runningCall);
   const progress = useToolProgress(!!runningCall);
+
+  if (calls.length === 0) return null;
+
+  const anyRunning = calls.some((c) => c.status === 'running' || c.status === 'pending');
 
   return (
     <Box flexDirection="column" marginBottom={1}>

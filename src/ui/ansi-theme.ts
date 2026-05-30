@@ -78,6 +78,10 @@ export interface AnsiColors {
   string: string;
   function: string;
   type: string;
+  progressBar: string;
+  progressBg: string;
+  permissionHighlight: string;
+  statusBar: string;
 }
 
 // ─── ANSI escape code lookup ───────────────────────────────────────────────────
@@ -264,6 +268,10 @@ export function createAnsiTheme(mode?: ThemeMode): AnsiColors {
           string: 'green',
           function: 'yellow',
           type: 'blueBright',
+          progressBar: 'green',
+          progressBg: 'gray',
+          permissionHighlight: 'yellow',
+          statusBar: 'gray',
         }
       : {
           userLabel: 'cyan',
@@ -316,6 +324,10 @@ export function createAnsiTheme(mode?: ThemeMode): AnsiColors {
           string: 'green',
           function: 'yellowBright',
           type: 'cyanBright',
+          progressBar: 'greenBright',
+          progressBg: 'gray',
+          permissionHighlight: 'yellowBright',
+          statusBar: 'gray',
         };
 
   const colors: Record<string, string> = {};

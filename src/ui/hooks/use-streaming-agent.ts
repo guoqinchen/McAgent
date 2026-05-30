@@ -102,7 +102,7 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
 
   useEffect(() => {
     let streamBuffer = '';
-    let rafId: number | null = null;
+    let immediateId: NodeJS.Timeout | null = null;
     let lastFrameTime = performance.now();
     let flushScheduled = false;
 
@@ -114,15 +114,16 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
       if (elapsed >= FRAME_BUDGET_MS) {
         doFlush();
       } else {
-        rafId = requestAnimationFrame(() => { doFlush(); });
+        // Use setImmediate as Node.js equivalent of requestAnimationFrame
+        immediateId = setImmediate(() => { doFlush(); });
       }
     }
 
     function doFlush() {
       flushScheduled = false;
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
+      if (immediateId !== null) {
+        clearImmediate(immediateId);
+        immediateId = null;
       }
       if (streamBuffer.length > 0) {
         const now = performance.now();
@@ -134,9 +135,9 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
     }
 
     function flushStreamBuffer() {
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
+      if (immediateId !== null) {
+        clearImmediate(immediateId);
+        immediateId = null;
       }
       flushScheduled = false;
       if (streamBuffer.length > 0) {

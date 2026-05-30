@@ -4,11 +4,26 @@
  * Manages scroll offset for paginating message history. Auto-scrolls to
  * bottom when streaming or when the user is already at the bottom.
  *
- * v2.4: Optimized with RAF-throttled content change updates and stabilized
- *       callback memoization to prevent unnecessary re-renders.
+ * v2.5: Replaced requestAnimationFrame with setImmediate for Node.js/Ink
+ *       terminal environment compatibility.
  */
 
 import { useState, useCallback, useRef } from 'react';
+
+// ─── Node.js type-safe immediate timer helpers ─────────────────────────────────
+// Ink runs in Node.js terminal environment where requestAnimationFrame is not
+// available. We use setImmediate/clearImmediate as the Node.js-native equivalent
+// for deferring work to the next event loop iteration.
+
+function scheduleImmediate(fn: () => void): NodeJS.Timeout {
+  return setImmediate(fn);
+}
+
+function cancelImmediate(id: NodeJS.Timeout | null): void {
+  if (id !== null) {
+    clearImmediate(id);
+  }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,7 +47,7 @@ export interface ScrollActions {
   jumpTop: () => void;
   /** Jump to bottom */
   jumpBottom: () => void;
-  /** Call when content changes — auto-scrolls if at bottom (RAF throttled) */
+  /** Call when content changes — auto-scrolls if at bottom (setImmediate throttled) */
   onContentChange: (totalLines: number) => void;
   /** Reset to bottom */
   reset: () => void;
@@ -44,15 +59,16 @@ export function useScrollManager(): ScrollState & ScrollActions {
   const [offset, setOffset] = useState(0);
   const [totalLines, setTotalLines] = useState(0);
   const userScrolledRef = useRef(false);
-  const rafRef = useRef<number | null>(null);
+  const immediateRef = useRef<NodeJS.Timeout | null>(null);
   const pendingTotalRef = useRef<number | null>(null);
 
-  // RAF-throttled total lines update to batch rapid content changes
+  // setImmediate-throttled total lines update to batch rapid content changes.
+  // This is the Node.js equivalent of RAF throttling used in browser contexts.
   const scheduleTotalUpdate = useCallback((newTotal: number) => {
     pendingTotalRef.current = newTotal;
-    if (rafRef.current === null) {
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = null;
+    if (immediateRef.current === null) {
+      immediateRef.current = scheduleImmediate(() => {
+        immediateRef.current = null;
         const t = pendingTotalRef.current;
         pendingTotalRef.current = null;
         if (t !== null) {
@@ -65,12 +81,12 @@ export function useScrollManager(): ScrollState & ScrollActions {
     }
   }, []);
 
-  // Cleanup RAF on unmount
+  // Cleanup immediate timer on unmount
   const cleanupRef = useRef<() => void>(() => {});
   cleanupRef.current = () => {
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+    if (immediateRef.current !== null) {
+      cancelImmediate(immediateRef.current);
+      immediateRef.current = null;
     }
   };
 

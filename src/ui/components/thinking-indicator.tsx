@@ -53,6 +53,16 @@ export const ThinkingIndicator = memo(function ThinkingIndicator({
 
   const elapsedStr = elapsed >= 1 ? formatElapsed(elapsed) : '';
 
+  // Progress stages for long thinking
+  const progressBar = elapsed >= 5
+    ? ` [${'█'.repeat(Math.min(10, Math.floor(elapsed / 3)))}${'░'.repeat(Math.max(0, 10 - Math.floor(elapsed / 3)))}]`
+    : '';
+
+  // Elapsed time breakdown
+  const timeDisplay = elapsed >= 60
+    ? `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`
+    : elapsedStr;
+
   return (
     <Box flexDirection="column" marginBottom={1}>
       {/* Spinner + label line */}
@@ -62,7 +72,10 @@ export const ThinkingIndicator = memo(function ThinkingIndicator({
           {' '}
           {label}
         </Text>
-        {elapsedStr && <Text color={theme.thinkingTimer}> ({elapsedStr})</Text>}
+        {elapsedStr && <Text color={theme.thinkingTimer}> ({timeDisplay})</Text>}
+        {progressBar && (
+          <Text color={theme.progressBar}>{progressBar}</Text>
+        )}
       </Box>
 
       {/* Reasoning content */}
@@ -74,10 +87,10 @@ export const ThinkingIndicator = memo(function ThinkingIndicator({
         </Box>
       )}
 
-      {/* Animated dots */}
+      {/* Thinking stage indicator with adaptive messages */}
       <Box paddingLeft={2}>
         <Text color={theme.muted}>
-          {elapsed < 5 ? '分析中' : elapsed < 15 ? '仍在思考' : '深度思考中'}
+          {elapsed < 3 ? 'Analyzing your request' : elapsed < 10 ? 'Working through the problem' : elapsed < 30 ? 'Considering options in depth' : 'Complex reasoning in progress'}
           {'.'.repeat((frameIdx % 3) + 1)}
         </Text>
       </Box>

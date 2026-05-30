@@ -168,8 +168,6 @@ const darkTokens: ThemeTokens = {
   string: 'green',
   function: 'yellowBright',
   type: 'cyanBright',
-  permissionHighlight: 'yellow',
-  progressBar: 'greenBright',
 };
 
 const lightTokens: ThemeTokens = {

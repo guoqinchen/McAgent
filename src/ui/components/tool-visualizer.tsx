@@ -6,9 +6,10 @@
  * Uses memo to prevent re-rendering tools whose state hasn't changed.
  */
 
-import { useMemo, memo } from 'react';
+import { useMemo, memo, useState, useEffect, useRef } from 'react';
 import { Box, Text } from 'ink';
 import { useTheme } from '../hooks/use-theme.js';
+import { useElapsed, formatElapsed } from '../hooks/use-streaming-agent.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,6 +70,19 @@ const StatusBadge = memo(function StatusBadge({
   }
 });
 
+// ─── Progress bar component for long-running tools ──────────────────────────
+
+function ToolProgressBar({ progress, color }: { progress: number; color: string }) {
+  const barWidth = 10;
+  const filled = Math.min(barWidth, Math.round((progress / 100) * barWidth));
+  const empty = barWidth - filled;
+  return (
+    <Text color={color}>
+      {' ['}{'█'.repeat(filled)}{'░'.repeat(empty)}{']'}{' '}{Math.min(progress, 100)}%
+    </Text>
+  );
+}
+
 // ─── Single tool call component ───────────────────────────────────────────────
 
 const ToolCallRow = memo(function ToolCallRow({
@@ -76,11 +90,13 @@ const ToolCallRow = memo(function ToolCallRow({
   maxArgLength,
   maxResultLength,
   isLast,
+  progress,
 }: {
   call: ToolCallInfo;
   maxArgLength: number;
   maxResultLength: number;
   isLast: boolean;
+  progress?: { percent: number; elapsed: string; remaining: string } | null;
 }) {
   const theme = useTheme();
 
@@ -123,6 +139,18 @@ const ToolCallRow = memo(function ToolCallRow({
         {call.durationMs !== undefined && (
           <Text color={theme.toolDuration}> [{formatDuration(call.durationMs)}]</Text>
         )}
+        {progress && call.status === 'running' && (
+          <>
+            <ToolProgressBar progress={progress.percent} color={theme.progressBar} />
+            <Text color={theme.toolDuration}> {progress.elapsed}</Text>
+            {progress.remaining && (
+              <Text color={theme.toolDuration}> ~{progress.remaining}</Text>
+            )}
+          </>
+        )}
+        {call.status === 'pending' && (
+          <Text color={theme.toolPending}> ⏳ queued</Text>
+        )}
       </Box>
 
       {/* Note: full args expansion available via scroll */}
@@ -134,7 +162,7 @@ const ToolCallRow = memo(function ToolCallRow({
         </Box>
       )}
 
-      {/* Tool result */}
+      {/* Tool result preview */}
       {hasResult && (
         <Box paddingLeft={2}>
           <Text color={call.status === 'error' ? theme.toolError : theme.muted}>
@@ -145,6 +173,35 @@ const ToolCallRow = memo(function ToolCallRow({
     </Box>
   );
 });
+
+// ─── Timer hook for running tool progress ───────────────────────────────────
+
+function useToolProgress(isRunning: boolean, elapsedMs: number) {
+  const [progress, setProgress] = useState<{ percent: number; elapsed: string; remaining: string } | null>(null);
+  const startRef = useRef(Date.now());
+
+  useEffect(() => {
+    if (!isRunning) {
+      setProgress(null);
+      return;
+    }
+    startRef.current = Date.now();
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - startRef.current;
+      const elapsedStr = elapsed < 2000 ? `${(elapsed / 1000).toFixed(1)}s` : formatElapsed(Math.floor(elapsed / 1000));
+      // Simulate progress: slower as time goes on
+      const pct = Math.min(95, Math.round((elapsed / 15000) * 100));
+      const remaining = pct < 95 ? formatElapsed(Math.round((15000 - elapsed) / 1000)) : '';
+      setProgress({ percent: pct, elapsed: elapsedStr, remaining });
+    }, 500);
+    return () => {
+      clearInterval(timer);
+      setProgress(null);
+    };
+  }, [isRunning, elapsedMs]);
+
+  return progress;
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -159,14 +216,22 @@ export const ToolVisualizer = memo(function ToolVisualizer({
 
   const anyRunning = calls.some((c) => c.status === 'running' || c.status === 'pending');
 
+  // Get elapsed time for the running tool
+  const runningCall = calls.find((c) => c.status === 'running');
+  const elapsed = useElapsed(!!runningCall);
+  const progress = useToolProgress(!!runningCall, elapsed * 1000);
+
   return (
     <Box flexDirection="column" marginBottom={1}>
       {/* Header */}
       <Box>
         <Text color={theme.toolCall} bold>
-          {anyRunning ? '🔧 Tools' : '🔧 Tools'}
+          {'🔧'} Tools
         </Text>
         <Text color={theme.muted}> ({calls.length})</Text>
+        {anyRunning && elapsed > 0 && (
+          <Text color={theme.toolDuration}> [{formatElapsed(elapsed)}]</Text>
+        )}
       </Box>
 
       {/* Tool calls */}
@@ -178,6 +243,7 @@ export const ToolVisualizer = memo(function ToolVisualizer({
             maxArgLength={maxArgLength}
             maxResultLength={maxResultLength}
             isLast={i === calls.length - 1}
+            progress={call.status === 'running' ? progress : null}
           />
         ))}
       </Box>

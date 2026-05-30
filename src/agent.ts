@@ -250,6 +250,16 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     return this.config.permissionMode;
   }
 
+  /** Get the list of registered tool names. */
+  getToolNames(): string[] {
+    return this.config.tools.map((t) => t.name);
+  }
+
+  /** Get the count of registered tools. */
+  getToolCount(): number {
+    return this.config.tools.length;
+  }
+
   /** Update the command allowlist and sync to runCommandTool. */
   setAllowlist(list: string[]): void {
     this.config.autoAllowlist = list;
@@ -312,7 +322,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     metricsCollector.startRequest(requestId);
 
     this.conversation.addUserMessage(content);
-    this.emit('message:user', { role: 'user', content });
+    this.emit('message:user', { role: 'user', content, timestamp: new Date().toISOString() });
     if (!sync) this.emit('thinking:start');
     logger.info(`${label}() started`, { content: content.slice(0, 80) });
 

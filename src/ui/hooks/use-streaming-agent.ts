@@ -83,12 +83,6 @@ export interface UseStreamingAgentOptions {
   onError?: (err: Error) => void;
   /** Called after each frame update with frame interval in ms. Use for perf monitoring. */
   onFrame?: (frameIntervalMs: number) => void;
-  /** Extension point for tool progress tracking */
-  setToolProgress?: (progress: ToolProgress | null) => void;
-  /** Extension point for agent context updates */
-  setAgentContext?: (context: AgentContext) => void;
-  /** Extension point for permission requests */
-  setPermissionRequest?: (request: PermissionRequest) => void;
 }
 
 /** Target frame budget: ~16ms for ~60fps updates. */

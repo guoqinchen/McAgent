@@ -160,6 +160,7 @@ export class ConversationHistory {
           : Array.isArray(m.content)
             ? m.content.map((c: { text?: string }) => ('text' in c ? c.text : '')).join('')
             : '',
+      timestamp: new Date().toISOString(),
     }));
     this.cacheDirty = false;
     return this.cachedPlain;

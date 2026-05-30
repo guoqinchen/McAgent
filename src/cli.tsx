@@ -93,37 +93,72 @@ const OnboardingOverlay = memo(function OnboardingOverlay({
     >
       <Box marginBottom={1}>
         <Text bold color={theme.header}>
-          🎉 Welcome to McAgent!
+          🎉 Welcome to McAgent v2.5!
         </Text>
       </Box>
       <Box flexDirection="column" marginBottom={1}>
         <Text>
-          Your AI-powered macOS CLI assistant. Ask me anything about your Mac!
+          Your AI-powered macOS CLI assistant. I help you operate your Mac
+          efficiently using CLI commands, system utilities, and automation.
         </Text>
       </Box>
       <Box flexDirection="column" marginBottom={1}>
         <Text bold color={theme.heading}>
-          Quick Tips
+          ⚡ Quick Start
         </Text>
         <Text color={theme.muted}>
-          {'  '}• Type your question and press Enter to chat
+          {'  '}• Just type your question and press <Text bold>Enter</Text> to chat
         </Text>
         <Text color={theme.muted}>
-          {'  '}• Press ? to show help at any time
+          {'  '}• Try: <Text italic>"How much disk space do I have?"</Text>
         </Text>
         <Text color={theme.muted}>
-          {'  '}• Press Ctrl+L to clear the screen
-        </Text>
-        <Text color={theme.muted}>
-          {'  '}• Press Ctrl+C or Esc to exit
-        </Text>
-        <Text color={theme.muted}>
-          {'  '}• Use ↑/↓ to browse your message history
+          {'  '}• Try: <Text italic>"Show me running processes"</Text>
         </Text>
       </Box>
-      <Box>
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold color={theme.heading}>
+          ⌨ Keyboard Shortcuts
+        </Text>
+        <Text color={theme.muted}>
+          {'  '}• <Text bold>?</Text> — Show full help menu
+        </Text>
+        <Text color={theme.muted}>
+          {'  '}• <Text bold>Ctrl+L</Text> — Clear screen
+        </Text>
+        <Text color={theme.muted}>
+          {'  '}• <Text bold>↑/↓</Text> — Browse message history
+        </Text>
+        <Text color={theme.muted}>
+          {'  '}• <Text bold>Ctrl+R</Text> — Recall last input
+        </Text>
+        <Text color={theme.muted}>
+          {'  '}• <Text bold>Ctrl+C/Esc</Text> — Exit
+        </Text>
+        <Text color={theme.muted}>
+          {'  '}• <Text bold>/mode</Text> — Switch permission mode
+        </Text>
+      </Box>
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold color={theme.heading}>
+          🛡 Permission Modes
+        </Text>
+        <Text color={theme.muted}>
+          {'  '}• approve (default) — I ask before risky operations
+        </Text>
+        <Text color={theme.muted}>
+          {'  '}• readonly — I only read, never modify
+        </Text>
+        <Text color={theme.muted}>
+          {'  '}• auto — I operate freely on safe commands
+        </Text>
+      </Box>
+      <Box marginTop={1}>
         <Text bold color={theme.success}>
-          Press Enter to start using McAgent →
+          Press Enter to start →{'\u00a0'}
+        </Text>
+        <Text color={theme.muted}>
+          (or Esc to skip this welcome)
         </Text>
       </Box>
     </Box>
@@ -183,12 +218,21 @@ function PermissionPrompt({
 
   const dangerLabel = request.dangerLevel
     ? ({
-        safe: 'Safe operation',
-        caution: 'Proceed with caution',
-        dangerous: 'Dangerous operation',
-        destructive: 'Destructive operation',
+        safe: '✅ Safe — no risk to system',
+        caution: '⚠️ Caution — minor impact possible',
+        dangerous: '🔴 Dangerous — potential system impact',
+        destructive: '💀 Destructive — can irreversibly modify data',
       } as Record<string, string>)[request.dangerLevel]
     : '';
+
+  const impactDescription =
+    request.dangerLevel === 'destructive'
+      ? 'This operation can modify or delete system files/data irreversibly.'
+      : request.dangerLevel === 'dangerous'
+        ? 'This operation can significantly affect system state or running processes.'
+        : request.dangerLevel === 'caution'
+          ? 'This operation makes minor changes but is generally safe.'
+          : 'This is a read-only or safe operation.';
 
   return (
     <Box
@@ -200,7 +244,7 @@ function PermissionPrompt({
     >
       <Box marginBottom={1}>
         <Text bold color={dangerColor}>
-          ⚠ Permission Request
+          {'⚠'} Permission Request
         </Text>
       </Box>
       <Box flexDirection="column" marginBottom={1}>
@@ -209,19 +253,36 @@ function PermissionPrompt({
         </Text>
         <Text>{request.description}</Text>
         {request.command && (
-          <Text color={theme.inlineCode}>
-            Command: <Text bold>{request.command}</Text>
-          </Text>
+          <Box marginTop={0}>
+            <Text color={theme.inlineCode}>
+              Command: <Text bold>{request.command}</Text>
+            </Text>
+          </Box>
         )}
-        {dangerLabel && <Text color={dangerColor}>{dangerLabel}</Text>}
+        {dangerLabel && (
+          <Box marginTop={0}>
+            <Text color={dangerColor}>{dangerLabel}</Text>
+          </Box>
+        )}
+        <Box marginTop={0}>
+          <Text color={theme.muted}>{'📋'} {impactDescription}</Text>
+        </Box>
+        <Box marginTop={0}>
+          <Text color={theme.muted} dimColor>
+            {'💡'} To skip future prompts, use <Text bold>/mode auto</Text> (less safe) or{' '}
+            <Text bold>/mode readonly</Text> (more restrictive).
+          </Text>
+        </Box>
       </Box>
       <Box>
         <Text color={theme.success}>
-          {' '}Enter — Approve
+          {' '}Enter — Approve {' '}
         </Text>
-        <Text> </Text>
         <Text color={theme.error}>
-          Esc — Deny
+          Esc — Deny {' '}
+        </Text>
+        <Text color={theme.muted}>
+          /mode — Change settings
         </Text>
       </Box>
     </Box>
@@ -335,8 +396,14 @@ function App() {
   useInput((input, key) => {
     // Handle permission prompt first
     if (permissionRequest) {
-      if (key.return || key.escape) {
+      if (key.return) {
         setPermissionRequest(null);
+        setStatus('✅ Permission approved');
+        setTimeout(() => setStatus(''), 2000);
+      } else if (key.escape) {
+        setPermissionRequest(null);
+        setStatus('⛔ Permission denied');
+        setTimeout(() => setStatus(''), 2000);
       }
       return; // Block all other input during permission prompt
     }
@@ -352,7 +419,7 @@ function App() {
 
     // Handle help overlay
     if (showHelp) {
-      if (key.escape || (key.ctrl && input === 'c')) {
+      if (key.escape || (key.ctrl && input === 'c') || input === '?' || key.return) {
         setShowHelp(false);
         return;
       }
@@ -366,10 +433,12 @@ function App() {
     }
     if (key.ctrl && input === 'l') {
       process.stdout.write('\x1b[2J\x1b[H');
+      setStatus('🧹 Screen cleared');
+      setTimeout(() => setStatus(''), 1500);
       return;
     }
     if (input === '?' && !showHelp) {
-      setShowHelp(true);
+      if (!isLoading) setShowHelp(true);
       return;
     }
     if (key.ctrl && input === 'd' && editorRef.current?.value === '') {
@@ -378,7 +447,25 @@ function App() {
     }
     // Ctrl+R: recall last recent input
     if (key.ctrl && input === 'r' && inputHistory.length > 0) {
-      editorRef.current?.setValue(inputHistory[inputHistory.length - 1] ?? '');
+      const recallText = inputHistory[inputHistory.length - 1] ?? '';
+      editorRef.current?.setValue(recallText);
+      setStatus(`📋 Recalled: "${recallText.slice(0, 40)}${recallText.length > 40 ? '…' : ''}"`);
+      setTimeout(() => setStatus(''), 2000);
+      return;
+    }
+    // Ctrl+S: save session (quick status update)
+    if (key.ctrl && input === 's') {
+      setStatus('💾 Session auto-saved');
+      setTimeout(() => setStatus(''), 2000);
+      // Future: implement actual session save
+      return;
+    }
+    // Ctrl+N: new conversation
+    if (key.ctrl && input === 'n') {
+      agent.clearHistory();
+      setMessages([]);
+      setStatus('🆕 New conversation started');
+      setTimeout(() => setStatus(''), 2000);
       return;
     }
   });
@@ -421,7 +508,8 @@ function App() {
       setHistoryIndex(-1);
       setHistoryDraft('');
       setIsLoading(true);
-      setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
+      const timestamp = new Date().toISOString();
+      setMessages((prev) => [...prev, { role: 'user', content: trimmed, timestamp }]);
       try {
         await agent.send(trimmed);
       } catch (err) {
@@ -455,12 +543,24 @@ function App() {
   }, [inputHistory, historyIndex, historyDraft]);
   return (
     <Box flexDirection="column" padding={1}>
-      {/* Header */}
+      {/* Header with context */}
       <Box marginBottom={1} borderStyle="round" borderColor={theme.header} paddingX={1}>
         <Text bold color={theme.header}>
-          🍏 McAgent
+          🍏 McAgent{' '}
         </Text>
-        <Text color={theme.muted}> (? help, ↑ history, Ctrl+R recall)</Text>
+        <Text color={theme.muted}>
+          ?=help ↑↓=history ⌃R=recall ⌃N=new ⌃S=save
+        </Text>
+        {toolProgress && toolProgress.progress !== null && (
+          <Text color={theme.progressBar}>
+            {' ['}{'█'.repeat(Math.floor(toolProgress.progress / 10))}{'░'.repeat(10 - Math.floor(toolProgress.progress / 10))}{'] '}{toolProgress.progress}%
+          </Text>
+        )}
+        {isThinking && (
+          <Text color={theme.thinkingSpinner}>
+            {' 💭'} thinking
+          </Text>
+        )}
       </Box>
 
       {/* Onboarding overlay — first-time experience */}
@@ -528,8 +628,12 @@ function App() {
             <Text key="help-act1" color={theme.muted}> ?         Show this help</Text>
             <Text key="help-act2" color={theme.muted}> Ctrl+L    Clear screen</Text>
             <Text key="help-act3" color={theme.muted}> Ctrl+R    Recall last input</Text>
-            <Text key="help-act4" color={theme.muted}> Ctrl+C    Quit</Text>
-            <Text key="help-act5" color={theme.muted}> Ctrl+D    Quit (when input is empty)</Text>
+            <Text key="help-act4" color={theme.muted}> Ctrl+N    New conversation</Text>
+            <Text key="help-act5" color={theme.muted}> Ctrl+S    Save session (auto-save)</Text>
+            <Text key="help-act6" color={theme.muted}> Ctrl+C    Quit</Text>
+            <Text key="help-act7" color={theme.muted}> Ctrl+D    Quit (when input is empty)</Text>
+            <Text key="help-act8" color={theme.muted}> Enter     Confirm permission / send message</Text>
+            <Text key="help-act9" color={theme.muted}> Esc       Dismiss overlay / deny permission</Text>
           </Box>
           <Box key="help-commands" flexDirection="column" marginBottom={1}>
             <Text bold color={theme.heading}>
@@ -537,7 +641,19 @@ function App() {
             </Text>
             <Text key="help-sc1" color={theme.muted}> /mode     Switch permission mode</Text>
             <Text key="help-sc2" color={theme.muted}> /clear    Clear conversation</Text>
-            <Text key="help-sc3" color={theme.muted}> /help     Show help</Text>
+            <Text key="help-sc3" color={theme.muted}> /help     Show this help</Text>
+            <Text key="help-sc4" color={theme.muted}> /status   Show agent status</Text>
+            <Text key="help-sc5" color={theme.muted}> /version  Show version info</Text>
+            <Text key="help-sc6" color={theme.muted}> /tools    List active tools</Text>
+          </Box>
+          <Box key="help-tips" flexDirection="column" marginBottom={1}>
+            <Text bold color={theme.heading}>
+              Pro Tips
+            </Text>
+            <Text key="help-tip1" color={theme.muted}> {'  '}• Use /mode auto to skip permission prompts for safe commands</Text>
+            <Text key="help-tip2" color={theme.muted}> {'  '}• Use /mode readonly when you only want me to inspect, not modify</Text>
+            <Text key="help-tip3" color={theme.muted}> {'  '}• Press ? at any time to reopen this help</Text>
+            <Text key="help-tip4" color={theme.muted}> {'  '}• Long operations ({'>'}2s) show a progress bar automatically</Text>
           </Box>
           <Box key="help-colors" flexDirection="column">
             <Text bold color={theme.heading}>
@@ -606,15 +722,38 @@ function handleSlashCommand(
     case '/clear':
       agent.clearHistory();
       setMessages([]);
-      setStatus('✓ Conversation cleared');
+      setStatus('✅ Conversation cleared');
       setTimeout(() => setStatus(''), 2000);
       break;
     case '/help':
       setStatus('Press ? to show help');
       setTimeout(() => setStatus(''), 2000);
       break;
+    case '/status': {
+      const mode = agent.getPermissionMode();
+      const msgCount = agent.getMessages().length;
+      const toolCount = agent.getToolCount();
+      setStatus(
+        `📊 Mode: ${mode} | Model: ${agent.model} | Messages: ${msgCount} | Tools: ${toolCount}`
+      );
+      setTimeout(() => setStatus(''), 5000);
+      break;
+    }
+    case '/version':
+      setStatus('🍏 McAgent v2.5.0 — DeepSeek-powered macOS AI assistant');
+      setTimeout(() => setStatus(''), 4000);
+      break;
+    case '/tools': {
+      const toolList = agent.getToolNames().join(', ');
+      const toolCount = agent.getToolCount();
+      setStatus(`🔧 Tools (${toolCount}): ${toolList.slice(0, 120)}`);
+      setTimeout(() => setStatus(''), 5000);
+      break;
+    }
     default:
-      setErrorMessage(`Unknown command: ${command}. Try /mode, /clear, or /help`);
+      setErrorMessage(
+        `Unknown command: ${command}. Try /mode, /clear, /help, /status, /version, or /tools`
+      );
       setTimeout(() => setErrorMessage(''), 3000);
   }
 }

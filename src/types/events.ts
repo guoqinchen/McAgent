@@ -8,6 +8,8 @@
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  /** ISO timestamp when the message was created (v2.5+) */
+  timestamp?: string;
 }
 
 /** Permission request details emitted before a potentially destructive tool call. */

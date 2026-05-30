@@ -28,7 +28,9 @@ describe('ConversationHistory (typed)', () => {
   it('addAssistantMessage stores assistant message with content', () => {
     conv.addAssistantMessage('hello back');
     const plain = conv.toPlainMessages();
-    expect(plain[0]).toEqual({ role: 'assistant', content: 'hello back' });
+    expect(plain[0].role).toBe('assistant');
+    expect(plain[0].content).toBe('hello back');
+    expect(plain[0]).toHaveProperty('timestamp');
   });
 
   it('addAssistantMessage stores reasoning_content', () => {
@@ -56,7 +58,9 @@ describe('ConversationHistory (typed)', () => {
     const plain = conv.toPlainMessages();
     // toPlainMessages uses a type assertion on role — at runtime
     // the value stays 'tool' (the cast is compile-time only)
-    expect(plain[0]).toEqual({ role: 'tool', content: '{"result":"ok"}' });
+    expect(plain[0].role).toBe('tool');
+    expect(plain[0].content).toBe('{"result":"ok"}');
+    expect(plain[0]).toHaveProperty('timestamp');
     expect(conv.raw[0].role).toBe('tool');
   });
 

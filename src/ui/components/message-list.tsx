@@ -34,8 +34,6 @@ export interface MessageListProps {
   status: string;
   errorMessage: string;
   isLoading: boolean;
-  /** Tool progress (for long-running operations) */
-  toolProgress?: ToolProgress | null;
   /** Whether the agent is in thinking state */
   isThinking?: boolean;
   /** Reasoning text from DeepSeek reasoning_content */
@@ -76,40 +74,60 @@ const ElapsedDisplay = memo(function ElapsedDisplay({
 
 const RoleBadge = memo(function RoleBadge({
   role,
+  showTimestamp,
 }: {
   role: 'user' | 'assistant' | 'system';
+  showTimestamp?: string;
 }) {
   const theme = useTheme();
+  const ts = showTimestamp ? formatShortTime(showTimestamp) : null;
 
   switch (role) {
     case 'user':
       return (
         <Text bold color={theme.userLabel}>
           {'\u25b6'} You
+          {ts && <Text color={theme.muted}> {ts}</Text>}
         </Text>
       );
     case 'assistant':
       return (
         <Text bold color={theme.assistantLabel}>
           {'\u25c6'} Assistant
+          {ts && <Text color={theme.muted}> {ts}</Text>}
         </Text>
       );
     case 'system':
       return (
         <Text bold color={theme.systemLabel}>
           {'\u2699'} System
+          {ts && <Text color={theme.muted}> {ts}</Text>}
         </Text>
       );
   }
 });
 
+/** Format ISO timestamp to a short HH:MM:SS display. */
+function formatShortTime(iso?: string): string {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
 // ─── Message separator ────────────────────────────────────────────────────────
 
-function MessageSeparator({ color }: { color: string }) {
+function MessageSeparator({ color, label }: { color: string; label?: string }) {
   return (
     <Box>
       <Text color={color} dimColor>
-        {'\u2500'.repeat(50)}
+        {'\u2500'.repeat(25)}
+        {label ? ` ${label} ` : ''}
+        {'\u2500'.repeat(label ? 25 - label.length : 25)}
       </Text>
     </Box>
   );
@@ -294,30 +312,60 @@ export function MessageList({
         </Box>
       )}
 
-      {/* Visible messages */}
-      {visibleMessages.map((msg, i) => (
-        <Box key={`msg-${i}`} flexDirection="column" marginBottom={1}>
-          {/* Message separator */}
-          {i > 0 && <MessageSeparator color={theme.messageSeparator} />}
+      {/* Visible messages with grouping */}
+      {visibleMessages
+        .filter((msg, idx, arr) => {
+          // Collapse consecutive same-role: only show the last in a run
+          if (idx === arr.length - 1) return true;
+          if (idx > 0 && arr[idx-1]?.role === msg.role) return false;
+          // Check if next message has same role
+          const next = arr[idx + 1];
+          if (next && next.role === msg.role && msg.role !== 'system') return false;
+          return true;
+        })
+        .map((msg, i, filteredArr) => {
+          // Count how many consecutive same-role messages this represents
+          const originalIdx = messages.findIndex(m => m.timestamp === msg.timestamp && m.content === msg.content);
+          let collapsedCount = 1;
+          if (originalIdx >= 0) {
+            for (let j = originalIdx + 1; j < messages.length; j++) {
+              if (messages[j]?.role === msg.role) collapsedCount++;
+              else break;
+            }
+          }
+          const showSep =
+            i > 0 && filteredArr[i - 1]?.role !== msg.role;
+          const groupLabel = collapsedCount > 1 ? ` (${collapsedCount})` : '';
 
-          {/* Role badge */}
-          <Box>
-            <RoleBadge role={msg.role} />
-            <ElapsedDisplay isLoading={isLoading} color={theme.muted} />
-          </Box>
+        return (
+          <Box key={`msg-${originalIdx}`} flexDirection="column" marginBottom={1}>
+            {/* Message separator between different roles */}
+            {showSep && <MessageSeparator color={theme.messageSeparator} />}
 
-          {/* Content */}
-          <Box paddingLeft={1}>
-            {msg.role === 'user' || msg.role === 'system' ? (
-              <Text wrap="wrap" color={msg.role === 'user' ? theme.userText : theme.assistantText}>
-                {msg.content}
-              </Text>
-            ) : (
-              <MarkdownRenderer content={msg.content} />
-            )}
+            {/* Role badge with timestamp and group count */}
+            <Box>
+              <RoleBadge role={msg.role} showTimestamp={msg.timestamp} />
+              {groupLabel && (
+                <Text color={theme.muted}>[{collapsedCount}x]</Text>
+              )}
+              <ElapsedDisplay isLoading={isLoading} color={theme.muted} />
+            </Box>
+
+            {/* Content */}
+            <Box paddingLeft={1}>
+              {msg.role === 'user' || msg.role === 'system' ? (
+                <Text wrap="wrap" color={msg.role === 'user' ? theme.userText : theme.assistantText}>
+                  {collapsedCount > 1
+                    ? `${msg.content}${groupLabel}`
+                    : msg.content}
+                </Text>
+              ) : (
+                <MarkdownRenderer content={msg.content} />
+              )}
+            </Box>
           </Box>
-        </Box>
-      ))}
+        );
+      })}
 
       {/* Thinking indicator */}
       <ThinkingIndicator

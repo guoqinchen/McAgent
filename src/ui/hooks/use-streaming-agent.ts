@@ -91,6 +91,11 @@ export interface UseStreamingAgentOptions {
 /** Target frame budget: ~16ms for ~60fps updates. */
 const FRAME_BUDGET_MS = 16;
 
+/** Maximum characters of streaming text stored in React state. Prevents OOM on large outputs. */
+const MAX_STREAMING_TEXT = 100_000;
+/** Maximum characters of reasoning text buffer. Prevents unbounded concatenation. */
+const MAX_REASONING_TEXT = 50_000;
+
 export function useStreamingAgent(options: UseStreamingAgentOptions): void {
   const { agent, onError } = options;
 
@@ -129,7 +134,12 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
         const frameInterval = now - lastFrameTime;
         lastFrameTime = now;
         optionsRef.current.onFrame?.(frameInterval);
-        optionsRef.current.setStreamingText(streamBuffer);
+        // Cap to prevent OOM from large accumulated streaming text
+        const text =
+          streamBuffer.length > MAX_STREAMING_TEXT
+            ? '...(output truncated)...\n' + streamBuffer.slice(-MAX_STREAMING_TEXT)
+            : streamBuffer;
+        optionsRef.current.setStreamingText(text);
       }
     }
 
@@ -265,7 +275,7 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
     };
 
     const onReasoningDelta = (text: string) => {
-      reasoningBuffer = reasoningBuffer + text;
+      reasoningBuffer = (reasoningBuffer + text).slice(-MAX_REASONING_TEXT);
       const currentReasoning = reasoningBuffer;
       queueState(() => {
         const ref = optionsRef.current;

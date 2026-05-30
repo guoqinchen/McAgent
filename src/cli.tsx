@@ -516,7 +516,10 @@ function App() {
         return;
       }
 
-      setInputHistory((prev) => [...prev, trimmed]);
+      setInputHistory((prev) => {
+        const next = [...prev, trimmed];
+        return next.length > 100 ? next.slice(-100) : next;
+      });
       setHistoryIndex(-1);
       setHistoryDraft('');
       setIsLoading(true);

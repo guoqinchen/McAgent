@@ -1,12 +1,14 @@
 /**
- * HeadlessRenderer — structured CLI output for McAgent headless mode.
+ * HeadlessRenderer v3 — structured CLI output for McAgent headless mode.
  *
  * Provides:
- *  - Terminal width detection & text wrapping
- *  - Colored separators and section markers
- *  - Structured tool result display (success/failure/progress)
- *  - Error / exception formatting
- *  - ASCII spinner animation
+ *  - Terminal width detection & text wrapping (adaptive to process.stdout.columns)
+ *  - Colored separators and section markers with clear labels
+ *  - Structured tool result display with ✅/❌/⏳ icons + summary + details
+ *  - Enhanced error / exception formatting with type + location + suggestion
+ *  - ASCII spinner animation with smoother frames
+ *  - ANSI colored output: green success / red error / yellow warning / blue info
+ *  - Consistent token naming with TUI mode (Ink theme)
  */
 
 import { createAnsiTheme, type AnsiColors } from './ansi-theme.js';
@@ -48,7 +50,7 @@ export function ansiPad(text: string, width: number, align: 'left' | 'right' = '
   const visible = stripAnsi(text);
   const len = visible.length;
   if (len >= width) {
-    const truncated = visible.slice(0, width - 1) + '…';
+    const truncated = visible.slice(0, Math.max(width - 1, 1)) + '…';
     return text.endsWith('\x1b[0m') ? truncated + '\x1b[0m' : truncated;
   }
   const pad = ' '.repeat(width - len);
@@ -93,6 +95,15 @@ export function wrapText(text: string, width: number): string[] {
   return lines;
 }
 
+/** Truncate text with ellipsis, ANSI-aware. */
+export function truncate(text: string, maxLen: number): string {
+  const visible = stripAnsi(text);
+  if (visible.length <= maxLen) return text;
+  // Find ANSI-safe boundary
+  const truncated = visible.slice(0, Math.max(maxLen - 1, 1)) + '…';
+  return truncated;
+}
+
 // ─── Separator / Rule ────────────────────────────────────────────────────────
 
 /** Draw a horizontal rule across the terminal, with optional label and color. */
@@ -117,7 +128,7 @@ export function rule(
   return `${colorCode}${char.repeat(leftLen)}${c.reset}${padded}${colorCode}${char.repeat(rightLen)}${c.reset}`;
 }
 
-// ─── Section header ──────────────────────────────────────────────────────────
+// ─── Section headers / blocks ───────────────────────────────────────────────
 
 /** Create a visually distinct section header. */
 export function sectionHeader(c: AnsiColors, title: string): string {
@@ -135,6 +146,72 @@ export function compactHeader(c: AnsiColors, title: string): string {
   const visibleLen = stripAnsi(title).length + 4; // " ◆  " prefix
   const remaining = Math.max(width - visibleLen, 0);
   return `${c.header} ◆  ${c.bold}${title}${c.reset} ${c.border}${'─'.repeat(remaining)}${c.reset}`;
+}
+
+/**
+ * Create a labeled section block with a top rule, indented content, and bottom rule.
+ * Used to visually distinguish user input, AI replies, tool calls, and errors.
+ *
+ * Section types:
+ *   - 'user'      → User input (cyan label)
+ *   - 'assistant' → AI reply (green label)
+ *   - 'tool'      → Tool call (yellow label)
+ *   - 'error'     → Error (red label)
+ *   - 'info'      → Info/status (blue/magenta label)
+ *   - 'system'    → System message (yellow label)
+ */
+export type SectionType = 'user' | 'assistant' | 'tool' | 'error' | 'info' | 'system';
+
+const SECTION_CONFIG: Record<SectionType, { color: keyof AnsiColors; icon: string; defaultLabel: string }> = {
+  user:      { color: 'userLabel',      icon: '🧑', defaultLabel: 'You' },
+  assistant: { color: 'assistantLabel', icon: '🤖', defaultLabel: 'McAgent' },
+  tool:      { color: 'toolCall',       icon: '🔧', defaultLabel: 'Tool Call' },
+  error:     { color: 'error',          icon: '❌', defaultLabel: 'Error' },
+  info:      { color: 'header',         icon: 'ℹ️', defaultLabel: 'Info' },
+  system:    { color: 'systemLabel',    icon: '⚙️', defaultLabel: 'System' },
+};
+
+/** Create a section block with top rule, optional icon, content lines, and bottom rule. */
+export function sectionBlock(
+  c: AnsiColors,
+  type: SectionType,
+  content: string,
+  options?: { label?: string; details?: string }
+): string {
+  const cfg = SECTION_CONFIG[type];
+  const label = options?.label ?? cfg.defaultLabel;
+  const colorCode = c[cfg.color];
+  const lines: string[] = [];
+
+  // Top separator with label
+  const width = terminalWidth();
+  const headerContent = ` ${cfg.icon}  ${colorCode}${c.bold}${label}${c.reset} `;
+  const visiblePrefix = stripAnsi(headerContent);
+  const remaining = Math.max(width - visiblePrefix.length, 0);
+  lines.push(`${colorCode}${'─'.repeat(4)}${c.reset}${headerContent}${colorCode}${'─'.repeat(remaining)}${c.reset}`);
+
+  // Content (each line gets 2-space indent)
+  const contentLines = content.split('\n');
+  for (const line of contentLines) {
+    lines.push(`  ${line}`);
+  }
+
+  // Optional details line
+  if (options?.details) {
+    lines.push(`  ${c.dim}${options.details}${c.reset}`);
+  }
+
+  // Bottom rule
+  lines.push(`${colorCode}${'─'.repeat(Math.min(width, 40))}${c.reset}`);
+
+  return lines.join('\n');
+}
+
+/** Create a compact one-line section label (for inline use). */
+export function sectionLabel(c: AnsiColors, type: SectionType, label?: string): string {
+  const cfg = SECTION_CONFIG[type];
+  const text = label ?? cfg.defaultLabel;
+  return `${c[cfg.color]}${cfg.icon}${c.reset} ${c.bold}${text}${c.reset}`;
 }
 
 // ─── Structured tool result display ──────────────────────────────────────────
@@ -162,9 +239,16 @@ const STATUS_ICONS: Record<ToolDisplayResult['status'], string> = {
   skipped: '–',
 };
 
-/** Render a single tool call result line. */
+/** Render a single tool call result line with structured output. */
 export function renderToolResult(c: AnsiColors, result: ToolDisplayResult): string {
-  const icon = STATUS_ICONS[result.status];
+  // Emoji-enhanced status icons
+  const STATUS_EMOJI: Record<ToolDisplayResult['status'], string> = {
+    running: '⏳',
+    success: '✅',
+    failure: '❌',
+    skipped: '⏭️',
+  };
+  const icon = STATUS_EMOJI[result.status];
   const colorMap: Record<ToolDisplayResult['status'], string> = {
     running: c.warning,
     success: c.success,
@@ -176,10 +260,15 @@ export function renderToolResult(c: AnsiColors, result: ToolDisplayResult): stri
     ? ` ${c.muted}(${formatDuration(result.durationMs)})${c.reset}`
     : '';
   const preview = result.preview
-    ? ` ${c.dim}${result.preview.length > 60 ? result.preview.slice(0, 60) + '…' : result.preview}${c.reset}`
+    ? ` ${c.dim}${truncate(result.preview, 60)}${c.reset}`
     : '';
 
-  return `  ${color}${icon}${c.reset} ${c.bold}${result.name}${c.reset}${duration}${preview}`;
+  const statusLabel = result.status === 'running' ? 'RUNNING'
+    : result.status === 'success' ? 'OK'
+    : result.status === 'failure' ? 'FAILED'
+    : 'SKIPPED';
+
+  return `  ${color}${icon}${c.reset} ${color}${c.bold}[${statusLabel}]${c.reset} ${c.bold}${result.name}${c.reset}${duration}${preview}`;
 }
 
 /** Render a table of tool results (e.g., after a batch). */
@@ -189,41 +278,99 @@ export function renderToolResults(c: AnsiColors, results: ToolDisplayResult[]): 
   const lines = results.map((r) => renderToolResult(c, r));
   const succeeded = results.filter((r) => r.status === 'success').length;
   const failed = results.filter((r) => r.status === 'failure').length;
-  const summary = `  ${c.muted}── ${succeeded} succeeded, ${failed} failed ──${c.reset}`;
+  const skipped = results.filter((r) => r.status === 'skipped').length;
+  const total = results.length;
+
+  // Summary line with structured stats
+  const summaryParts: string[] = [];
+  if (succeeded > 0) summaryParts.push(`${c.success}${succeeded} succeeded${c.reset}`);
+  if (failed > 0) summaryParts.push(`${c.error}${failed} failed${c.reset}`);
+  if (skipped > 0) summaryParts.push(`${c.muted}${skipped} skipped${c.reset}`);
+  const summary = `  ${c.muted}── ${summaryParts.join(', ')} (${total} total) ──${c.reset}`;
 
   return [...lines, summary].join('\n');
 }
 
-// ─── Error display ───────────────────────────────────────────────────────────
+// ─── Enhanced error display ─────────────────────────────────────────────────
 
-/** Format an error with a clear visual structure. */
+/** Known error patterns with suggestion mappings. */
+interface ErrorSuggestion {
+  pattern: RegExp;
+  suggestion: string;
+}
+
+const ERROR_SUGGESTIONS: ErrorSuggestion[] = [
+  { pattern: /ENOENT/i, suggestion: 'File or directory not found. Check the path and try again.' },
+  { pattern: /EACCES|permission denied/i, suggestion: 'Permission denied. Try with sudo or check file permissions.' },
+  { pattern: /ETIMEDOUT|timeout/i, suggestion: 'Operation timed out. Check network connectivity or increase timeout.' },
+  { pattern: /ECONNREFUSED/i, suggestion: 'Connection refused. Ensure the target service is running.' },
+  { pattern: /ECONNRESET/i, suggestion: 'Connection reset. The remote server closed the connection.' },
+  { pattern: /ENOSPC|no space/i, suggestion: 'Disk space full. Free up space and try again.' },
+  { pattern: /SyntaxError|Unexpected token/i, suggestion: 'Syntax error in code or JSON. Check for typos.' },
+  { pattern: /TypeError/i, suggestion: 'Type mismatch. Check that values have the correct type.' },
+  { pattern: /ReferenceError/i, suggestion: 'Undefined variable reference. Check that the variable is declared.' },
+  { pattern: /command not found/i, suggestion: 'Command not found. Install the required package or check the command name.' },
+  { pattern: /failed|error/i, suggestion: 'The operation failed. Review the details and retry.' },
+];
+
+/** Find a suggestion for a given error message. */
+export function findSuggestion(errorMessage: string): string | undefined {
+  for (const entry of ERROR_SUGGESTIONS) {
+    if (entry.pattern.test(errorMessage)) {
+      return entry.suggestion;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Format an error with a clear visual structure:
+ *   ❌ ErrorType ━━━━━━━━━━
+ *     Error message
+ *     📍 Location: file.ts:42
+ *     💡 Suggestion: ...
+ *   ━━━━━━━━━━━━━━━━━━━━━━
+ */
 export function formatError(c: AnsiColors, error: Error, context?: string): string {
   const width = terminalWidth();
   const lines: string[] = [];
 
-  // Error header
-  const errLabel = `${c.error}${c.bold}✗ Error${c.reset}`;
-  const divider = c.error + '━'.repeat(4) + c.reset;
-  lines.push(`${errLabel} ${divider} ${c.bold}${error.name}${c.reset}`);
-  lines.push(`  ${c.error}${error.message}${c.reset}`);
+  // Error header with type
+  const errLabel = `${c.error}${c.bold}❌ Error${c.reset}`;
+  const remaining = Math.max(width - stripAnsi(errLabel).length - stripAnsi(error.name).length - 4, 0);
+  lines.push(`${errLabel} ${c.error}${error.name}${c.reset} ${c.error}${'━'.repeat(remaining)}${c.reset}`);
+
+  // Error message (wrapped)
+  const wrappedMsg = wrapText(`${c.error}${error.message}${c.reset}`, width - 4);
+  for (const w of wrappedMsg) {
+    lines.push(`  ${w}`);
+  }
 
   // Optional context
   if (context) {
-    lines.push(`  ${c.dim}Context: ${context}${c.reset}`);
+    lines.push(`  ${c.dim}📍 Context: ${context}${c.reset}`);
   }
 
-  // Stack trace (dimmed)
+  // Location from stack trace (first meaningful frame)
   if (error.stack) {
     const stackLines = error.stack.split('\n').slice(1);
     for (const s of stackLines) {
       const trimmed = s.trim();
-      if (trimmed) {
-        const wrapped = wrapText(`${c.dim}${trimmed}${c.reset}`, width - 4);
-        for (const w of wrapped) {
-          lines.push(`  ${w}`);
+      if (trimmed && !trimmed.includes('node:internal') && !trimmed.includes('node_modules')) {
+        // Extract location from stack frame like "at functionName (/path/file.ts:42:10)"
+        const locMatch = trimmed.match(/\((.+?:\d+:\d+)\)/) || trimmed.match(/at (.+?:\d+:\d+)/);
+        if (locMatch) {
+          lines.push(`  ${c.errorHint}📍 Location: ${locMatch[1]}${c.reset}`);
         }
+        break; // Only first meaningful frame
       }
     }
+  }
+
+  // 💡 Suggested solution
+  const suggestion = findSuggestion(error.message);
+  if (suggestion) {
+    lines.push(`  ${c.warning}💡 ${suggestion}${c.reset}`);
   }
 
   // Bottom border
@@ -406,6 +553,8 @@ export interface RendererOptions {
 /**
  * HeadlessRenderer — a high-level convenience wrapper that manages
  * the AnsiTheme, a Spinner, and provides structured output methods.
+ *
+ * v3: Added sectionBlock, sectionLabel, warn (multiline), progressLine methods.
  */
 export class HeadlessRenderer {
   readonly c: AnsiColors;
@@ -443,6 +592,19 @@ export class HeadlessRenderer {
     } else {
       this.writeln(sectionHeader(this.c, title));
     }
+  }
+
+  /**
+   * Render a labeled section block with top/bottom rules and indented content.
+   * Clear visual distinction for user input, AI replies, tool calls, and errors.
+   */
+  section(type: SectionType, content: string, options?: { label?: string; details?: string }): void {
+    this.writeln(sectionBlock(this.c, type, content, options));
+  }
+
+  /** Render a compact one-line section label. */
+  sectionLabel(type: SectionType, label?: string): void {
+    this.writeln(sectionLabel(this.c, type, label));
   }
 
   /** Render a tool result line. */

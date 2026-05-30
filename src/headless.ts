@@ -14,7 +14,7 @@ import { macOSProTools } from './tools-pro.js';
 import { createInterface } from 'node:readline';
 import { logger } from './logging/structured-logger.js';
 import { resolveConfig } from './config/resolver.js';
-import { HeadlessRenderer } from './ui/headless-renderer.js';
+import { HeadlessRenderer, terminalWidth } from './ui/headless-renderer.js';
 import type { ToolDisplayResult } from './ui/headless-renderer.js';
 
 // ─── Configuration ───────────────────────────────────────────────────────────
@@ -42,12 +42,12 @@ logger.info('Headless CLI starting', {
 // ─── Startup banner ───────────────────────────────────────────────────────────
 
 render.blank();
-render.header('McAgent Headless', false);
+render.header('🍏 McAgent Headless', false);
 render.blank();
-render.rule({ label: 'Session Start', char: '━', color: 'header' });
-render.badge(`Model: ${config.model ?? 'deepseek-v4-flash'}`, 'info');
-render.badge(`Thinking: ${config.thinkingEnabled ?? true ? 'enabled' : 'disabled'}`, 'info');
-render.badge(`Logs: ${process.env.HOME}/.mcagent/logs/`, 'info');
+render.rule({ label: '🚀 Session Start', char: '━', color: 'header' });
+render.info(`Model: ${config.model ?? 'deepseek-v4-flash'}`);
+render.info(`Thinking: ${config.thinkingEnabled ?? true ? 'enabled' : 'disabled'}`);
+render.info(`Logs: ${process.env.HOME}/.mcagent/logs/`);
 render.rule({ char: '━', color: 'muted' });
 render.blank();
 
@@ -76,7 +76,7 @@ const toolDisplays: ToolDisplayResult[] = [];
 agent.on('thinking:start', function onThinkingStart() {
   toolDisplays.length = 0;
   toolStartTimes.clear();
-  render.spinner.start('Processing…');
+  render.spinner.start('🧠 Thinking…');
 });
 
 agent.on('thinking:end', function onThinkingEnd() {
@@ -90,16 +90,20 @@ agent.on('tool:call', function onToolCall(name: string, args: unknown) {
   toolStartTimes.set(name, Date.now());
   const argsStr = JSON.stringify(args);
   const preview = argsStr.length > 80 ? argsStr.slice(0, 80) + '…' : argsStr;
+  // Use enhanced tool result display with emoji
   render.toolResult({ name, status: 'running', preview });
 });
 
 agent.on('tool:progress', function onToolProgress(progress) {
-  const barWidth = 20;
+  const width = terminalWidth();
+  const barMaxWidth = Math.min(20, Math.floor((width - 30) / 2));
+  const barWidth = Math.max(barMaxWidth, 4);
   if (progress.progress !== null) {
     const filled = Math.round((progress.progress / 100) * barWidth);
     const empty = barWidth - filled;
     const bar = `${c.toolRunning}${'━'.repeat(filled)}${c.muted}${'━'.repeat(empty)}${c.reset}`;
-    process.stdout.write(`\r  ${bar} ${progress.progress}% ${c.muted}(${progress.status})${c.reset} `);
+    const pctStr = `${String(progress.progress).padStart(3)}%`;
+    process.stdout.write(`\r  ${c.toolRunning}⏳${c.reset} ${bar} ${pctStr} ${c.muted}${progress.status}${c.reset} `);
   } else {
     const elapsed = formatDuration(progress.elapsedMs);
     process.stdout.write(`\r  ${c.toolRunning}⏳${c.reset} ${c.muted}${elapsed} — ${progress.status}${c.reset} `);
@@ -119,11 +123,17 @@ agent.on('tool:result', function onToolResult(name: string, result: unknown) {
   const status = isSuccess ? 'success' : 'failure';
   const preview = resultStr.length > 60 ? resultStr.slice(0, 60) + '…' : resultStr;
 
+  // Enhanced tool result with structured output
+  const line = `  ${status === 'success' ? '✅' : '❌'} ${c.bold}[${status === 'success' ? 'OK' : 'FAILED'}]${c.reset} ${c.bold}${name}${c.reset}${duration ? ` ${c.muted}(${duration}ms)${c.reset}` : ''}`;
+  const width = terminalWidth();
+  process.stdout.write(`\r${' '.repeat(width)}\r`); // clear line
   render.toolResult({ name, status, durationMs: duration, preview });
 
   const idx = toolDisplays.findIndex((t) => t.name === name && t.status === 'running');
   if (idx !== -1) {
     toolDisplays[idx] = { name, status, durationMs: duration, preview };
+  } else {
+    toolDisplays.push({ name, status, durationMs: duration, preview });
   }
 });
 
@@ -187,16 +197,15 @@ function prompt(): void {
     const trimmed = input.trim();
     if (!trimmed) return prompt();
     if (trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === 'quit') {
-      render.rule({ label: 'Session End', char: '━', color: 'muted' });
-      render.writeln(`${c.muted}Goodbye!${c.reset}`);
+      render.rule({ label: '👋 Session End', char: '━', color: 'muted' });
+      render.writeln(`  ${c.muted}Goodbye! Thanks for using McAgent.${c.reset}`);
       rl.close();
       return;
     }
 
-    // Show user message with clear separator
-    render.rule({ label: 'You', char: '─', color: 'userLabel' });
-    render.writeln(`  ${c.userLabel}${trimmed}${c.reset}`);
-    render.rule({ char: '─', color: 'muted' });
+    // Show user message with section block for clear visual distinction
+    render.section('user', trimmed);
+    render.blank();
 
     try {
       await agent.send(trimmed);

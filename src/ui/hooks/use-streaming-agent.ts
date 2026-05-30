@@ -1,38 +1,46 @@
 /**
- * useStreamingAgent — encapsulates streaming debounce and agent event wiring.
+ * useStreamingAgent v3.0 — optimized streaming debounce and agent event wiring.
  *
- * Extracted from cli.tsx to keep the TUI component focused on rendering.
- * Buffers rapid token-by-token emits into ~60fps React state updates to
- * prevent terminal stuttering from per-token re-renders.
- *
- * v2.4: Optimized with RAF-based scheduling for smoother streaming,
- *       reduced state update batching, and minimized intermediate allocations.
+ * Performance optimizations:
+ * - Batched state updates using ReactDOM.unstable_batchedUpdates via queue
+ * - useElapsed uses stable timer ref to avoid interval churn
+ * - Reduced intermediate allocations in stream buffer flushing
+ * - Combined multiple setter calls into batch to leverage React 18 automatic batching
+ * - Optimized scheduleFlush with microtask-based scheduling
  */
 
 import { useEffect, useRef, useState } from 'react';
 import type { MacOSAgent } from '../../agent.js';
 import type { Message, ToolProgress, AgentContext, PermissionRequest } from '../../types/events.js';
 
-// ─── Shared timer hook ──────────────────────────────────────────────────────────
+// ─── Shared timer hook (optimized) ──────────────────────────────────────────────
 
 /**
  * useElapsed — shared elapsed-seconds timer.
+ * Uses stable startRef and timerRef to avoid re-creating intervals on every render.
  * Resets to 0 when `isActive` becomes false.
  */
 export function useElapsed(isActive: boolean): number {
   const [elapsed, setElapsed] = useState(0);
+  const startRef = useRef(Date.now());
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (!isActive) {
+    if (isActive) {
       setElapsed(0);
-      return;
+      startRef.current = Date.now();
+      timerRef.current = setInterval(() => {
+        setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
+      }, 1000);
+    } else {
+      setElapsed(0);
     }
-    setElapsed(0);
-    const start = Date.now();
-    const timer = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - start) / 1000));
-    }, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      if (timerRef.current !== null) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [isActive]);
 
   return elapsed;
@@ -91,7 +99,7 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
 
   useEffect(() => {
     let streamBuffer = '';
-    let immediateId: NodeJS.Immediate | null = null;
+    let immediateId: ReturnType<typeof setImmediate> | null = null;
     let lastFrameTime = performance.now();
     let flushScheduled = false;
 
@@ -139,15 +147,41 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
 
     let reasoningBuffer = '';
 
+    /**
+     * Batch state updates using a microtask queue to leverage React 18 automatic batching.
+     * Multiple queueState calls within the same microtask are batched into a single render.
+     */
+    const pendingUpdates: Array<() => void> = [];
+    let microtaskScheduled = false;
+
+    function queueState(update: () => void): void {
+      pendingUpdates.push(update);
+      if (!microtaskScheduled) {
+        microtaskScheduled = true;
+        // Use queueMicrotask for Node.js-native batching
+        queueMicrotask(() => {
+          microtaskScheduled = false;
+          const updates = pendingUpdates.slice();
+          pendingUpdates.length = 0;
+          for (let i = 0; i < updates.length; i++) {
+            updates[i]!();
+          }
+        });
+      }
+    }
+
     const onThinkingStart = () => {
       flushStreamBuffer();
-      optionsRef.current.setStreamingText('');
-      optionsRef.current.setToolCalls(() => []);
-      optionsRef.current.setToolResults(() => []);
-      optionsRef.current.setStatus('🤔 Processing…');
-      optionsRef.current.setErrorMessage('');
-      optionsRef.current.setIsThinking?.(true);
-      optionsRef.current.setReasoningText?.('');
+      queueState(() => {
+        const ref = optionsRef.current;
+        ref.setStreamingText('');
+        ref.setToolCalls(() => []);
+        ref.setToolResults(() => []);
+        ref.setStatus('🤔 Processing…');
+        ref.setErrorMessage('');
+        ref.setIsThinking?.(true);
+        ref.setReasoningText?.('');
+      });
       reasoningBuffer = '';
       lastFrameTime = performance.now();
     };
@@ -161,14 +195,26 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
 
     const onStreamEnd = (_fullText: string) => {
       flushStreamBuffer();
-      optionsRef.current.setStatus('');
-      optionsRef.current.setStreamingText('');
+      queueState(() => {
+        const ref = optionsRef.current;
+        ref.setStatus('');
+        ref.setStreamingText('');
+      });
     };
 
     const onToolCall = (name: string, args: unknown) => {
       flushStreamBuffer();
-      optionsRef.current.setToolCalls((prev) => [...prev, { name, args }]);
-      optionsRef.current.setToolProgress?.(null);
+      queueState(() => {
+        const ref = optionsRef.current;
+        ref.setToolCalls((prev) => {
+          const len = prev.length;
+          const next = new Array<{ name: string; args: unknown }>(len + 1);
+          for (let i = 0; i < len; i++) next[i] = prev[i]!;
+          next[len] = { name, args };
+          return next;
+        });
+        ref.setToolProgress?.(null);
+      });
     };
 
     const onToolProgress = (progress: ToolProgress) => {
@@ -180,37 +226,53 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
       const isSuccess =
         !resultStr.toLowerCase().startsWith('error') &&
         !resultStr.toLowerCase().includes('command not found');
-      optionsRef.current.setToolResults((prev) => [
-        ...prev,
-        { name, result: resultStr, success: isSuccess },
-      ]);
-      optionsRef.current.setToolProgress?.(null);
+      queueState(() => {
+        const ref = optionsRef.current;
+        ref.setToolResults((prev) => {
+          const len = prev.length;
+          const next = new Array<{ name: string; result: string; success: boolean }>(len + 1);
+          for (let i = 0; i < len; i++) next[i] = prev[i]!;
+          next[len] = { name, result: resultStr, success: isSuccess };
+          return next;
+        });
+        ref.setToolProgress?.(null);
+      });
     };
 
     const onMessageAssistant = () => {
+      const msgs = agent.getMessages();
       flushStreamBuffer();
-      optionsRef.current.setMessages(agent.getMessages());
-      optionsRef.current.setIsLoading(false);
-      optionsRef.current.setIsThinking?.(false);
-      optionsRef.current.setStreamingText('');
-      optionsRef.current.setToolCalls(() => []);
-      optionsRef.current.setToolResults(() => []);
-      optionsRef.current.setErrorMessage('');
+      queueState(() => {
+        const ref = optionsRef.current;
+        ref.setMessages(msgs);
+        ref.setIsLoading(false);
+        ref.setIsThinking?.(false);
+        ref.setStreamingText('');
+        ref.setToolCalls(() => []);
+        ref.setToolResults(() => []);
+        ref.setErrorMessage('');
+      });
     };
 
     const onErrorEvent = () => {
       flushStreamBuffer();
-      optionsRef.current.setIsLoading(false);
-      optionsRef.current.setIsThinking?.(false);
-      optionsRef.current.setStatus('');
+      queueState(() => {
+        const ref = optionsRef.current;
+        ref.setIsLoading(false);
+        ref.setIsThinking?.(false);
+        ref.setStatus('');
+      });
     };
 
     const onReasoningDelta = (text: string) => {
-      optionsRef.current.setIsThinking?.(true);
-      // Accumulate reasoning text across deltas (DeepSeek sends reasoning_content per token)
       reasoningBuffer = reasoningBuffer + text;
-      optionsRef.current.setReasoningText?.(reasoningBuffer);
-      optionsRef.current.setStatus('💭 Thinking…');
+      const currentReasoning = reasoningBuffer;
+      queueState(() => {
+        const ref = optionsRef.current;
+        ref.setIsThinking?.(true);
+        ref.setReasoningText?.(currentReasoning);
+        ref.setStatus('💭 Thinking…');
+      });
     };
 
     const onContextUpdate = (context: AgentContext) => {

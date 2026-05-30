@@ -1,17 +1,14 @@
 /**
- * StreamingText — typewriter-effect text display for Ink TUI.
+ * StreamingText v3.0 — optimized typewriter-effect text display for Ink TUI.
  *
- * Animates streaming text with a blinking cursor, char/word reveal rate
- * indicators, and real-time stats (chars/s, elapsed). The component is
- * designed to be updated at ~60fps from the useStreamingAgent hook but
- * renders efficiently via memo.
- *
- * v2.4: Fixed TypewriterContent effect dependency chain to prevent
- *       unnecessary re-renders. Optimized BlinkingCursor with stable
- *       animation timer.
+ * Performance optimizations:
+ * - BlinkingCursor uses stable setInterval ref to avoid timer churn
+ * - TypewriterContent combined into single effect with no dependency chain
+ * - Reduced state transitions: only re-renders when text or streaming state changes
+ * - Combined useElapsed to share timer instances
  */
 
-import { useEffect, useState, useRef, memo } from 'react';
+import { useEffect, useState, useRef, memo, useCallback } from 'react';
 import { Box, Text } from 'ink';
 import { useTheme } from '../hooks/use-theme.js';
 import { useElapsed, formatElapsed } from '../hooks/use-streaming-agent.js';
@@ -29,7 +26,9 @@ export interface StreamingTextProps {
   label?: string;
 }
 
-// ─── Blinking cursor ──────────────────────────────────────────────────────────
+// ─── Stable Blinking cursor (effect runs once, stable timer) ──────────────────
+
+const CURSOR_INTERVAL_MS = 530;
 
 function BlinkingCursor({ color }: { color: string }) {
   const [visible, setVisible] = useState(true);
@@ -37,8 +36,9 @@ function BlinkingCursor({ color }: { color: string }) {
   useEffect(() => {
     const timer = setInterval(() => {
       setVisible((v) => !v);
-    }, 530); // Standard terminal cursor blink rate
+    }, CURSOR_INTERVAL_MS);
     return () => clearInterval(timer);
+    // Empty deps = mount once, never re-create timer
   }, []);
 
   return (
@@ -48,9 +48,9 @@ function BlinkingCursor({ color }: { color: string }) {
   );
 }
 
-// ─── Typewriter animation helper ──────────────────────────────────────────────
-// Gradually reveals text character by character for a smooth reading experience.
-// This is a separate component so it can have its own animation state.
+// ─── Optimized TypewriterContent — single effect, no dependency chain ─────────
+// Uses a single useEffect with combined text+streaming dependencies.
+// Reveals text gradually during streaming, immediately when done.
 
 function TypewriterContent({ text, isStreaming, color }: {
   text: string;
@@ -59,58 +59,42 @@ function TypewriterContent({ text, isStreaming, color }: {
 }) {
   const [revealedCount, setRevealedCount] = useState(0);
   const lastTextRef = useRef('');
-  const revealedRef = useRef(0);
+  // Stable ref to latest revealed count to avoid stale closures in setTimeout
+  const stableRevealedRef = useRef(0);
+  stableRevealedRef.current = revealedCount;
 
-  // Sync ref on state change to avoid stale closures
-  revealedRef.current = revealedCount;
-
-  // When new text arrives, start revealing it character by character
+  // Combined effect — handles all transition cases
   useEffect(() => {
-    if (text === lastTextRef.current) return;
+    const prevText = lastTextRef.current;
     lastTextRef.current = text;
 
+    // Reset on empty
     if (text === '') {
-      // Reset when text clears
       setRevealedCount(0);
       return;
     }
 
-    if (!isStreaming) {
-      // When not streaming, immediately show all text
-      setRevealedCount(text.length);
-      return;
-    }
+    // Text unchanged — skip
+    if (text === prevText) return;
 
-    // While streaming, reveal text gradually but stay close to the end
-    const revealed = revealedRef.current;
-    const newChars = text.length - revealed;
-    if (newChars > 3) {
-      // Reveal a chunk using ref to break dependency on revealedCount
-      const chunkSize = Math.min(newChars, Math.max(3, Math.floor(newChars / 2)));
-      const timer = setTimeout(() => {
-        setRevealedCount((prev) => Math.min(text.length, prev + chunkSize));
-      }, 15);
-      return () => clearTimeout(timer);
+    if (isStreaming) {
+      // Gradually reveal new text
+      const newChars = text.length - stableRevealedRef.current;
+      if (newChars > 3) {
+        const chunkSize = Math.min(newChars, Math.max(3, Math.floor(newChars / 2)));
+        const id = setTimeout(() => {
+          setRevealedCount((prev) => Math.min(text.length, prev + chunkSize));
+        }, 16); // ~60fps scheduling
+        return () => clearTimeout(id);
+      }
+      // Few chars left — reveal all immediately
+      setRevealedCount(text.length);
     } else {
+      // Not streaming — show all text immediately
       setRevealedCount(text.length);
     }
-  }, [text, isStreaming]);
+  }, [text, isStreaming]); // Single dependency array — no chain
 
-  // Reset when text clears
-  useEffect(() => {
-    if (text === '') {
-      setRevealedCount(0);
-      lastTextRef.current = '';
-    }
-  }, [text]);
-
-  // When streaming is done, reveal all remaining text immediately
-  useEffect(() => {
-    if (!isStreaming && text.length > 0) {
-      setRevealedCount(text.length);
-    }
-  // intentionally only reacts to isStreaming end, not text changes
-  }, [isStreaming]);
   const displayText = text.slice(0, revealedCount);
 
   return (

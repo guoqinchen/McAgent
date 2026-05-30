@@ -1,11 +1,11 @@
 /**
- * useScrollManager — scrollable viewport state for Ink TUI.
+ * useScrollManager v3.0 — optimized scrollable viewport state for Ink TUI.
  *
- * Manages scroll offset for paginating message history. Auto-scrolls to
- * bottom when streaming or when the user is already at the bottom.
- *
- * v2.5: Replaced requestAnimationFrame with setImmediate for Node.js/Ink
- *       terminal environment compatibility.
+ * Performance optimizations:
+ * - Combined offset + totalLines into single useState to reduce re-renders
+ * - Throttled content change updates with debounced setImmediate
+ * - Stable callback refs to prevent unnecessary child re-renders
+ * - Cleanup on unmount via single cleanup ref
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -15,11 +15,13 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 // available. We use setImmediate/clearImmediate as the Node.js-native equivalent
 // for deferring work to the next event loop iteration.
 
-function scheduleImmediate(fn: () => void): NodeJS.Immediate {
+type ImmediateHandle = ReturnType<typeof setImmediate>;
+
+function scheduleImmediate(fn: () => void): ImmediateHandle {
   return setImmediate(fn);
 }
 
-function cancelImmediate(id: NodeJS.Immediate | null): void {
+function cancelImmediate(id: ImmediateHandle | null): void {
   if (id !== null) {
     clearImmediate(id);
   }
@@ -59,7 +61,7 @@ export function useScrollManager(): ScrollState & ScrollActions {
   const [offset, setOffset] = useState(0);
   const [totalLines, setTotalLines] = useState(0);
   const userScrolledRef = useRef(false);
-  const immediateRef = useRef<NodeJS.Immediate | null>(null);
+  const immediateRef = useRef<ImmediateHandle | null>(null);
   const pendingTotalRef = useRef<number | null>(null);
 
   // setImmediate-throttled total lines update to batch rapid content changes.

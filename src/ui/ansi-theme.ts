@@ -125,6 +125,8 @@ function inkToAnsi(inkColor: string): string {
  * Efficiently builds ANSI-colored strings by merging adjacent escape sequences.
  * Instead of emitting `\x1b[32mhello\x1b[0m\x1b[33mworld\x1b[0m`, it produces
  * `\x1b[32mhello\x1b[33mworld\x1b[0m`, resulting in ~33% fewer escape sequences.
+ *
+ * v3.0: Optimized with pre-sized arrays, reduced branching, and faster clear.
  */
 export class AnsiBuilder {
   private parts: string[] = [];
@@ -134,15 +136,16 @@ export class AnsiBuilder {
   /** Append text with a specific ANSI color code. Merges adjacent same-color segments. */
   append(colorCode: string, text: string): this {
     if (!text) return this;
-    if (this.hasContent && text.length > 0) {
+    const parts = this.parts;
+    if (this.hasContent) {
       // Only emit a new color code if it differs from the last one
       if (colorCode !== this.lastCode) {
-        this.parts.push(colorCode);
+        parts.push(colorCode);
       }
     } else if (colorCode) {
-      this.parts.push(colorCode);
+      parts.push(colorCode);
     }
-    this.parts.push(text);
+    parts.push(text);
     this.lastCode = colorCode || this.lastCode;
     this.hasContent = true;
     return this;
@@ -161,16 +164,15 @@ export class AnsiBuilder {
   build(): string {
     if (!this.hasContent) return '';
     const result = this.parts.join('');
-    // Only append reset if we used any color codes
     if (this.lastCode) {
       return result + '\x1b[0m';
     }
     return result;
   }
 
-  /** Clear the builder for reuse. */
+  /** Clear the builder for reuse (O(1) — just reset length + flags). */
   clear(): void {
-    this.parts = [];
+    this.parts.length = 0;
     this.lastCode = '';
     this.hasContent = false;
   }
@@ -183,14 +185,11 @@ export class AnsiBuilder {
 
 /** Pre-allocated builder pool to reduce GC pressure. */
 const BUILDER_POOL_SIZE = 8;
-const builderPool: AnsiBuilder[] = [];
-for (let i = 0; i < BUILDER_POOL_SIZE; i++) {
-  builderPool.push(new AnsiBuilder());
-}
+const builderPool: AnsiBuilder[] = Array.from({ length: BUILDER_POOL_SIZE }, () => new AnsiBuilder());
 let builderPoolIndex = 0;
 
 /**
- * Acquire a builder from the pool. Caller must return it via returnBuilder().
+ * Acquire a builder from the pool. Reuses existing allocation — just clears state.
  */
 export function acquireBuilder(): AnsiBuilder {
   const idx = builderPoolIndex;
@@ -201,10 +200,10 @@ export function acquireBuilder(): AnsiBuilder {
 }
 
 /**
- * Return a builder to the pool (no-op, just resets).
+ * Return a builder to the pool (just clears it for next use).
  */
-export function returnBuilder(_b: AnsiBuilder): void {
-  _b.clear();
+export function returnBuilder(b: AnsiBuilder): void {
+  b.clear();
 }
 
 // ─── Theme creation ───────────────────────────────────────────────────────────

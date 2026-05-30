@@ -103,7 +103,7 @@ describe('Micro-benchmark: ConversationHistory', () => {
       conv.addUserMessage(`message ${i}`);
     }
     // run once to populate cache/state
-    conv.getMessagesWithSystem('You are a bot.', 96_000);
+    conv.getMessagesWithSystem('You are a bot.');
     // reset for consistent state
     conv.clear();
     for (let i = 0; i < 50; i++) {
@@ -112,7 +112,7 @@ describe('Micro-benchmark: ConversationHistory', () => {
 
     const result = await runBenchmark({
       name: 'ConversationHistory.getMessagesWithSystem — 50 msgs',
-      fn: () => void conv.getMessagesWithSystem('You are a bot.', 96_000),
+      fn: () => void conv.getMessagesWithSystem('You are a bot.'),
       samples: 50,
       warmupSamples: 5,
     });

@@ -85,7 +85,17 @@ function estimateSingleMessageTokens(msg: ChatCompletionMessageParam): number {
   let total = 0;
 
   // Text content
-  total += estimateTokens((msg.content as string) || '');
+  const content = (msg.content as string) || '';
+  let contentTokens = estimateTokens(content);
+
+  // Code blocks (``` fences) are over-counted ~2-4x by character-ratio
+  // estimation because operators / punctuation / whitespace each consume
+  // far fewer tokens than 0.25 in real BPE tokenizers. Apply a discount
+  // when code fences are present.
+  if (content.includes('```')) {
+    contentTokens = Math.ceil(contentTokens * 0.7);
+  }
+  total += contentTokens;
 
   // Tool call arguments (only on assistant messages with function calls)
   if ('tool_calls' in msg && msg.tool_calls) {
@@ -246,10 +256,7 @@ export function getContextUsage(
 ): ContextUsage {
   const estimatedTokens = estimateMessageTokens(messages);
   const effectiveBudget = effectiveMessageBudget(maxContextTokens, responseBudget);
-  const utilizationPercent = Math.min(
-    100,
-    Math.round((estimatedTokens / effectiveBudget) * 100)
-  );
+  const utilizationPercent = Math.min(100, Math.round((estimatedTokens / effectiveBudget) * 100));
 
   return {
     estimatedTokens,

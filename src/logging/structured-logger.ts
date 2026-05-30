@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { getConfigDir } from '../config/resolver.js';
 
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
@@ -208,7 +209,7 @@ const createDefaultLogger = (): StructuredLogger => {
   const consoleHandler = new ConsoleHandler('info');
   logger.addHandler(consoleHandler);
 
-  const logDir = path.join(process.env.HOME || '', '.mcagent', 'logs');
+  const logDir = path.join(getConfigDir(), 'logs');
   const logFile = path.join(logDir, `mcagent-${new Date().toISOString().split('T')[0]}.log`);
   const fileHandler = new FileHandler(logFile, 'debug');
   logger.addHandler(fileHandler);

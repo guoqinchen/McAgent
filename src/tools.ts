@@ -10,7 +10,6 @@ import { defaultExecutor } from './shell/executor.js';
 
 // ─── Helper: safe shell execution ───────────────────────────────────────────
 
-/** @deprecated Use defaultExecutor.run() instead. */
 const run = (cmd: string, timeout?: number): Promise<string> => defaultExecutor.run(cmd, timeout);
 
 // ─── Tool: execute a shell command ──────────────────────────────────────────

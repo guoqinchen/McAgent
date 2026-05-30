@@ -73,9 +73,7 @@ agent.on('tool:call', function onToolCall(name, args) {
 
 agent.on('tool:result', function onToolResult(name, result) {
   const preview =
-    typeof result === 'string' && result.length > 120
-      ? result.slice(0, 120) + '…'
-      : String(result);
+    typeof result === 'string' && result.length > 120 ? result.slice(0, 120) + '…' : String(result);
   process.stdout.write(`  ${c.success}✓ ${name}${c.reset}: ${preview}\n`);
 });
 
@@ -127,8 +125,11 @@ function prompt(): void {
 
     try {
       await agent.send(trimmed);
-    } catch (_err) {
-      // Error already emitted via 'error' event
+    } catch (err) {
+      // Fallback: log error (primary handling is via 'error' event)
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('Headless send failed', error);
+      console.error(`\n${c.error}❌  Error:${c.reset} ${error.message}`);
     }
     prompt();
   });

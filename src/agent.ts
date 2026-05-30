@@ -194,6 +194,9 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     });
 
     this.llmClient = new LLMClient(this.client);
+    for (const t of this.config.tools) {
+      this.toolsByName.set(t.name, t);
+    }
     this.toolExecutor = new ToolExecutor(this.toolsByName);
 
     logger.info('McAgent initialized', {
@@ -201,10 +204,6 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
       baseURL: this.config.baseURL,
       tools: this.config.tools.length,
     });
-
-    for (const t of this.config.tools) {
-      this.toolsByName.set(t.name, t);
-    }
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
@@ -287,72 +286,53 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
    * Handles tool calls automatically (up to maxToolRounds).
    */
   async send(content: string, signal?: AbortSignal): Promise<string> {
-    if (this.disposed) throw new Error('Agent has been disposed');
-    if (this.busy) {
-      throw new Error('Agent is already processing a request');
-    }
-    this.busy = true;
-    this.consecutiveErrors = 0;
-    const requestId = `send-${Date.now()}`;
-    metricsCollector.startRequest(requestId);
-
-    this.conversation.addUserMessage(content);
-    this.emit('message:user', { role: 'user', content });
-    this.emit('thinking:start');
-    logger.info('send() started', { content: content.slice(0, 80) });
-
-    try {
-      const fullText = await this.runLoop(false, signal);
-      metricsCollector.endRequest(requestId, true, undefined, {
-        prompt: 0,
-        completion: fullText.length,
-      });
-      logger.info('send() completed', { responseLen: fullText.length });
-      return fullText;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      metricsCollector.endRequest(requestId, false, 'error');
-      logger.error('send() failed', error);
-      this.emit('error', error);
-      throw error;
-    } finally {
-      this.busy = false;
-      this.emit('thinking:end');
-    }
+    return this.sendCore(content, false, signal);
   }
 
   // ── Send (non-streaming, simpler) ─────────────────────────────────────────
 
   async sendSync(content: string, signal?: AbortSignal): Promise<string> {
+    return this.sendCore(content, true, signal);
+  }
+
+  /**
+   * Shared implementation for send() and sendSync().
+   * All validation, metrics, and error handling live here so the public
+   * methods stay thin wrappers over the single boolean flag.
+   */
+  private async sendCore(content: string, sync: boolean, signal?: AbortSignal): Promise<string> {
     if (this.disposed) throw new Error('Agent has been disposed');
     if (this.busy) {
       throw new Error('Agent is already processing a request');
     }
     this.busy = true;
     this.consecutiveErrors = 0;
-    const requestId = `sendSync-${Date.now()}`;
+    const label = sync ? 'sendSync' : 'send';
+    const requestId = `${label}-${Date.now()}`;
     metricsCollector.startRequest(requestId);
 
     this.conversation.addUserMessage(content);
     this.emit('message:user', { role: 'user', content });
-    logger.info('sendSync() started', { content: content.slice(0, 80) });
+    if (!sync) this.emit('thinking:start');
+    logger.info(`${label}() started`, { content: content.slice(0, 80) });
 
     try {
-      const fullText = await this.runLoop(true, signal);
+      const fullText = await this.runLoop(sync, signal);
       metricsCollector.endRequest(requestId, true, undefined, {
         prompt: 0,
         completion: fullText.length,
       });
-      logger.info('sendSync() completed', { responseLen: fullText.length });
+      logger.info(`${label}() completed`, { responseLen: fullText.length });
       return fullText;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       metricsCollector.endRequest(requestId, false, 'error');
-      logger.error('sendSync() failed', error);
+      logger.error(`${label}() failed`, error);
       this.emit('error', error);
       throw error;
     } finally {
       this.busy = false;
+      this.emit('thinking:end');
     }
   }
 
@@ -380,10 +360,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
       // Explicitly evict old messages first, then build message array
       this.conversation.evictIfNeeded(this.config.maxContextTokens);
-      const messages = this.conversation.getMessagesWithSystem(
-        this.config.instructions,
-        this.config.maxContextTokens
-      );
+      const messages = this.conversation.getMessagesWithSystem(this.config.instructions);
 
       // Log context usage stats (helpful for debugging DeepSeek-V4 1M context)
       if (round === 0) {

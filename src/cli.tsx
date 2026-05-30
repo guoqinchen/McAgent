@@ -15,8 +15,6 @@ import { MessageList } from './ui/components/message-list.js';
 import { render, Box, Text, useInput, useApp } from 'ink';
 import { useTheme } from './ui/hooks/use-theme.js';
 
-
-
 import { createMacOSAgent } from './agent.js';
 import type { Message } from './types/events.js';
 import { macOSDefaultTools } from './tools.js';
@@ -56,7 +54,6 @@ const agent = createMacOSAgent({
   ].join('\n'),
   tools: [...macOSDefaultTools, ...macOSExtendedTools, ...macOSProTools],
 });
-
 
 // ─── Input field ─────────────────────────────────────────────────────────────
 
@@ -114,13 +111,10 @@ function InputField({
       <Text inverse>{atCursor}</Text>
       <Text>{afterCursor}</Text>
       {disabled && <Text color="gray"> …</Text>}
-      {editor.killRing && !disabled && (
-        <Text color="gray"> [cut]</Text>
-      )}
+      {editor.killRing && !disabled && <Text color="gray"> [cut]</Text>}
     </Box>
   );
 }
-
 
 // ─── Main App ────────────────────────────────────────────────────────────────
 function App() {
@@ -133,13 +127,14 @@ function App() {
   const [toolCalls, setToolCalls] = useState<Array<{ name: string; args: unknown }>>([]);
 
   const [status, setStatus] = useState('');
-  const [toolResults, setToolResults] = useState<Array<{ name: string; result: string; success: boolean }>>([]);
+  const [toolResults, setToolResults] = useState<
+    Array<{ name: string; result: string; success: boolean }>
+  >([]);
   const [inputHistory, setInputHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [historyDraft, setHistoryDraft] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const editorRef = useRef<{ setValue: (v: string) => void; value: string } | null>(null);
-
 
   // Keyboard: Ctrl+C/Escape to quit, Ctrl+L to clear, ? for help
   useInput((input, key) => {
@@ -159,7 +154,7 @@ function App() {
       setShowHelp(true);
       return;
     }
-    if ((key.ctrl && input === 'd') && editorRef.current?.value === '') {
+    if (key.ctrl && input === 'd' && editorRef.current?.value === '') {
       exit();
       return;
     }
@@ -182,20 +177,26 @@ function App() {
     },
   });
 
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || isLoading) return;
-    const trimmed = text.trim();
-    setInputHistory((prev) => [...prev, trimmed]);
-    setHistoryIndex(-1);
-    setHistoryDraft('');
-    setIsLoading(true);
-    setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
-    try {
-      await agent.send(trimmed);
-    } catch {
-      // handled by event
-    }
-  }, [isLoading]);
+  const sendMessage = useCallback(
+    async (text: string) => {
+      if (!text.trim() || isLoading) return;
+      const trimmed = text.trim();
+      setInputHistory((prev) => [...prev, trimmed]);
+      setHistoryIndex(-1);
+      setHistoryDraft('');
+      setIsLoading(true);
+      setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
+      try {
+        await agent.send(trimmed);
+      } catch (err) {
+        // Fallback: log and show error in UI (primary handling is via events)
+        const error = err instanceof Error ? err : new Error(String(err));
+        logger.error('TUI send failed', error);
+        setErrorMessage(error.message);
+      }
+    },
+    [isLoading]
+  );
 
   const historyUp = useCallback(() => {
     if (inputHistory.length === 0) return;
@@ -248,40 +249,50 @@ function App() {
           marginBottom={1}
         >
           <Box marginBottom={1}>
-            <Text bold color={theme.header}>&#x2318; McAgent Help</Text>
+            <Text bold color={theme.header}>
+              &#x2318; McAgent Help
+            </Text>
           </Box>
 
           <Box flexDirection="column" marginBottom={1}>
-            <Text bold color={theme.heading}>Line Editing</Text>
-            <Text color={theme.muted}>  Ctrl+A/E       Go to beginning/end of line</Text>
-            <Text color={theme.muted}>  Alt+B/F        Move backward/forward one word</Text>
-            <Text color={theme.muted}>  Ctrl+K/U/W     Cut to end/start/previous word</Text>
-            <Text color={theme.muted}>  Ctrl+Y         Paste last cut text</Text>
+            <Text bold color={theme.heading}>
+              Line Editing
+            </Text>
+            <Text color={theme.muted}> Ctrl+A/E Go to beginning/end of line</Text>
+            <Text color={theme.muted}> Alt+B/F Move backward/forward one word</Text>
+            <Text color={theme.muted}> Ctrl+K/U/W Cut to end/start/previous word</Text>
+            <Text color={theme.muted}> Ctrl+Y Paste last cut text</Text>
           </Box>
 
           <Box flexDirection="column" marginBottom={1}>
-            <Text bold color={theme.heading}>Navigation</Text>
-            <Text color={theme.muted}>  PgUp/PgDn      Scroll message history</Text>
-            <Text color={theme.muted}>  Home/End       Jump to top/bottom</Text>
-            <Text color={theme.muted}>  &#8593;/&#8595;   Browse input history</Text>
+            <Text bold color={theme.heading}>
+              Navigation
+            </Text>
+            <Text color={theme.muted}> PgUp/PgDn Scroll message history</Text>
+            <Text color={theme.muted}> Home/End Jump to top/bottom</Text>
+            <Text color={theme.muted}> &#8593;/&#8595; Browse input history</Text>
           </Box>
 
           <Box flexDirection="column" marginBottom={1}>
-            <Text bold color={theme.heading}>Actions</Text>
-            <Text color={theme.muted}>  Ctrl+L         Clear screen</Text>
-            <Text color={theme.muted}>  Ctrl+C / Esc   Quit</Text>
-            <Text color={theme.muted}>  Ctrl+D         Quit (when input is empty)</Text>
+            <Text bold color={theme.heading}>
+              Actions
+            </Text>
+            <Text color={theme.muted}> Ctrl+L Clear screen</Text>
+            <Text color={theme.muted}> Ctrl+C / Esc Quit</Text>
+            <Text color={theme.muted}> Ctrl+D Quit (when input is empty)</Text>
           </Box>
 
           <Box flexDirection="column">
-            <Text bold color={theme.heading}>Color Key</Text>
+            <Text bold color={theme.heading}>
+              Color Key
+            </Text>
             <Box>
               <Text color={theme.userLabel}>&#x25CF; User</Text>
-              <Text>  </Text>
+              <Text> </Text>
               <Text color={theme.assistantLabel}>&#x25CF; Assistant</Text>
-              <Text>  </Text>
+              <Text> </Text>
               <Text color={theme.toolCall}>&#x25CF; Tool</Text>
-              <Text>  </Text>
+              <Text> </Text>
               <Text color={theme.error}>&#x25CF; Error</Text>
             </Box>
           </Box>

@@ -52,8 +52,15 @@ export class MetricsCollector {
   };
 
   private activeRequests = new Map<string, RequestTiming>();
+  private static readonly MAX_ACTIVE_REQUESTS = 100;
+  private static readonly REQUEST_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
   startRequest(requestId: string): void {
+    // Prevent unbounded growth from leaked entries (crashed/aborted requests)
+    if (this.activeRequests.size >= MetricsCollector.MAX_ACTIVE_REQUESTS) {
+      const oldest = this.activeRequests.keys().next().value;
+      if (oldest) this.activeRequests.delete(oldest);
+    }
     this.activeRequests.set(requestId, {
       startTime: Date.now(),
     });
@@ -147,6 +154,14 @@ export class MetricsCollector {
     totalTokens: number;
     errorBreakdown: Record<string, number>;
   } {
+    // Evict stale active requests (e.g., from crashed/aborted operations)
+    const now = Date.now();
+    for (const [id, timing] of this.activeRequests) {
+      if (now - timing.startTime > MetricsCollector.REQUEST_TIMEOUT_MS) {
+        this.activeRequests.delete(id);
+      }
+    }
+
     const successRate =
       this.metrics.requests > 0 ? (this.metrics.successes / this.metrics.requests) * 100 : 0;
 

@@ -7,7 +7,10 @@
 
 import { existsSync } from 'node:fs';
 import { writeFile, readFile } from 'node:fs/promises';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type {
+  ChatCompletionMessageParam,
+  ChatCompletionMessageToolCall,
+} from 'openai/resources/chat/completions';
 import { evictMessages, DEFAULT_MAX_CONTEXT_TOKENS } from '../context-manager.js';
 import type { Message } from '../types/events.js';
 
@@ -60,7 +63,7 @@ export class ConversationHistory {
 
   addAssistantMessage(
     content: string | null,
-    toolCalls?: unknown,
+    toolCalls?: ChatCompletionMessageToolCall[],
     reasoningContent?: string
   ): void {
     const msg = {
@@ -127,17 +130,19 @@ export class ConversationHistory {
    * Pure function — does NOT mutate internal state. Call evictIfNeeded()
    * separately before this if eviction is desired.
    */
-  getMessagesWithSystem(
-    systemPrompt: string,
-    maxContextTokens: number = DEFAULT_MAX_CONTEXT_TOKENS
-  ): ChatCompletionMessageParam[] {
+  getMessagesWithSystem(systemPrompt: string): ChatCompletionMessageParam[] {
     const result: ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt },
       ...this.messages,
     ];
 
-    if (maxContextTokens > 0) {
-      return evictMessages(result, maxContextTokens);
+    // Strip reasoning_content from assistant messages before sending to API.
+    // reasoning_content is DeepSeek-specific output-only — sending it back
+    // wastes tokens and may cause errors with strict API validation.
+    for (const msg of result) {
+      if (msg.role === 'assistant' && 'reasoning_content' in msg) {
+        delete (msg as Record<string, unknown>).reasoning_content;
+      }
     }
 
     return result;

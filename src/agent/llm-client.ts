@@ -48,7 +48,7 @@ export class LLMClient {
     tools: ChatCompletionTool[],
     thinkingBody: ThinkingBody,
     signal?: AbortSignal
-  ): Promise<CompletionResponse | null> {
+  ): Promise<CompletionResponse | undefined> {
     const params: CreateCompletionParams = {
       model,
       messages,
@@ -64,7 +64,7 @@ export class LLMClient {
     return errorRecoveryEngine.executeWithRecovery(
       () => this.client.chat.completions.create(params),
       'chat.completions.create'
-    ) as Promise<CompletionResponse | null>;
+    ) as Promise<CompletionResponse | undefined>;
   }
 
   /**
@@ -77,7 +77,7 @@ export class LLMClient {
     tools: ChatCompletionTool[],
     thinkingBody: ThinkingBody,
     signal?: AbortSignal
-  ): Promise<CompletionStream | null> {
+  ): Promise<CompletionStream | undefined> {
     const params: CreateCompletionParams = {
       model,
       messages,
@@ -89,6 +89,6 @@ export class LLMClient {
     return errorRecoveryEngine.executeWithRecovery(
       () => this.client.chat.completions.create(params),
       'chat.completions.create'
-    ) as Promise<CompletionStream | null>;
+    ) as Promise<CompletionStream | undefined>;
   }
 }

@@ -84,7 +84,7 @@ describe('ConversationHistory (typed)', () => {
 
   it('getMessagesWithSystem prepends system message', () => {
     conv.addUserMessage('hi');
-    const msgs = conv.getMessagesWithSystem('You are a bot.', 999999);
+    const msgs = conv.getMessagesWithSystem('You are a bot.');
     expect(msgs).toHaveLength(2);
     expect(msgs[0].role).toBe('system');
     expect(msgs[0].content).toBe('You are a bot.');
@@ -96,10 +96,8 @@ describe('ConversationHistory (typed)', () => {
     for (let i = 0; i < 10; i++) {
       conv.addUserMessage('message ' + i);
     }
-    // A very low token budget should force eviction
-    const msgs = conv.getMessagesWithSystem('system', 10);
-    expect(msgs.length).toBeLessThan(12); // system + some messages removed
-    // Internal messages should also be evicted
+    // A very low token budget should force eviction via evictIfNeeded
+    conv.evictIfNeeded(10);
     expect(conv.length).toBeLessThan(11);
   });
 });

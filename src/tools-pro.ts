@@ -19,7 +19,6 @@ import { defaultExecutor } from './shell/executor.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
-/** @deprecated Use defaultExecutor.run() instead. */
 const run = (cmd: string, timeout?: number): Promise<string> => defaultExecutor.run(cmd, timeout);
 
 // ─── Tool 1: network_diagnostics ──────────────────────────────────────────────
@@ -379,23 +378,17 @@ export const powerManagementTool: Tool = {
       case 'battery': {
         const batt = await run('pmset -g batt 2>/dev/null');
 
-        // Parse percentage
-        const pctMatch = batt.match(/(\d+)%/);
-        // Parse cycle count from system_profiler
+        const { parseBatteryOutput } = await import('./tools/battery-parser.js');
         const cycleInfo = await run(
           `system_profiler SPPowerDataType 2>/dev/null | grep -E "Cycle Count|Health Information|Condition|Temperature" | head -10`
         );
+        const info = parseBatteryOutput(batt, cycleInfo);
         const cycles = cycleInfo.split('\n').filter(Boolean);
-
-        let status = 'unknown';
-        if (/charged/i.test(batt)) status = 'fully charged';
-        else if (/charging/i.test(batt)) status = 'charging';
-        else if (/discharging/i.test(batt)) status = 'discharging';
 
         return {
           action: 'battery',
-          percentage: pctMatch ? Number(pctMatch[1]) : null,
-          status,
+          percentage: info.percentage,
+          status: info.status,
           cycles:
             cycles.length > 0 ? cycles : 'No detailed battery data (may require SIP permissive)',
           raw: batt,

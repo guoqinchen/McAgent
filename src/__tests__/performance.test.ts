@@ -270,7 +270,7 @@ describe('Performance: ConversationHistory', () => {
     }
 
     const elapsed = measureSync(() => {
-      conv.getMessagesWithSystem('You are a bot.', 96_000);
+      conv.getMessagesWithSystem('You are a bot.');
     }, 500);
     expect(elapsed).toBeLessThan(100);
   });
@@ -630,12 +630,8 @@ describe('Performance: Integration — full message pipeline', () => {
     expect(conv.length).toBe(500);
 
     const elapsed = measureSync(() => {
-      const msgs = conv.getMessagesWithSystem(
-        'You are a macOS assistant.',
-        DEFAULT_MAX_CONTEXT_TOKENS
-      );
+      const msgs = conv.getMessagesWithSystem('You are a macOS assistant.');
       const tokenCount = estimateMessageTokens(msgs);
-      // If over limit, evict (getMessagesWithSystem already does this internally)
       expect(msgs.length).toBeGreaterThan(0);
       expect(tokenCount).toBeGreaterThan(0);
     }, 1);

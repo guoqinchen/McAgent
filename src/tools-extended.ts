@@ -16,7 +16,6 @@ import { defaultExecutor } from './shell/executor.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
-/** @deprecated Use defaultExecutor.run() instead. */
 const run = (cmd: string, timeout?: number): Promise<string> => defaultExecutor.run(cmd, timeout);
 
 // (removed escapeSed — edit_file now uses Node.js native replaceAll instead of sed)
@@ -263,33 +262,20 @@ export const batteryTool: Tool = {
     const batt = await run('pmset -g batt 2>/dev/null');
     const ps = await run('pmset -g ps 2>/dev/null');
 
-    // Parse percentage from "NN%" pattern
-    const pctMatch = batt.match(/(\d+)%/);
-    const charging = /charging/i.test(batt);
-    const discharging = /discharging/i.test(batt);
-    const full = /charged/i.test(batt);
-
-    let status = 'unknown';
-    if (full) status = 'fully charged';
-    else if (charging) status = 'charging';
-    else if (discharging) status = 'discharging';
-
-    // Fetch cycle count and health from system_profiler
+    const { parseBatteryOutput } = await import('./tools/battery-parser.js');
     const powerData = await run(
       'system_profiler SPPowerDataType 2>/dev/null | grep -E "Cycle Count|Condition|Maximum Capacity|Temperature" | head -5'
     );
-    const cycleMatch = powerData.match(/Cycle Count:\s*(\d+)/);
-    const healthMatch = powerData.match(/Condition:\s*(\w+)/);
-    const capacityMatch = powerData.match(/Maximum Capacity:\s*(\d+)%/);
-    const tempMatch = powerData.match(/Temperature.*?:\s*(\d+)/);
+
+    const info = parseBatteryOutput(batt, powerData);
 
     return {
-      percentage: pctMatch ? Number(pctMatch[1]) : null,
-      status,
-      cycleCount: cycleMatch ? Number(cycleMatch[1]) : null,
-      health: healthMatch ? healthMatch[1] : null,
-      maxCapacityPercent: capacityMatch ? Number(capacityMatch[1]) : null,
-      temperature: tempMatch ? `${tempMatch[1]}°C` : null,
+      percentage: info.percentage,
+      status: info.status,
+      cycleCount: info.cycleCount,
+      health: info.health,
+      maxCapacityPercent: info.maxCapacityPercent,
+      temperature: info.temperature,
       raw: batt,
       powerSources: ps,
     };

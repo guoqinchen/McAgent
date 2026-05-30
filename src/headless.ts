@@ -91,7 +91,19 @@ agent.on('tool:call', function onToolCall(name: string, args: unknown) {
   const argsStr = JSON.stringify(args);
   const preview = argsStr.length > 80 ? argsStr.slice(0, 80) + '…' : argsStr;
   render.toolResult({ name, status: 'running', preview });
-  render.spinner.start(`Running ${name}…`);
+});
+
+agent.on('tool:progress', function onToolProgress(progress) {
+  const barWidth = 20;
+  if (progress.progress !== null) {
+    const filled = Math.round((progress.progress / 100) * barWidth);
+    const empty = barWidth - filled;
+    const bar = `${c.progressBar}${'━'.repeat(filled)}${c.progressBg}${'━'.repeat(empty)}${c.reset}`;
+    process.stdout.write(`\r  ${bar} ${progress.progress}% ${c.muted}(${progress.status})${c.reset} `);
+  } else {
+    const elapsed = formatDuration(progress.elapsedMs);
+    process.stdout.write(`\r  ${c.progressBar}⏳${c.reset} ${c.muted}${elapsed} — ${progress.status}${c.reset} `);
+  }
 });
 
 agent.on('tool:result', function onToolResult(name: string, result: unknown) {
@@ -137,6 +149,21 @@ agent.on('error', function onError(err: Error) {
   render.blank();
   render.error(err, 'Agent encountered an error');
 });
+
+agent.on('context:update', function onContextUpdate(ctx) {
+  // Context updates are shown in the status line but we don't print them
+  // in headless mode to avoid clutter — kept for extensibility
+});
+
+// ─── Helper ─────────────────────────────────────────────────────────────────
+
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+  const mins = Math.floor(ms / 60_000);
+  const secs = Math.floor((ms % 60_000) / 1000);
+  return `${mins}m ${secs}s`;
+}
 
 // ─── Interactive loop ────────────────────────────────────────────────────────
 

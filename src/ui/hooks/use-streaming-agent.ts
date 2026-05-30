@@ -4,11 +4,18 @@
  * Extracted from cli.tsx to keep the TUI component focused on rendering.
  * Buffers rapid token-by-token emits into ~60fps React state updates to
  * prevent terminal stuttering from per-token re-renders.
+ *
+ * v2.3: Added tool progress tracking, context updates, and permission requests.
  */
 
 import { useEffect, useRef } from 'react';
 import type { MacOSAgent } from '../../agent.js';
-import type { Message } from '../../types/events.js';
+import type {
+  Message,
+  ToolProgress,
+  AgentContext,
+  PermissionRequest,
+} from '../../types/events.js';
 
 export interface UseStreamingAgentOptions {
   agent: MacOSAgent;
@@ -27,6 +34,12 @@ export interface UseStreamingAgentOptions {
   setErrorMessage: (message: string) => void;
   setMessages: (messages: Message[]) => void;
   setIsLoading: (loading: boolean) => void;
+  /** Tool progress updates for UI progress bar. */
+  setToolProgress?: (progress: ToolProgress | null) => void;
+  /** Context snapshot for status bar. */
+  setAgentContext?: (context: AgentContext) => void;
+  /** Permission request handler. */
+  setPermissionRequest?: (request: PermissionRequest | null) => void;
   onError?: (err: Error) => void;
   /** Called after each frame update with frame interval in ms. Use for perf monitoring. */
   onFrame?: (frameIntervalMs: number) => void;
@@ -62,6 +75,8 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
       optionsRef.current.setToolResults(() => []);
       optionsRef.current.setStatus('🤔 Processing…');
       optionsRef.current.setErrorMessage('');
+      optionsRef.current.setToolProgress?.(null);
+      optionsRef.current.setPermissionRequest?.(null);
     };
 
     const onStreamDelta = (_delta: string, accumulated: string) => {
@@ -89,6 +104,11 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
     const onToolCall = (name: string, args: unknown) => {
       flushStreamBuffer();
       optionsRef.current.setToolCalls((prev) => [...prev, { name, args }]);
+      optionsRef.current.setToolProgress?.(null);
+    };
+
+    const onToolProgress = (progress: ToolProgress) => {
+      optionsRef.current.setToolProgress?.(progress);
     };
 
     const onToolResult = (name: string, result: unknown) => {
@@ -100,6 +120,7 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
         ...prev,
         { name, result: resultStr, success: isSuccess },
       ]);
+      optionsRef.current.setToolProgress?.(null);
     };
 
     const onMessageAssistant = () => {
@@ -122,14 +143,25 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
       optionsRef.current.setStatus('💭 Thinking…');
     };
 
+    const onContextUpdate = (context: AgentContext) => {
+      optionsRef.current.setAgentContext?.(context);
+    };
+
+    const onPermissionRequest = (request: PermissionRequest) => {
+      optionsRef.current.setPermissionRequest?.(request);
+    };
+
     agent.on('thinking:start', onThinkingStart);
     agent.on('stream:delta', onStreamDelta);
     agent.on('stream:end', onStreamEnd);
     agent.on('tool:call', onToolCall);
+    agent.on('tool:progress', onToolProgress);
     agent.on('tool:result', onToolResult);
     agent.on('message:assistant', onMessageAssistant);
     agent.on('error', onErrorEvent);
     agent.on('reasoning:delta', onReasoningDelta);
+    agent.on('context:update', onContextUpdate);
+    agent.on('permission:request', onPermissionRequest);
 
     const onErrorWithLog = (err: Error) => {
       optionsRef.current.setErrorMessage(err.message);
@@ -145,10 +177,13 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
       agent.off('stream:delta', onStreamDelta);
       agent.off('stream:end', onStreamEnd);
       agent.off('tool:call', onToolCall);
+      agent.off('tool:progress', onToolProgress);
       agent.off('tool:result', onToolResult);
       agent.off('message:assistant', onMessageAssistant);
       agent.off('error', onErrorWithLog);
       agent.off('reasoning:delta', onReasoningDelta);
+      agent.off('context:update', onContextUpdate);
+      agent.off('permission:request', onPermissionRequest);
     };
   }, [agent]);
 }

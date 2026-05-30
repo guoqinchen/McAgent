@@ -31,7 +31,7 @@ import { metricsCollector } from './monitoring/metrics-collector.js';
 
 import type { Tool } from './types/tool.js';
 import type { McAgentConfig as MacOSAgentConfig, PermissionMode } from './types/config.js';
-import type { Message, McAgentEvents as MacOSAgentEvents } from './types/events.js';
+import type { Message, McAgentEvents as MacOSAgentEvents, AgentContext } from './types/events.js';
 
 // ─── Re-export types for backward compatibility ────────────────────────────
 
@@ -569,23 +569,36 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
   /**
    * Execute the tool calls from a model response, add results to history.
+   * Emits progress events for long-running tools and context updates.
    */
   private async executeToolCalls(
     toolCalls: ChatCompletionMessageFunctionToolCall[]
   ): Promise<void> {
+    // Emit context update before execution
+    this.emitContextUpdate();
+
     const results = await this.toolExecutor.executeAll(
       toolCalls,
       // onCall
-      (name, args) => this.emit('tool:call', name, args),
+      (name, args) => {
+        this.emit('tool:call', name, args);
+        this.emitContextUpdate();
+      },
       // onResult
       (name, result) => {
         this.consecutiveErrors = 0;
         this.emit('tool:result', name, result);
+        this.emitContextUpdate();
       },
       // onError
       (error) => {
         this.consecutiveErrors++;
         this.emit('error', error);
+        this.emitContextUpdate();
+      },
+      // onProgress — new in v2.3
+      (progress) => {
+        this.emit('tool:progress', progress);
       }
     );
 
@@ -593,6 +606,21 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     for (const r of results) {
       this.conversation.addToolResult(r.toolCallId, r.content);
     }
+  }
+
+  /**
+   * Emit a context snapshot for the UI status bar.
+   */
+  private emitContextUpdate(): void {
+    const ctx: AgentContext = {
+      cwd: process.cwd(),
+      permissionMode: this.config.permissionMode,
+      model: this.config.model,
+      isProcessing: this.busy,
+      messageCount: this.conversation.length,
+      contextUsagePercent: 0, // Simplified; full calculation would require token estimation
+    };
+    this.emit('context:update', ctx);
   }
 }
 

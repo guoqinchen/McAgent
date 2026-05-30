@@ -28,6 +28,10 @@ export interface AnsiColors {
   success: string;
   warning: string;
   reasoning: string;
+  progressBar: string;
+  progressBg: string;
+  permissionHighlight: string;
+  statusBar: string;
 }
 
 const ansiColorMap: Record<string, string> = {
@@ -76,6 +80,10 @@ export function createAnsiTheme(mode?: ThemeMode): AnsiColors {
           success: 'green',
           warning: 'yellow',
           reasoning: 'gray',
+          progressBar: 'green',
+          progressBg: 'gray',
+          permissionHighlight: 'yellow',
+          statusBar: 'gray',
         }
       : {
           userLabel: 'cyan',
@@ -95,6 +103,10 @@ export function createAnsiTheme(mode?: ThemeMode): AnsiColors {
           success: 'greenBright',
           warning: 'yellowBright',
           reasoning: 'gray',
+          progressBar: 'greenBright',
+          progressBg: 'gray',
+          permissionHighlight: 'yellowBright',
+          statusBar: 'gray',
         };
 
   const colors: Record<string, string> = {};
@@ -123,5 +135,9 @@ export function createAnsiTheme(mode?: ThemeMode): AnsiColors {
     success: colors.success || '',
     warning: colors.warning || '',
     reasoning: colors.reasoning || '',
+    progressBar: colors.progressBar || '',
+    progressBg: colors.progressBg || '',
+    permissionHighlight: colors.permissionHighlight || '',
+    statusBar: colors.statusBar || '',
   };
 }

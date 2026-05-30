@@ -4,6 +4,8 @@
  * Renders chat messages with scroll management, enhanced error display,
  * loading state with elapsed time, and tool execution feedback.
  *
+ * v2.3: Added progress bar for long-running tools, enhanced tool call display.
+ *
  * Scroll: PageUp/PageDown to navigate message history.
  */
 
@@ -12,7 +14,7 @@ import { Box, Text, useInput } from 'ink';
 import { useScrollManager } from '../hooks/use-scroll-manager.js';
 import { useTheme } from '../hooks/use-theme.js';
 import { MarkdownRenderer } from './markdown-renderer.js';
-import type { Message } from '../../types/events.js';
+import type { Message, ToolProgress } from '../../types/events.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +26,8 @@ export interface MessageListProps {
   status: string;
   errorMessage: string;
   isLoading: boolean;
+  /** Tool progress for the progress bar display. */
+  toolProgress: ToolProgress | null;
   /** Viewport height in lines (default 10) */
   viewportHeight?: number;
 }
@@ -39,6 +43,46 @@ function estimateLines(text: string, cols = 80): number {
   }
   return total;
 }
+
+// ─── Progress Bar ───────────────────────────────────────────────────────────
+
+const ProgressBar = memo(function ProgressBar({
+  progress,
+  width = 20,
+  fillColor,
+  bgColor,
+}: {
+  progress: number | null;
+  width?: number;
+  fillColor: string;
+  bgColor: string;
+}) {
+  if (progress === null) {
+    // Indeterminate progress: show a pulsing bar
+    return (
+      <Text color={fillColor}>
+        {'['}
+        <Text color={fillColor}>{'━'.repeat(Math.min(width, 5))}</Text>
+        <Text color={bgColor}>{'━'.repeat(Math.max(0, width - 5))}</Text>
+        {']'}
+      </Text>
+    );
+  }
+
+  const filled = Math.round((progress / 100) * width);
+  const empty = width - filled;
+  const pctStr = `${progress}%`;
+
+  return (
+    <Text>
+      {'['}
+      <Text color={fillColor}>{'━'.repeat(filled)}</Text>
+      <Text color={bgColor}>{'━'.repeat(empty)}</Text>
+      {'] '}
+      <Text color={fillColor}>{pctStr}</Text>
+    </Text>
+  );
+});
 
 // ─── Elapsed Timer (isolated to prevent parent re-renders) ────────────────────
 
@@ -79,6 +123,7 @@ export function MessageList({
   streamingText,
   toolCalls,
   toolResults,
+  toolProgress,
   status,
   errorMessage,
   isLoading,
@@ -223,19 +268,35 @@ export function MessageList({
         </Box>
       )}
 
-      {/* Tool calls */}
+      {/* Tool calls with progress bar */}
       {toolCalls.length > 0 &&
-        toolCalls.map((tc, i) => (
-          <Box key={`tc-${i}`}>
-            <Text color={theme.toolCall}> 🔧 {tc.name}</Text>
-            <Text color={theme.muted}>
-              ({(() => {
-                const s = JSON.stringify(tc.args);
-                return s.length > 80 ? s.slice(0, 80) + '…' : s;
-              })()})
-            </Text>
-          </Box>
-        ))}
+        toolCalls.map((tc, i) => {
+          const isLatest = i === toolCalls.length - 1;
+          const showProgress = isLatest && toolProgress !== null && toolProgress.name === tc.name;
+          return (
+            <Box key={`tc-${i}`} flexDirection="column">
+              <Box>
+                <Text color={theme.toolCall}> 🔧 {tc.name}</Text>
+                <Text color={theme.muted}>
+                  &nbsp;({(() => {
+                    const s = JSON.stringify(tc.args);
+                    return s.length > 80 ? s.slice(0, 80) + '…' : s;
+                  })()})
+                </Text>
+              </Box>
+              {showProgress && (
+                <Box paddingLeft={2} marginBottom={0}>
+                  <ProgressBar
+                    progress={toolProgress!.progress}
+                    fillColor={theme.progressBar}
+                    bgColor={theme.progressBg}
+                  />
+                  <Text color={theme.muted}> {toolProgress!.status}</Text>
+                </Box>
+              )}
+            </Box>
+          );
+        })}
 
       {/* Tool results */}
       {toolResults.length > 0 &&

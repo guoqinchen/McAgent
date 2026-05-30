@@ -51,6 +51,14 @@ export interface ThemeTokens {
   warning: string;
   /** Reasoning / thinking text */
   reasoning: string;
+  /** Progress bar fill color */
+  progressBar: string;
+  /** Progress bar background color */
+  progressBg: string;
+  /** Permission prompt highlight */
+  permissionHighlight: string;
+  /** Status bar background */
+  statusBar: string;
 }
 
 // ─── Color palettes ───────────────────────────────────────────────────────────
@@ -75,6 +83,10 @@ const darkTokens: ThemeTokens = {
   success: 'greenBright',
   warning: 'yellowBright',
   reasoning: 'gray',
+  progressBar: 'greenBright',
+  progressBg: 'gray',
+  permissionHighlight: 'yellowBright',
+  statusBar: 'gray',
 };
 
 const lightTokens: ThemeTokens = {
@@ -97,6 +109,10 @@ const lightTokens: ThemeTokens = {
   success: 'green',
   warning: 'yellow',
   reasoning: 'gray',
+  progressBar: 'green',
+  progressBg: 'gray',
+  permissionHighlight: 'yellow',
+  statusBar: 'gray',
 };
 
 // ─── Detection ────────────────────────────────────────────────────────────────

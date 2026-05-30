@@ -253,6 +253,27 @@ export class Spinner {
   private colorCode: string;
   private resetCode: string;
   private running = false;
+  private cleanupRegistered = false;
+
+  /** Register process exit handlers to ensure terminal cursor is restored. */
+  private ensureCleanupRegistered(): void {
+    if (this.cleanupRegistered) return;
+    this.cleanupRegistered = true;
+
+    const cleanup = () => {
+      if (this.running) {
+        process.stdout.write('\x1b[?25h'); // restore cursor
+        if (this.intervalId !== null) {
+          clearInterval(this.intervalId);
+          this.intervalId = null;
+        }
+        this.running = false;
+      }
+    };
+    process.on('exit', cleanup);
+    process.on('SIGINT', () => { cleanup(); process.exit(0); });
+    process.on('SIGTERM', () => { cleanup(); process.exit(0); });
+  }
 
   constructor(
     style: SpinnerStyle = 'dots',
@@ -268,6 +289,7 @@ export class Spinner {
   start(text: string): void {
     if (this.running) return;
     this.running = true;
+    this.ensureCleanupRegistered();
     this.text = text;
     this.frameIndex = 0;
 

@@ -98,18 +98,19 @@ agent.on('tool:progress', function onToolProgress(progress) {
   if (progress.progress !== null) {
     const filled = Math.round((progress.progress / 100) * barWidth);
     const empty = barWidth - filled;
-    const bar = `${c.progressBar}${'━'.repeat(filled)}${c.progressBg}${'━'.repeat(empty)}${c.reset}`;
+    const bar = `${c.toolRunning}${'━'.repeat(filled)}${c.muted}${'━'.repeat(empty)}${c.reset}`;
     process.stdout.write(`\r  ${bar} ${progress.progress}% ${c.muted}(${progress.status})${c.reset} `);
   } else {
     const elapsed = formatDuration(progress.elapsedMs);
-    process.stdout.write(`\r  ${c.progressBar}⏳${c.reset} ${c.muted}${elapsed} — ${progress.status}${c.reset} `);
+    process.stdout.write(`\r  ${c.toolRunning}⏳${c.reset} ${c.muted}${elapsed} — ${progress.status}${c.reset} `);
   }
 });
 
 agent.on('tool:result', function onToolResult(name: string, result: unknown) {
   if (render.spinner.isRunning) render.spinner.stop();
 
-  const duration = toolStartTimes.has(name) ? Date.now() - toolStartTimes.get(name)! : undefined;
+  const startTime = toolStartTimes.get(name);
+  const duration = startTime !== undefined ? Date.now() - startTime : undefined;
   const resultStr = typeof result === 'string' ? result : JSON.stringify(result);
   const isSuccess =
     !resultStr.toLowerCase().startsWith('error') &&

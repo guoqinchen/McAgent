@@ -14,11 +14,12 @@ import { useEffect, useState, useMemo, memo } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useScrollManager } from '../hooks/use-scroll-manager.js';
 import { useTheme } from '../hooks/use-theme.js';
+import { useElapsed, formatElapsed } from '../hooks/use-streaming-agent.js';
 import { MarkdownRenderer } from './markdown-renderer.js';
 import { ThinkingIndicator } from './thinking-indicator.js';
 import { ToolVisualizer } from './tool-visualizer.js';
 import { StreamingText } from './streaming-text.js';
-import type { Message } from '../../types/events.js';
+import type { Message, ToolProgress } from '../../types/events.js';
 import type { ToolCallInfo } from './tool-visualizer.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@ export interface MessageListProps {
   streamingText: string;
   toolCalls: Array<{ name: string; args: unknown }>;
   toolResults: Array<{ name: string; result: string; success: boolean }>;
+  toolProgress: ToolProgress | null;
   status: string;
   errorMessage: string;
   isLoading: boolean;
@@ -60,27 +62,11 @@ const ElapsedDisplay = memo(function ElapsedDisplay({
   isLoading: boolean;
   color: string;
 }) {
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    if (!isLoading) {
-      setElapsed(0);
-      return;
-    }
-    setElapsed(0);
-    const start = Date.now();
-    const timer = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - start) / 1000));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isLoading]);
+  const elapsed = useElapsed(isLoading);
 
   if (!isLoading || elapsed === 0) return null;
 
-  const elapsedStr =
-    elapsed >= 60 ? `${Math.floor(elapsed / 60)}m ${elapsed % 60}s` : `${elapsed}s`;
-
-  return <Text color={color}> ({elapsedStr})</Text>;
+  return <Text color={color}> ({formatElapsed(elapsed)})</Text>;
 });
 
 // ─── Message role badge ───────────────────────────────────────────────────────
@@ -132,23 +118,30 @@ function buildToolCallInfos(
   toolCalls: Array<{ name: string; args: unknown }>,
   toolResults: Array<{ name: string; result: string; success: boolean }>,
 ): ToolCallInfo[] {
-  const resultMap = new Map<string, { result: string; success: boolean }>();
-  for (const tr of toolResults) {
-    resultMap.set(tr.name, { result: tr.result, success: tr.success });
+  // Use index-based tracking to handle multiple calls to the same tool name
+  const resultByIndex = new Map<number, { name: string; result: string; success: boolean }>();
+  for (let ri = 0; ri < toolResults.length; ri++) {
+    const tr = toolResults[ri]!;
+    // Find the first tool call with matching name that doesn't have a result yet
+    for (let ci = 0; ci < toolCalls.length; ci++) {
+      if (toolCalls[ci]!.name === tr.name && !resultByIndex.has(ci)) {
+        resultByIndex.set(ci, tr);
+        break;
+      }
+    }
   }
 
   const lastCallIdx = toolCalls.length - 1;
 
   return toolCalls.map((tc, i) => {
-    const result = resultMap.get(tc.name);
-    const isLastWithoutResult = i === lastCallIdx && !result;
+    const result = resultByIndex.get(i);
 
     return {
       name: tc.name,
       args: tc.args,
       status: result
         ? (result.success ? 'success' : 'error')
-        : isLastWithoutResult
+        : i === lastCallIdx
           ? 'running'
           : 'pending',
       result: result?.result,

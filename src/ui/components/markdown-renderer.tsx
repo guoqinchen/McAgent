@@ -99,7 +99,7 @@ function parseInline(text: string): InlineToken[] {
     if (ic) { tokens.push({ type: 'italic', text: ic[1] }); remaining = remaining.slice(ic[0].length); continue; }
     const c = remaining.match(/^\`([^\`]+)\`/);
     if (c) { tokens.push({ type: 'inlineCode', text: c[1] }); remaining = remaining.slice(c[0].length); continue; }
-    const l = remaining.match(/^\[([^\]]+)\(([^)]+)\)/);
+    const l = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
     if (l) { tokens.push({ type: 'link', text: l[1], url: l[2] }); remaining = remaining.slice(l[0].length); continue; }
     const n = remaining.match(/^([^*\`[~\n]+)/);
     if (n) { tokens.push({ type: 'text', text: n[1] }); remaining = remaining.slice(n[0].length); continue; }

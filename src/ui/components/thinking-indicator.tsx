@@ -9,6 +9,7 @@
 import { useEffect, useState, memo } from 'react';
 import { Box, Text } from 'ink';
 import { useTheme } from '../hooks/use-theme.js';
+import { useElapsed, formatElapsed } from '../hooks/use-streaming-agent.js';
 
 // ─── Spinner frames ───────────────────────────────────────────────────────────
 
@@ -23,27 +24,6 @@ export interface ThinkingIndicatorProps {
   reasoningText?: string;
   /** Optional status label override (default: "Thinking") */
   label?: string;
-}
-
-// ─── Elapsed timer ────────────────────────────────────────────────────────────
-
-function useElapsed(isActive: boolean): number {
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    if (!isActive) {
-      setElapsed(0);
-      return;
-    }
-    setElapsed(0);
-    const start = Date.now();
-    const timer = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - start) / 1000));
-    }, 500);
-    return () => clearInterval(timer);
-  }, [isActive]);
-
-  return elapsed;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -71,12 +51,7 @@ export const ThinkingIndicator = memo(function ThinkingIndicator({
 
   if (!isThinking) return null;
 
-  const elapsedStr =
-    elapsed >= 60
-      ? `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`
-      : elapsed >= 1
-        ? `${elapsed}s`
-        : '';
+  const elapsedStr = elapsed >= 1 ? formatElapsed(elapsed) : '';
 
   return (
     <Box flexDirection="column" marginBottom={1}>

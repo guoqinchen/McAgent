@@ -8,7 +8,7 @@
  * v2.3: Added tool progress tracking, context updates, and permission requests.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MacOSAgent } from '../../agent.js';
 import type {
   Message,
@@ -16,6 +16,41 @@ import type {
   AgentContext,
   PermissionRequest,
 } from '../../types/events.js';
+
+// ─── Shared timer hook ──────────────────────────────────────────────────────────
+
+/**
+ * useElapsed — shared elapsed-seconds timer.
+ * Resets to 0 when `isActive` becomes false.
+ */
+export function useElapsed(isActive: boolean): number {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!isActive) {
+      setElapsed(0);
+      return;
+    }
+    setElapsed(0);
+    const start = Date.now();
+    const timer = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - start) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isActive]);
+
+  return elapsed;
+}
+
+/**
+ * Format elapsed seconds into a human-readable string.
+ */
+export function formatElapsed(elapsed: number): string {
+  if (elapsed >= 60) {
+    return `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`;
+  }
+  return `${elapsed}s`;
+}
 
 export interface UseStreamingAgentOptions {
   agent: MacOSAgent;
@@ -38,6 +73,12 @@ export interface UseStreamingAgentOptions {
   setIsThinking?: (thinking: boolean) => void;
   /** Reasoning text from DeepSeek reasoning_content */
   setReasoningText?: (text: string) => void;
+  /** Tool progress updates */
+  setToolProgress?: (progress: ToolProgress | null) => void;
+  /** Agent context updates (status bar) */
+  setAgentContext?: (context: AgentContext) => void;
+  /** Permission request overlay */
+  setPermissionRequest?: (request: PermissionRequest | null) => void;
   onError?: (err: Error) => void;
   /** Called after each frame update with frame interval in ms. Use for perf monitoring. */
   onFrame?: (frameIntervalMs: number) => void;
@@ -182,6 +223,7 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
 
     return () => {
       flushStreamBuffer();
+      reasoningBuffer = ''; // Free reasoning text buffer on unmount
       agent.off('thinking:start', onThinkingStart);
       agent.off('stream:delta', onStreamDelta);
       agent.off('stream:end', onStreamEnd);

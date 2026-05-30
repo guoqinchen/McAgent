@@ -80,7 +80,13 @@ const ansiColorMap: Record<string, string> = {
 };
 
 function inkToAnsi(inkColor: string): string {
-  return ansiColorMap[inkColor] || '';
+  const code = ansiColorMap[inkColor];
+  if (code === undefined) {
+    // Fallback to white for unrecognized colors to avoid unclosed ANSI sequences
+    console.warn(`Unknown ANSI color token: "${inkColor}", falling back to white`);
+    return ansiColorMap.white ?? '\\x1b[37m';
+  }
+  return code;
 }
 
 export function createAnsiTheme(mode?: ThemeMode): AnsiColors {

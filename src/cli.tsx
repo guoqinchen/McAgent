@@ -178,7 +178,7 @@ function PermissionPrompt({
       : request.dangerLevel === 'dangerous'
         ? theme.warning
         : request.dangerLevel === 'caution'
-          ? theme.permissionHighlight
+          ? theme.warning
           : theme.success;
 
   const dangerLabel = request.dangerLevel
@@ -389,6 +389,9 @@ function App() {
     setStreamingText,
     setToolCalls,
     setToolResults,
+    setToolProgress,
+    setAgentContext,
+    setPermissionRequest,
     setStatus,
     setErrorMessage,
     setMessages,
@@ -501,55 +504,55 @@ function App() {
               &#x2318; McAgent Help
             </Text>
           </Box>
-          <Box flexDirection="column" marginBottom={1}>
+          <Box key="help-line-editing" flexDirection="column" marginBottom={1}>
             <Text bold color={theme.heading}>
               Line Editing
             </Text>
-            <Text color={theme.muted}> Ctrl+A/E  Beginning/end of line</Text>
-            <Text color={theme.muted}> Alt+B/F   Backward/forward one word</Text>
-            <Text color={theme.muted}> Ctrl+K/U/W Cut to end/start/previous word</Text>
-            <Text color={theme.muted}> Ctrl+Y    Paste last cut text</Text>
+            <Text key="help-le1" color={theme.muted}> Ctrl+A/E  Beginning/end of line</Text>
+            <Text key="help-le2" color={theme.muted}> Alt+B/F   Backward/forward one word</Text>
+            <Text key="help-le3" color={theme.muted}> Ctrl+K/U/W Cut to end/start/previous word</Text>
+            <Text key="help-le4" color={theme.muted}> Ctrl+Y    Paste last cut text</Text>
           </Box>
-          <Box flexDirection="column" marginBottom={1}>
+          <Box key="help-navigation" flexDirection="column" marginBottom={1}>
             <Text bold color={theme.heading}>
               Navigation
             </Text>
-            <Text color={theme.muted}> PgUp/PgDn Scroll message history</Text>
-            <Text color={theme.muted}> Home/End  Jump to top/bottom</Text>
-            <Text color={theme.muted}> ↑/↓       Browse input history</Text>
+            <Text key="help-nav1" color={theme.muted}> PgUp/PgDn Scroll message history</Text>
+            <Text key="help-nav2" color={theme.muted}> Home/End  Jump to top/bottom</Text>
+            <Text key="help-nav3" color={theme.muted}> ↑/↓       Browse input history</Text>
           </Box>
-          <Box flexDirection="column" marginBottom={1}>
+          <Box key="help-actions" flexDirection="column" marginBottom={1}>
             <Text bold color={theme.heading}>
               Actions
             </Text>
-            <Text color={theme.muted}> ?         Show this help</Text>
-            <Text color={theme.muted}> Ctrl+L    Clear screen</Text>
-            <Text color={theme.muted}> Ctrl+R    Recall last input</Text>
-            <Text color={theme.muted}> Ctrl+C    Quit</Text>
-            <Text color={theme.muted}> Ctrl+D    Quit (when input is empty)</Text>
+            <Text key="help-act1" color={theme.muted}> ?         Show this help</Text>
+            <Text key="help-act2" color={theme.muted}> Ctrl+L    Clear screen</Text>
+            <Text key="help-act3" color={theme.muted}> Ctrl+R    Recall last input</Text>
+            <Text key="help-act4" color={theme.muted}> Ctrl+C    Quit</Text>
+            <Text key="help-act5" color={theme.muted}> Ctrl+D    Quit (when input is empty)</Text>
           </Box>
-          <Box flexDirection="column" marginBottom={1}>
+          <Box key="help-commands" flexDirection="column" marginBottom={1}>
             <Text bold color={theme.heading}>
               Slash Commands
             </Text>
-            <Text color={theme.muted}> /mode     Switch permission mode</Text>
-            <Text color={theme.muted}> /clear    Clear conversation</Text>
-            <Text color={theme.muted}> /help     Show help</Text>
+            <Text key="help-sc1" color={theme.muted}> /mode     Switch permission mode</Text>
+            <Text key="help-sc2" color={theme.muted}> /clear    Clear conversation</Text>
+            <Text key="help-sc3" color={theme.muted}> /help     Show help</Text>
           </Box>
-          <Box flexDirection="column">
+          <Box key="help-colors" flexDirection="column">
             <Text bold color={theme.heading}>
               Color Key
             </Text>
             <Box>
-              <Text color={theme.userLabel}>&#x25CF; User</Text>
-              <Text> </Text>
-              <Text color={theme.assistantLabel}>&#x25CF; Assistant</Text>
-              <Text> </Text>
-              <Text color={theme.toolCall}>&#x25CF; Tool</Text>
-              <Text> </Text>
-              <Text color={theme.progressBar}>&#x25CF; Progress</Text>
-              <Text> </Text>
-              <Text color={theme.error}>&#x25CF; Error</Text>
+              <Text key="color-user" color={theme.userLabel}>&#x25CF; User</Text>
+              <Text key="color-space1"> </Text>
+              <Text key="color-assistant" color={theme.assistantLabel}>&#x25CF; Assistant</Text>
+              <Text key="color-space2"> </Text>
+              <Text key="color-tool" color={theme.toolCall}>&#x25CF; Tool</Text>
+              <Text key="color-space3"> </Text>
+              <Text key="color-progress" color={theme.toolRunning}>&#x25CF; Progress</Text>
+              <Text key="color-space4"> </Text>
+              <Text key="color-error" color={theme.error}>&#x25CF; Error</Text>
             </Box>
           </Box>
         </Box>

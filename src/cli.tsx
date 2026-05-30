@@ -391,6 +391,16 @@ function App() {
   const [historyDraft, setHistoryDraft] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const editorRef = useRef<{ setValue: (v: string) => void; value: string } | null>(null);
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current !== null) clearTimeout(statusTimerRef.current);
+      if (errorTimerRef.current !== null) clearTimeout(errorTimerRef.current);
+    };
+  }, []);
 
   // Keyboard: comprehensive shortcuts
   useInput((input, key) => {
@@ -399,11 +409,13 @@ function App() {
       if (key.return) {
         setPermissionRequest(null);
         setStatus('✅ Permission approved');
-        setTimeout(() => setStatus(''), 2000);
+        if (statusTimerRef.current !== null) clearTimeout(statusTimerRef.current);
+        statusTimerRef.current = setTimeout(() => setStatus(''), 2000);
       } else if (key.escape) {
         setPermissionRequest(null);
         setStatus('⛔ Permission denied');
-        setTimeout(() => setStatus(''), 2000);
+        if (statusTimerRef.current !== null) clearTimeout(statusTimerRef.current);
+        statusTimerRef.current = setTimeout(() => setStatus(''), 2000);
       }
       return; // Block all other input during permission prompt
     }

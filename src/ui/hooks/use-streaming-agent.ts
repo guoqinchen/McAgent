@@ -96,7 +96,7 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
 
   useEffect(() => {
     let streamBuffer = '';
-    let immediateId: NodeJS.Timeout | null = null;
+    let immediateId: NodeJS.Immediate | null = null;
     let lastFrameTime = performance.now();
     let flushScheduled = false;
 

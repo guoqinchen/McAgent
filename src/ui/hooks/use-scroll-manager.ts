@@ -8,18 +8,18 @@
  *       terminal environment compatibility.
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 // ─── Node.js type-safe immediate timer helpers ─────────────────────────────────
 // Ink runs in Node.js terminal environment where requestAnimationFrame is not
 // available. We use setImmediate/clearImmediate as the Node.js-native equivalent
 // for deferring work to the next event loop iteration.
 
-function scheduleImmediate(fn: () => void): NodeJS.Timeout {
+function scheduleImmediate(fn: () => void): NodeJS.Immediate {
   return setImmediate(fn);
 }
 
-function cancelImmediate(id: NodeJS.Timeout | null): void {
+function cancelImmediate(id: NodeJS.Immediate | null): void {
   if (id !== null) {
     clearImmediate(id);
   }
@@ -59,7 +59,7 @@ export function useScrollManager(): ScrollState & ScrollActions {
   const [offset, setOffset] = useState(0);
   const [totalLines, setTotalLines] = useState(0);
   const userScrolledRef = useRef(false);
-  const immediateRef = useRef<NodeJS.Timeout | null>(null);
+  const immediateRef = useRef<NodeJS.Immediate | null>(null);
   const pendingTotalRef = useRef<number | null>(null);
 
   // setImmediate-throttled total lines update to batch rapid content changes.
@@ -89,6 +89,13 @@ export function useScrollManager(): ScrollState & ScrollActions {
       immediateRef.current = null;
     }
   };
+
+  // Register cleanup on mount, unregister on unmount
+  useEffect(() => {
+    return () => {
+      cleanupRef.current();
+    };
+  }, []);
 
   // When user manually scrolls up from bottom, mark as scrolled up
   const pageUp = useCallback(

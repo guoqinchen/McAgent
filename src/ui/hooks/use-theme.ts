@@ -253,5 +253,8 @@ export function useTheme(): ThemeTokens & { mode: ThemeMode } {
   const mode = useMemo(() => detectThemeMode(), []);
   const tokens = useMemo(() => (mode === 'light' ? lightTokens : darkTokens), [mode]);
 
-  return { ...tokens, mode };
+  // Memoize the combined object so consumers can use it in dependency arrays
+  // without causing unnecessary re-renders.
+  const theme = useMemo(() => ({ ...tokens, mode }), [tokens, mode]);
+  return theme;
 }

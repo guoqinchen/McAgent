@@ -176,9 +176,9 @@ const ToolCallRow = memo(function ToolCallRow({
 
 // ─── Timer hook for running tool progress ───────────────────────────────────
 
-function useToolProgress(isRunning: boolean, elapsedMs: number) {
+function useToolProgress(isRunning: boolean) {
   const [progress, setProgress] = useState<{ percent: number; elapsed: string; remaining: string } | null>(null);
-  const startRef = useRef(Date.now());
+  const startRef = useRef(0);
 
   useEffect(() => {
     if (!isRunning) {
@@ -198,7 +198,7 @@ function useToolProgress(isRunning: boolean, elapsedMs: number) {
       clearInterval(timer);
       setProgress(null);
     };
-  }, [isRunning, elapsedMs]);
+  }, [isRunning]);
 
   return progress;
 }
@@ -219,7 +219,7 @@ export const ToolVisualizer = memo(function ToolVisualizer({
   // Get elapsed time for the running tool
   const runningCall = calls.find((c) => c.status === 'running');
   const elapsed = useElapsed(!!runningCall);
-  const progress = useToolProgress(!!runningCall, elapsed * 1000);
+  const progress = useToolProgress(!!runningCall);
 
   return (
     <Box flexDirection="column" marginBottom={1}>

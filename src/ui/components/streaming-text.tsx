@@ -69,40 +69,32 @@ function TypewriterContent({ text, isStreaming, color }: {
     if (text === lastTextRef.current) return;
     lastTextRef.current = text;
 
-    if (isStreaming) {
-      // While streaming, reveal text gradually but stay close to the end
-      const revealed = revealedRef.current;
-      const newChars = text.length - revealed;
-      if (newChars > 3) {
-        // Reveal a chunk using ref to break dependency on revealedCount
-        const chunkSize = Math.min(newChars, Math.max(3, Math.floor(newChars / 2)));
-        const timer = setTimeout(() => {
-          setRevealedCount((prev) => Math.min(text.length, prev + chunkSize));
-        }, 15);
-        return () => clearTimeout(timer);
-      } else {
-        setRevealedCount(text.length);
-      }
-    } else {
+    if (text === '') {
+      // Reset when text clears
+      setRevealedCount(0);
+      return;
+    }
+
+    if (!isStreaming) {
       // When not streaming, immediately show all text
+      setRevealedCount(text.length);
+      return;
+    }
+
+    // While streaming, reveal text gradually but stay close to the end
+    const revealed = revealedRef.current;
+    const newChars = text.length - revealed;
+    if (newChars > 3) {
+      // Reveal a chunk using ref to break dependency on revealedCount
+      const chunkSize = Math.min(newChars, Math.max(3, Math.floor(newChars / 2)));
+      const timer = setTimeout(() => {
+        setRevealedCount((prev) => Math.min(text.length, prev + chunkSize));
+      }, 15);
+      return () => clearTimeout(timer);
+    } else {
       setRevealedCount(text.length);
     }
   }, [text, isStreaming]);
-
-  // Reset when text clears
-  useEffect(() => {
-    if (text === '') {
-      setRevealedCount(0);
-      lastTextRef.current = '';
-    }
-  }, [text]);
-
-  // When streaming is done, reveal all remaining text immediately
-  useEffect(() => {
-    if (!isStreaming && text.length > 0) {
-      setRevealedCount(text.length);
-    }
-  }, [isStreaming]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayText = text.slice(0, revealedCount);
 

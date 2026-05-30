@@ -122,12 +122,14 @@ function formatShortTime(iso?: string): string {
 // ─── Message separator ────────────────────────────────────────────────────────
 
 function MessageSeparator({ color, label }: { color: string; label?: string }) {
+  const labelPart = label ? ` ${label} ` : '';
+  const remaining = Math.max(0, 25 - labelPart.length);
   return (
     <Box>
       <Text color={color} dimColor>
         {'\u2500'.repeat(25)}
-        {label ? ` ${label} ` : ''}
-        {'\u2500'.repeat(label ? 25 - label.length : 25)}
+        {labelPart}
+        {'\u2500'.repeat(remaining)}
       </Text>
     </Box>
   );

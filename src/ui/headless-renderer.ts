@@ -509,6 +509,11 @@ export class Spinner {
     return this.running;
   }
 
+  /** Strip ANSI escape codes from text to prevent terminal injection. */
+  private sanitize(text: string): string {
+    return text.replace(ANSI_STRIP_RE, '');
+  }
+
   private render(): void {
     if (!this.running) return;
     const frames = SPINNER_FRAMES[this.style];
@@ -516,9 +521,10 @@ export class Spinner {
     this.frameIndex++;
 
     const maxWidth = terminalWidth() - 4;
-    const displayText = this.text.length > maxWidth
-      ? this.text.slice(0, maxWidth - 1) + '…'
-      : this.text;
+    const safeText = this.sanitize(this.text);
+    const displayText = safeText.length > maxWidth
+      ? safeText.slice(0, maxWidth - 1) + '…'
+      : safeText;
 
     process.stdout.write(`\r${this.colorCode}${frame}${this.resetCode} ${displayText}\x1b[K`);
   }

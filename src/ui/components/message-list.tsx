@@ -1,12 +1,13 @@
 /**
- * MessageList — scrollable message view for Ink TUI.
+ * MessageList — enhanced scrollable message view for Ink TUI.
  *
- * Renders chat messages with scroll management, enhanced error display,
- * loading state with elapsed time, and tool execution feedback.
- *
- * v2.3: Added progress bar for long-running tools, enhanced tool call display.
- *
- * Scroll: PageUp/PageDown to navigate message history.
+ * Renders chat messages with:
+ * - Role-based visual hierarchy (colored badges, icons)
+ * - Message separators
+ * - Enhanced error display with recovery hints
+ * - Integrated ThinkingIndicator, ToolVisualizer, StreamingText
+ * - Scroll management with PageUp/PageDown
+ * - Elapsed timer for loading states
  */
 
 import { useEffect, useState, useMemo, memo } from 'react';
@@ -14,7 +15,11 @@ import { Box, Text, useInput } from 'ink';
 import { useScrollManager } from '../hooks/use-scroll-manager.js';
 import { useTheme } from '../hooks/use-theme.js';
 import { MarkdownRenderer } from './markdown-renderer.js';
-import type { Message, ToolProgress } from '../../types/events.js';
+import { ThinkingIndicator } from './thinking-indicator.js';
+import { ToolVisualizer } from './tool-visualizer.js';
+import { StreamingText } from './streaming-text.js';
+import type { Message } from '../../types/events.js';
+import type { ToolCallInfo } from './tool-visualizer.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,8 +31,10 @@ export interface MessageListProps {
   status: string;
   errorMessage: string;
   isLoading: boolean;
-  /** Tool progress for the progress bar display. */
-  toolProgress: ToolProgress | null;
+  /** Whether the agent is in thinking state */
+  isThinking?: boolean;
+  /** Reasoning text from DeepSeek reasoning_content */
+  reasoningText?: string;
   /** Viewport height in lines (default 10) */
   viewportHeight?: number;
 }
@@ -44,47 +51,7 @@ function estimateLines(text: string, cols = 80): number {
   return total;
 }
 
-// ─── Progress Bar ───────────────────────────────────────────────────────────
-
-const ProgressBar = memo(function ProgressBar({
-  progress,
-  width = 20,
-  fillColor,
-  bgColor,
-}: {
-  progress: number | null;
-  width?: number;
-  fillColor: string;
-  bgColor: string;
-}) {
-  if (progress === null) {
-    // Indeterminate progress: show a pulsing bar
-    return (
-      <Text color={fillColor}>
-        {'['}
-        <Text color={fillColor}>{'━'.repeat(Math.min(width, 5))}</Text>
-        <Text color={bgColor}>{'━'.repeat(Math.max(0, width - 5))}</Text>
-        {']'}
-      </Text>
-    );
-  }
-
-  const filled = Math.round((progress / 100) * width);
-  const empty = width - filled;
-  const pctStr = `${progress}%`;
-
-  return (
-    <Text>
-      {'['}
-      <Text color={fillColor}>{'━'.repeat(filled)}</Text>
-      <Text color={bgColor}>{'━'.repeat(empty)}</Text>
-      {'] '}
-      <Text color={fillColor}>{pctStr}</Text>
-    </Text>
-  );
-});
-
-// ─── Elapsed Timer (isolated to prevent parent re-renders) ────────────────────
+// ─── Elapsed Timer ────────────────────────────────────────────────────────────
 
 const ElapsedDisplay = memo(function ElapsedDisplay({
   isLoading,
@@ -116,6 +83,79 @@ const ElapsedDisplay = memo(function ElapsedDisplay({
   return <Text color={color}> ({elapsedStr})</Text>;
 });
 
+// ─── Message role badge ───────────────────────────────────────────────────────
+
+const RoleBadge = memo(function RoleBadge({
+  role,
+}: {
+  role: 'user' | 'assistant' | 'system';
+}) {
+  const theme = useTheme();
+
+  switch (role) {
+    case 'user':
+      return (
+        <Text bold color={theme.userLabel}>
+          {'\u25b6'} You
+        </Text>
+      );
+    case 'assistant':
+      return (
+        <Text bold color={theme.assistantLabel}>
+          {'\u25c6'} Assistant
+        </Text>
+      );
+    case 'system':
+      return (
+        <Text bold color={theme.systemLabel}>
+          {'\u2699'} System
+        </Text>
+      );
+  }
+});
+
+// ─── Message separator ────────────────────────────────────────────────────────
+
+function MessageSeparator({ color }: { color: string }) {
+  return (
+    <Box>
+      <Text color={color} dimColor>
+        {'\u2500'.repeat(50)}
+      </Text>
+    </Box>
+  );
+}
+
+// ─── Build tool calls with status ─────────────────────────────────────────────
+
+function buildToolCallInfos(
+  toolCalls: Array<{ name: string; args: unknown }>,
+  toolResults: Array<{ name: string; result: string; success: boolean }>,
+): ToolCallInfo[] {
+  const resultMap = new Map<string, { result: string; success: boolean }>();
+  for (const tr of toolResults) {
+    resultMap.set(tr.name, { result: tr.result, success: tr.success });
+  }
+
+  const lastCallIdx = toolCalls.length - 1;
+
+  return toolCalls.map((tc, i) => {
+    const result = resultMap.get(tc.name);
+    const isLastWithoutResult = i === lastCallIdx && !result;
+
+    return {
+      name: tc.name,
+      args: tc.args,
+      status: result
+        ? (result.success ? 'success' : 'error')
+        : isLastWithoutResult
+          ? 'running'
+          : 'pending',
+      result: result?.result,
+    } as ToolCallInfo;
+  });
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function MessageList({
@@ -127,13 +167,15 @@ export function MessageList({
   status,
   errorMessage,
   isLoading,
+  isThinking = false,
+  reasoningText = '',
   viewportHeight = 10,
 }: MessageListProps) {
   const scroll = useScrollManager();
   const theme = useTheme();
   const [cols] = useState(() => process.stdout.columns || 80);
 
-  // Precompute line heights once — used by totalLines and scroll offset
+  // Precompute line heights
   const msgHeights = useMemo(() => {
     const heights: number[] = [];
     for (const msg of messages) {
@@ -147,19 +189,20 @@ export function MessageList({
     return 1 + estimateLines(streamingText, cols) + 2;
   }, [streamingText, cols]);
 
-  // Compute total lines once per render cycle
+  // Compute total lines
   const totalLines = useMemo(() => {
     let total = 0;
     for (const h of msgHeights) total += h;
     if (streamingHeight) total += streamingHeight;
-    total += toolCalls.length;
+    total += toolCalls.length * 2;
     total += toolResults.length;
-    if (status && !streamingText && !errorMessage) total += 1;
+    if (isThinking) total += 3;
+    if (status && !streamingText && !errorMessage && !isThinking) total += 1;
     if (errorMessage) total += 3;
     return total;
-  }, [msgHeights, streamingHeight, toolCalls.length, toolResults.length, status, streamingText, errorMessage]);
+  }, [msgHeights, streamingHeight, toolCalls, toolResults, status, streamingText, errorMessage, isThinking]);
 
-  // Error classification for recovery hints
+  // Error classification
   const errorHint = useMemo(() => {
     if (!errorMessage) return null;
     const lower = errorMessage.toLowerCase();
@@ -181,12 +224,18 @@ export function MessageList({
     return 'Press Ctrl+L to clear the screen and try again.';
   }, [errorMessage]);
 
-  // Notify scroll manager of content changes
+  // Build tool call info array
+  const toolCallInfos = useMemo(
+    () => buildToolCallInfos(toolCalls, toolResults),
+    [toolCalls, toolResults],
+  );
+
+  // Notify scroll manager
   useEffect(() => {
     scroll.onContentChange(totalLines);
   }, [totalLines]);
 
-  // Determine which messages to render — uses precomputed heights
+  // Compute visible messages
   const { visibleMessages, scrollMsg } = useMemo(() => {
     const offset = scroll.offset;
     let accumulated = 0;
@@ -214,7 +263,7 @@ export function MessageList({
     return { visibleMessages: visible, scrollMsg: msg };
   }, [messages, msgHeights, totalLines, viewportHeight, scroll.offset]);
 
-  // Scroll keybindings — only PageUp/PageDown to avoid conflict with text input
+  // Scroll keybindings
   useInput((_input, key) => {
     if (key.pageDown) {
       scroll.pageDown(viewportHeight);
@@ -230,98 +279,63 @@ export function MessageList({
       {scrollMsg && (
         <Box>
           <Text color={theme.scrollIndicator} dimColor>
-            ── {scrollMsg} ──
+            {'\u2500\u2500'} {scrollMsg} {'\u2500\u2500'}
           </Text>
         </Box>
       )}
 
       {/* Visible messages */}
-      {visibleMessages.map((msg, i) => {
-        const isUser = msg.role === 'user';
-        return (
-          <Box key={`msg-${i}`} flexDirection="column" marginBottom={1}>
-            <Box>
-              <Text bold color={isUser ? theme.userLabel : theme.assistantLabel}>
-                {isUser ? '▶ You' : '◀ Assistant'}
+      {visibleMessages.map((msg, i) => (
+        <Box key={`msg-${i}`} flexDirection="column" marginBottom={1}>
+          {/* Message separator */}
+          {i > 0 && <MessageSeparator color={theme.messageSeparator} />}
+
+          {/* Role badge */}
+          <Box>
+            <RoleBadge role={msg.role} />
+            <ElapsedDisplay isLoading={isLoading} color={theme.muted} />
+          </Box>
+
+          {/* Content */}
+          <Box paddingLeft={1}>
+            {msg.role === 'user' || msg.role === 'system' ? (
+              <Text wrap="wrap" color={msg.role === 'user' ? theme.userText : theme.assistantText}>
+                {msg.content}
               </Text>
-            </Box>
-            {isUser ? (
-              <Text wrap="wrap">{msg.content}</Text>
             ) : (
               <MarkdownRenderer content={msg.content} />
             )}
           </Box>
-        );
-      })}
-
-      {/* Streaming text */}
-      {streamingText && (
-        <Box flexDirection="column" marginBottom={1}>
-          <Box>
-            <Text bold color={theme.assistantLabel}>
-              ◀ Assistant
-            </Text>
-            <ElapsedDisplay isLoading={isLoading} color={theme.muted} />
-          </Box>
-          <Text wrap="wrap">{streamingText}</Text>
-          <Text color={theme.streamingIndicator}>▌</Text>
         </Box>
-      )}
+      ))}
 
-      {/* Tool calls with progress bar */}
-      {toolCalls.length > 0 &&
-        toolCalls.map((tc, i) => {
-          const isLatest = i === toolCalls.length - 1;
-          const showProgress = isLatest && toolProgress !== null && toolProgress.name === tc.name;
-          return (
-            <Box key={`tc-${i}`} flexDirection="column">
-              <Box>
-                <Text color={theme.toolCall}> 🔧 {tc.name}</Text>
-                <Text color={theme.muted}>
-                  &nbsp;({(() => {
-                    const s = JSON.stringify(tc.args);
-                    return s.length > 80 ? s.slice(0, 80) + '…' : s;
-                  })()})
-                </Text>
-              </Box>
-              {showProgress && (
-                <Box paddingLeft={2} marginBottom={0}>
-                  <ProgressBar
-                    progress={toolProgress!.progress}
-                    fillColor={theme.progressBar}
-                    bgColor={theme.progressBg}
-                  />
-                  <Text color={theme.muted}> {toolProgress!.status}</Text>
-                </Box>
-              )}
-            </Box>
-          );
-        })}
+      {/* Thinking indicator */}
+      <ThinkingIndicator
+        isThinking={isThinking}
+        reasoningText={reasoningText}
+      />
 
-      {/* Tool results */}
-      {toolResults.length > 0 &&
-        toolResults.map((tr, i) => (
-          <Box key={`tr-${i}`}>
-            <Text color={tr.success ? theme.success : theme.warning}>
-              {tr.success ? '  ✓' : '  ✗'} {tr.name}:{' '}
-            </Text>
-            <Text color={theme.muted}>
-              {tr.result.length > 120 ? tr.result.slice(0, 120) + '…' : tr.result}
-            </Text>
-          </Box>
-        ))}
+      {/* Tool calls visualizer */}
+      <ToolVisualizer calls={toolCallInfos} />
 
-      {/* Loading indicator with elapsed time */}
-      {isLoading && !streamingText && !status && (
+      {/* Streaming text with typewriter effect */}
+      <StreamingText
+        text={streamingText}
+        isStreaming={isLoading && !!streamingText}
+        label="Assistant"
+      />
+
+      {/* Loading indicator */}
+      {isLoading && !streamingText && !isThinking && !status && (
         <Box>
           <Text color={theme.muted}>
-            🤔 Processing<ElapsedDisplay isLoading={isLoading} color={theme.muted} />…
+            Processing<ElapsedDisplay isLoading={isLoading} color={theme.muted} />...
           </Text>
         </Box>
       )}
 
       {/* Status */}
-      {status && !streamingText && !errorMessage && (
+      {status && !streamingText && !errorMessage && !isThinking && (
         <Box>
           <Text color={theme.status}>
             {status}<ElapsedDisplay isLoading={isLoading} color={theme.status} />
@@ -329,18 +343,22 @@ export function MessageList({
         </Box>
       )}
 
-      {/* Error */}
+      {/* Error display */}
       {errorMessage && (
         <Box flexDirection="column" marginTop={1}>
-          <Text bold color={theme.error}>
-            ❌ Error:
-          </Text>
-          <Text color={theme.error}>{errorMessage}</Text>
-          {errorHint && (
-            <Box marginTop={0}>
-              <Text color={theme.warning}>💡 {errorHint}</Text>
+          <Box borderStyle="round" borderColor={theme.error} paddingX={1} paddingY={0}>
+            <Box flexDirection="column">
+              <Text bold color={theme.error}>
+                {'\u274c'} Error:
+              </Text>
+              <Text color={theme.error}>{errorMessage}</Text>
+              {errorHint && (
+                <Box marginTop={0}>
+                  <Text color={theme.errorHint}>{'\ud83d\udca1'} {errorHint}</Text>
+                </Box>
+              )}
             </Box>
-          )}
+          </Box>
         </Box>
       )}
     </Box>

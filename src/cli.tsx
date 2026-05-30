@@ -320,6 +320,8 @@ function App() {
   const [permissionRequest, setPermissionRequest] = useState<PermissionRequest | null>(null);
 
   const [status, setStatus] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
+  const [reasoningText, setReasoningText] = useState('');
   const [toolResults, setToolResults] = useState<
     Array<{ name: string; result: string; success: boolean }>
   >([]);
@@ -391,9 +393,8 @@ function App() {
     setErrorMessage,
     setMessages,
     setIsLoading,
-    setToolProgress,
-    setAgentContext,
-    setPermissionRequest,
+    setIsThinking,
+    setReasoningText,
     onError: (err) => logger.error('Agent error in TUI', err),
     onFrame: (frameMs) => {
       if (frameMs > 50) {
@@ -482,6 +483,8 @@ function App() {
         status={status}
         errorMessage={errorMessage}
         isLoading={isLoading}
+        isThinking={isThinking}
+        reasoningText={reasoningText}
       />
 
       {/* Help overlay */}

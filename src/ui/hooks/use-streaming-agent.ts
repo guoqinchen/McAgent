@@ -34,12 +34,10 @@ export interface UseStreamingAgentOptions {
   setErrorMessage: (message: string) => void;
   setMessages: (messages: Message[]) => void;
   setIsLoading: (loading: boolean) => void;
-  /** Tool progress updates for UI progress bar. */
-  setToolProgress?: (progress: ToolProgress | null) => void;
-  /** Context snapshot for status bar. */
-  setAgentContext?: (context: AgentContext) => void;
-  /** Permission request handler. */
-  setPermissionRequest?: (request: PermissionRequest | null) => void;
+  /** Whether agent is in thinking phase */
+  setIsThinking?: (thinking: boolean) => void;
+  /** Reasoning text from DeepSeek reasoning_content */
+  setReasoningText?: (text: string) => void;
   onError?: (err: Error) => void;
   /** Called after each frame update with frame interval in ms. Use for perf monitoring. */
   onFrame?: (frameIntervalMs: number) => void;
@@ -68,6 +66,8 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
       streamBuffer = '';
     }
 
+    let reasoningBuffer = '';
+
     const onThinkingStart = () => {
       flushStreamBuffer();
       optionsRef.current.setStreamingText('');
@@ -75,11 +75,14 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
       optionsRef.current.setToolResults(() => []);
       optionsRef.current.setStatus('🤔 Processing…');
       optionsRef.current.setErrorMessage('');
-      optionsRef.current.setToolProgress?.(null);
-      optionsRef.current.setPermissionRequest?.(null);
+      optionsRef.current.setIsThinking?.(true);
+      optionsRef.current.setReasoningText?.('');
+      reasoningBuffer = '';
     };
 
     const onStreamDelta = (_delta: string, accumulated: string) => {
+      // Streaming started, thinking is done
+      optionsRef.current.setIsThinking?.(false);
       streamBuffer = accumulated;
       if (!streamFlushTimer) {
         let lastFrameTime = performance.now();
@@ -127,6 +130,7 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
       flushStreamBuffer();
       optionsRef.current.setMessages(agent.getMessages());
       optionsRef.current.setIsLoading(false);
+      optionsRef.current.setIsThinking?.(false);
       optionsRef.current.setStreamingText('');
       optionsRef.current.setToolCalls(() => []);
       optionsRef.current.setToolResults(() => []);
@@ -136,10 +140,15 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
     const onErrorEvent = () => {
       flushStreamBuffer();
       optionsRef.current.setIsLoading(false);
+      optionsRef.current.setIsThinking?.(false);
       optionsRef.current.setStatus('');
     };
 
-    const onReasoningDelta = (_text: string) => {
+    const onReasoningDelta = (text: string) => {
+      optionsRef.current.setIsThinking?.(true);
+      // Accumulate reasoning text across deltas (DeepSeek sends reasoning_content per token)
+      reasoningBuffer = reasoningBuffer + text;
+      optionsRef.current.setReasoningText?.(reasoningBuffer);
       optionsRef.current.setStatus('💭 Thinking…');
     };
 

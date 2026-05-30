@@ -17,8 +17,26 @@ export interface ThemeTokens {
   userLabel: string;
   /** Assistant message label color */
   assistantLabel: string;
+  /** System message label color */
+  systemLabel: string;
+  /** User message content text */
+  userText: string;
+  /** Assistant message content text */
+  assistantText: string;
   /** Tool call display color */
   toolCall: string;
+  /** Tool name label */
+  toolName: string;
+  /** Tool status indicator (pending) */
+  toolPending: string;
+  /** Tool status indicator (running) */
+  toolRunning: string;
+  /** Tool status indicator (success) */
+  toolSuccess: string;
+  /** Tool status indicator (error) */
+  toolError: string;
+  /** Tool execution duration */
+  toolDuration: string;
   /** Input prompt color */
   inputPrompt: string;
   /** Border color */
@@ -27,38 +45,68 @@ export interface ThemeTokens {
   status: string;
   /** Error text color */
   error: string;
+  /** Error hint/recovery text */
+  errorHint: string;
   /** Muted / dim text */
   muted: string;
   /** Header color */
   header: string;
   /** Streaming cursor indicator */
   streamingIndicator: string;
+  /** Streaming typewriter cursor */
+  streamingCursor: string;
   /** Scroll position indicator */
   scrollIndicator: string;
+  /** Message separator line */
+  messageSeparator: string;
+  /** Thinking state spinner */
+  thinkingSpinner: string;
+  /** Thinking state label */
+  thinkingLabel: string;
+  /** Thinking elapsed timer */
+  thinkingTimer: string;
   /** Markdown heading */
   heading: string;
-  /** Markdown code block */
+  /** Markdown heading level indicator (decorative) */
+  headingDecorator: string;
+  /** Markdown code block background */
   codeBlock: string;
+  /** Markdown code block language label */
+  codeLang: string;
   /** Inline code */
   inlineCode: string;
   /** Hyperlinks / URLs */
   link: string;
   /** List markers (bullet, number) */
   listMarker: string;
+  /** Blockquote bar/indicator */
+  blockquote: string;
+  /** Horizontal rule */
+  hr: string;
   /** Success / confirmation messages */
   success: string;
   /** Warning messages */
   warning: string;
   /** Reasoning / thinking text */
   reasoning: string;
-  /** Progress bar fill color */
-  progressBar: string;
-  /** Progress bar background color */
-  progressBg: string;
-  /** Permission prompt highlight */
-  permissionHighlight: string;
-  /** Status bar background */
-  statusBar: string;
+  /** Reasoning label */
+  reasoningLabel: string;
+  /** Table header */
+  tableHeader: string;
+  /** Table border */
+  tableBorder: string;
+  /** Keyword highlight */
+  keyword: string;
+  /** Number highlight (in code) */
+  number: string;
+  /** Comment highlight (in code) */
+  comment: string;
+  /** String highlight (in code) */
+  string: string;
+  /** Function name highlight (in code) */
+  function: string;
+  /** Type/class highlight (in code) */
+  type: string;
 }
 
 // ─── Color palettes ───────────────────────────────────────────────────────────
@@ -66,53 +114,101 @@ export interface ThemeTokens {
 const darkTokens: ThemeTokens = {
   userLabel: 'cyan',
   assistantLabel: 'green',
+  systemLabel: 'yellow',
+  userText: 'white',
+  assistantText: 'white',
   toolCall: 'yellow',
+  toolName: 'yellowBright',
+  toolPending: 'gray',
+  toolRunning: 'yellow',
+  toolSuccess: 'greenBright',
+  toolError: 'redBright',
+  toolDuration: 'gray',
   inputPrompt: 'yellow',
   border: 'gray',
   status: 'gray',
   error: 'redBright',
+  errorHint: 'yellowBright',
   muted: 'gray',
   header: 'magenta',
   streamingIndicator: 'gray',
+  streamingCursor: 'green',
   scrollIndicator: 'gray',
+  messageSeparator: 'gray',
+  thinkingSpinner: 'cyan',
+  thinkingLabel: 'cyan',
+  thinkingTimer: 'gray',
   heading: 'cyanBright',
+  headingDecorator: 'gray',
   codeBlock: 'cyan',
+  codeLang: 'gray',
   inlineCode: 'yellow',
   link: 'blueBright',
   listMarker: 'gray',
+  blockquote: 'gray',
+  hr: 'gray',
   success: 'greenBright',
   warning: 'yellowBright',
   reasoning: 'gray',
-  progressBar: 'greenBright',
-  progressBg: 'gray',
-  permissionHighlight: 'yellowBright',
-  statusBar: 'gray',
+  reasoningLabel: 'cyan',
+  tableHeader: 'cyanBright',
+  tableBorder: 'gray',
+  keyword: 'magenta',
+  number: 'yellow',
+  comment: 'gray',
+  string: 'green',
+  function: 'yellowBright',
+  type: 'cyanBright',
 };
 
 const lightTokens: ThemeTokens = {
   userLabel: 'blueBright',
   assistantLabel: 'green',
+  systemLabel: 'yellow',
+  userText: 'black',
+  assistantText: 'black',
   toolCall: 'yellow',
+  toolName: 'yellow',
+  toolPending: 'gray',
+  toolRunning: 'yellow',
+  toolSuccess: 'green',
+  toolError: 'redBright',
+  toolDuration: 'gray',
   inputPrompt: 'yellow',
   border: 'gray',
   status: 'gray',
   error: 'redBright',
+  errorHint: 'yellow',
   muted: 'gray',
   header: 'magentaBright',
   streamingIndicator: 'gray',
+  streamingCursor: 'greenBright',
   scrollIndicator: 'gray',
+  messageSeparator: 'gray',
+  thinkingSpinner: 'blue',
+  thinkingLabel: 'blue',
+  thinkingTimer: 'gray',
   heading: 'blueBright',
+  headingDecorator: 'gray',
   codeBlock: 'blue',
+  codeLang: 'gray',
   inlineCode: 'magenta',
-  link: 'blueBright',
+  link: 'blue',
   listMarker: 'gray',
+  blockquote: 'gray',
+  hr: 'gray',
   success: 'green',
   warning: 'yellow',
   reasoning: 'gray',
-  progressBar: 'green',
-  progressBg: 'gray',
-  permissionHighlight: 'yellow',
-  statusBar: 'gray',
+  reasoningLabel: 'blue',
+  tableHeader: 'blueBright',
+  tableBorder: 'gray',
+  keyword: 'magenta',
+  number: 'yellow',
+  comment: 'gray',
+  string: 'green',
+  function: 'yellow',
+  type: 'blueBright',
 };
 
 // ─── Detection ────────────────────────────────────────────────────────────────

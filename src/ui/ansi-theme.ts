@@ -7,7 +7,7 @@
 
 import { detectThemeMode, type ThemeMode } from './hooks/use-theme.js';
 
-interface AnsiColors {
+export interface AnsiColors {
   reset: string;
   bold: string;
   dim: string;

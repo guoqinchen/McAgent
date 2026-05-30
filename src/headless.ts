@@ -13,8 +13,9 @@ import { macOSExtendedTools } from './tools-extended.js';
 import { macOSProTools } from './tools-pro.js';
 import { createInterface } from 'node:readline';
 import { logger } from './logging/structured-logger.js';
-import { createAnsiTheme } from './ui/ansi-theme.js';
 import { resolveConfig } from './config/resolver.js';
+import { HeadlessRenderer } from './ui/headless-renderer.js';
+import type { ToolDisplayResult } from './ui/headless-renderer.js';
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
@@ -29,11 +30,26 @@ if (!apiKey) {
 
 const config = resolveConfig();
 
+const render = new HeadlessRenderer();
+const c = render.c;
+
 logger.info('Headless CLI starting', {
   model: config.model ?? 'deepseek-v4-flash',
   thinkingEnabled: config.thinkingEnabled ?? true,
   logDir: `${process.env.HOME}/.mcagent/logs/`,
 });
+
+// ─── Startup banner ───────────────────────────────────────────────────────────
+
+render.blank();
+render.header('McAgent Headless', false);
+render.blank();
+render.rule({ label: 'Session Start', char: '━', color: 'header' });
+render.badge(`Model: ${config.model ?? 'deepseek-v4-flash'}`, 'info');
+render.badge(`Thinking: ${config.thinkingEnabled ?? true ? 'enabled' : 'disabled'}`, 'info');
+render.badge(`Logs: ${process.env.HOME}/.mcagent/logs/`, 'info');
+render.rule({ char: '━', color: 'muted' });
+render.blank();
 
 const agent = createMacOSAgent({
   apiKey,
@@ -54,44 +70,72 @@ const agent = createMacOSAgent({
 
 // ─── Event hooks ─────────────────────────────────────────────────────────────
 
-const c = createAnsiTheme();
-
-let isStreaming = false;
+let toolStartTimes = new Map<string, number>();
+const toolDisplays: ToolDisplayResult[] = [];
 
 agent.on('thinking:start', function onThinkingStart() {
-  isStreaming = true;
-  process.stdout.write(`${c.header}⏳  Processing...${c.reset}\n`);
+  toolDisplays.length = 0;
+  toolStartTimes.clear();
+  render.spinner.start('Processing…');
 });
 
 agent.on('thinking:end', function onThinkingEnd() {
-  isStreaming = false;
+  render.spinner.stop();
 });
 
-agent.on('tool:call', function onToolCall(name, args) {
-  process.stdout.write(`  ${c.toolCall}🔧 ${name}${c.reset}(${JSON.stringify(args)}\n`);
+agent.on('tool:call', function onToolCall(name: string, args: unknown) {
+  if (render.spinner.isRunning) {
+    render.spinner.stop();
+  }
+  toolStartTimes.set(name, Date.now());
+  const argsStr = JSON.stringify(args);
+  const preview = argsStr.length > 80 ? argsStr.slice(0, 80) + '…' : argsStr;
+  render.toolResult({ name, status: 'running', preview });
+  render.spinner.start(`Running ${name}…`);
 });
 
-agent.on('tool:result', function onToolResult(name, result) {
-  const preview =
-    typeof result === 'string' && result.length > 120 ? result.slice(0, 120) + '…' : String(result);
-  process.stdout.write(`  ${c.success}✓ ${name}${c.reset}: ${preview}\n`);
+agent.on('tool:result', function onToolResult(name: string, result: unknown) {
+  if (render.spinner.isRunning) render.spinner.stop();
+
+  const duration = toolStartTimes.has(name) ? Date.now() - toolStartTimes.get(name)! : undefined;
+  const resultStr = typeof result === 'string' ? result : JSON.stringify(result);
+  const isSuccess =
+    !resultStr.toLowerCase().startsWith('error') &&
+    !resultStr.toLowerCase().includes('command not found') &&
+    !resultStr.toLowerCase().includes('failed');
+  const status = isSuccess ? 'success' : 'failure';
+  const preview = resultStr.length > 60 ? resultStr.slice(0, 60) + '…' : resultStr;
+
+  render.toolResult({ name, status, durationMs: duration, preview });
+
+  const idx = toolDisplays.findIndex((t) => t.name === name && t.status === 'running');
+  if (idx !== -1) {
+    toolDisplays[idx] = { name, status, durationMs: duration, preview };
+  }
 });
 
-agent.on('stream:delta', function onStreamDelta(delta) {
+agent.on('stream:delta', function onStreamDelta(delta: string) {
+  if (render.spinner.isRunning) render.spinner.stop();
   process.stdout.write(delta);
 });
 
 agent.on('stream:end', function onStreamEnd() {
   process.stdout.write('\n');
+  if (toolDisplays.length > 0) {
+    render.rule({ char: '─', color: 'muted' });
+  }
 });
 
-agent.on('reasoning:delta', function onReasoningDelta(text) {
+agent.on('reasoning:delta', function onReasoningDelta(text: string) {
+  if (render.spinner.isRunning) render.spinner.stop();
   process.stdout.write(`${c.dim}${text}${c.reset}`);
 });
 
-agent.on('error', function onError(err) {
+agent.on('error', function onError(err: Error) {
+  if (render.spinner.isRunning) render.spinner.stop();
   logger.error('Agent error in headless CLI', err);
-  console.error(`\n${c.error}❌  Error:${c.reset} ${err.message}`);
+  render.blank();
+  render.error(err, 'Agent encountered an error');
 });
 
 // ─── Interactive loop ────────────────────────────────────────────────────────
@@ -101,27 +145,30 @@ const rl = createInterface({
   output: process.stdout,
 });
 
-const welcome = `
-${c.header}╔══════════════════════════════════════════╗
-║           🍏  McAgent                  ║
-║  Your AI-powered macOS CLI assistant    ║
-╚══════════════════════════════════════════╝${c.reset}
-${c.muted}Model: ${agent.model}${c.reset}
-${c.muted}Type your macOS question or 'exit' to quit.${c.reset}
-`;
-
-console.log(welcome);
-console.log(`${c.muted}Logs: ~/.mcagent/logs/${c.reset}`);
+// Welcome screen
+render.blank();
+render.writeln(`${c.border}╔══════════════════════════════════════════╗${c.reset}`);
+render.writeln(`${c.border}║${c.reset}           ${c.header}🍏  McAgent${c.reset}              ${c.border}║${c.reset}`);
+render.writeln(`${c.border}║${c.reset}  ${c.dim}Your AI-powered macOS CLI assistant${c.reset}  ${c.border}║${c.reset}`);
+render.writeln(`${c.border}╚══════════════════════════════════════════╝${c.reset}`);
+render.writeln(`${c.muted}Type your macOS question or 'exit' to quit.${c.reset}`);
+render.blank();
 
 function prompt(): void {
   rl.question(`${c.userLabel}macOS>${c.reset} `, async (input) => {
     const trimmed = input.trim();
     if (!trimmed) return prompt();
     if (trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === 'quit') {
-      console.log(`${c.muted}Goodbye!${c.reset}`);
+      render.rule({ label: 'Session End', char: '━', color: 'muted' });
+      render.writeln(`${c.muted}Goodbye!${c.reset}`);
       rl.close();
       return;
     }
+
+    // Show user message with clear separator
+    render.rule({ label: 'You', char: '─', color: 'userLabel' });
+    render.writeln(`  ${c.userLabel}${trimmed}${c.reset}`);
+    render.rule({ char: '─', color: 'muted' });
 
     try {
       await agent.send(trimmed);
@@ -129,7 +176,8 @@ function prompt(): void {
       // Fallback: log error (primary handling is via 'error' event)
       const error = err instanceof Error ? err : new Error(String(err));
       logger.error('Headless send failed', error);
-      console.error(`\n${c.error}❌  Error:${c.reset} ${error.message}`);
+      render.blank();
+      render.error(error, 'send() failed');
     }
     prompt();
   });

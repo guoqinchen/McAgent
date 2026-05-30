@@ -46,7 +46,7 @@ render.header('🍏 McAgent Headless', false);
 render.blank();
 render.rule({ label: '🚀 Session Start', char: '━', color: 'header' });
 render.info(`Model: ${config.model ?? 'deepseek-v4-flash'}`);
-render.info(`Thinking: ${config.thinkingEnabled ?? true ? 'enabled' : 'disabled'}`);
+render.info(`Thinking: ${(config.thinkingEnabled ?? true) ? 'enabled' : 'disabled'}`);
 render.info(`Logs: ${process.env.HOME}/.mcagent/logs/`);
 render.rule({ char: '━', color: 'muted' });
 render.blank();
@@ -70,7 +70,7 @@ const agent = createMacOSAgent({
 
 // ─── Event hooks ─────────────────────────────────────────────────────────────
 
-let toolStartTimes = new Map<string, number>();
+const toolStartTimes = new Map<string, number>();
 const toolDisplays: ToolDisplayResult[] = [];
 
 agent.on('thinking:start', function onThinkingStart() {
@@ -103,10 +103,14 @@ agent.on('tool:progress', function onToolProgress(progress) {
     const empty = barWidth - filled;
     const bar = `${c.toolRunning}${'━'.repeat(filled)}${c.muted}${'━'.repeat(empty)}${c.reset}`;
     const pctStr = `${String(progress.progress).padStart(3)}%`;
-    process.stdout.write(`\r  ${c.toolRunning}⏳${c.reset} ${bar} ${pctStr} ${c.muted}${progress.status}${c.reset} `);
+    process.stdout.write(
+      `\r  ${c.toolRunning}⏳${c.reset} ${bar} ${pctStr} ${c.muted}${progress.status}${c.reset} `
+    );
   } else {
     const elapsed = formatDuration(progress.elapsedMs);
-    process.stdout.write(`\r  ${c.toolRunning}⏳${c.reset} ${c.muted}${elapsed} — ${progress.status}${c.reset} `);
+    process.stdout.write(
+      `\r  ${c.toolRunning}⏳${c.reset} ${c.muted}${elapsed} — ${progress.status}${c.reset} `
+    );
   }
 });
 
@@ -124,7 +128,6 @@ agent.on('tool:result', function onToolResult(name: string, result: unknown) {
   const preview = resultStr.length > 60 ? resultStr.slice(0, 60) + '…' : resultStr;
 
   // Enhanced tool result with structured output
-  const line = `  ${status === 'success' ? '✅' : '❌'} ${c.bold}[${status === 'success' ? 'OK' : 'FAILED'}]${c.reset} ${c.bold}${name}${c.reset}${duration ? ` ${c.muted}(${duration}ms)${c.reset}` : ''}`;
   const width = terminalWidth();
   process.stdout.write(`\r${' '.repeat(width)}\r`); // clear line
   render.toolResult({ name, status, durationMs: duration, preview });
@@ -161,7 +164,7 @@ agent.on('error', function onError(err: Error) {
   render.error(err, 'Agent encountered an error');
 });
 
-agent.on('context:update', function onContextUpdate(ctx) {
+agent.on('context:update', function onContextUpdate(_ctx) {
   // Context updates are shown in the status line but we don't print them
   // in headless mode to avoid clutter — kept for extensibility
 });
@@ -186,8 +189,12 @@ const rl = createInterface({
 // Welcome screen
 render.blank();
 render.writeln(`${c.border}╔══════════════════════════════════════════╗${c.reset}`);
-render.writeln(`${c.border}║${c.reset}           ${c.header}🍏  McAgent${c.reset}              ${c.border}║${c.reset}`);
-render.writeln(`${c.border}║${c.reset}  ${c.dim}Your AI-powered macOS CLI assistant${c.reset}  ${c.border}║${c.reset}`);
+render.writeln(
+  `${c.border}║${c.reset}           ${c.header}🍏  McAgent${c.reset}              ${c.border}║${c.reset}`
+);
+render.writeln(
+  `${c.border}║${c.reset}  ${c.dim}Your AI-powered macOS CLI assistant${c.reset}  ${c.border}║${c.reset}`
+);
 render.writeln(`${c.border}╚══════════════════════════════════════════╝${c.reset}`);
 render.writeln(`${c.muted}Type your macOS question or 'exit' to quit.${c.reset}`);
 render.blank();

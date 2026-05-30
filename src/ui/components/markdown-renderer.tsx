@@ -40,7 +40,7 @@ const KEYWORDS = new Set([
 ]);
 
 function detectLanguage(firstLine: string): string | undefined {
-  const rest = firstLine.startsWith('\`\`\`') ? firstLine.slice(3).trim() : '';
+  const rest = firstLine.startsWith('```') ? firstLine.slice(3).trim() : '';
   return rest ? rest.toLowerCase() : undefined;
 }
 
@@ -56,13 +56,13 @@ function highlightLine(line: string): Array<{ text: string; type: string }> {
       tokens.push({ text: line.slice(i), type: 'comment' });
       return tokens;
     }
-    if (line[i] === '"' || line[i] === "'" || line[i] === '\`') {
+    if (line[i] === '"' || line[i] === "'" || line[i] === '`') {
       const q = line[i]; let j = i + 1;
       while (j < line.length && line[j] !== q) { if (line[j] === '\\') j++; j++; }
       if (j < line.length) j++;
       tokens.push({ text: line.slice(i, j), type: 'string' }); i = j; continue;
     }
-    if (/[0-9]/.test(line[i]) && (i === 0 || /[\s,=([+\-*\/%]/.test(line[i-1]))) {
+    if (/[0-9]/.test(line[i]) && (i === 0 || /[\s,=([+\-*/%]/.test(line[i-1]))) {
       let j = i;
       while (j < line.length && /[0-9.eExXoObB]/.test(line[j])) j++;
       tokens.push({ text: line.slice(i, j), type: 'number' }); i = j; continue;
@@ -97,11 +97,11 @@ function parseInline(text: string): InlineToken[] {
     if (b) { tokens.push({ type: 'bold', text: b[1] }); remaining = remaining.slice(b[0].length); continue; }
     const ic = remaining.match(/^\*(.+?)\*/);
     if (ic) { tokens.push({ type: 'italic', text: ic[1] }); remaining = remaining.slice(ic[0].length); continue; }
-    const c = remaining.match(/^\`([^\`]+)\`/);
+    const c = remaining.match(/^`([^`]+)`/);
     if (c) { tokens.push({ type: 'inlineCode', text: c[1] }); remaining = remaining.slice(c[0].length); continue; }
     const l = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
     if (l) { tokens.push({ type: 'link', text: l[1], url: l[2] }); remaining = remaining.slice(l[0].length); continue; }
-    const n = remaining.match(/^([^*\`[~\n]+)/);
+    const n = remaining.match(/^([^*`[~\n]+)/);
     if (n) { tokens.push({ type: 'text', text: n[1] }); remaining = remaining.slice(n[0].length); continue; }
     remaining = remaining.slice(1);
   }
@@ -116,11 +116,11 @@ function parseBlocks(content: string): Block[] {
   while (i < lines.length) {
     const line = lines[i]!;
 
-    if (line.startsWith('\`\`\`')) {
+    if (line.startsWith('```')) {
       const lang = detectLanguage(line);
       const codeLines: string[] = [];
       i++;
-      while (i < lines.length && !lines[i]!.startsWith('\`\`\`')) {
+      while (i < lines.length && !lines[i]!.startsWith('```')) {
         codeLines.push(lines[i]!); i++;
       }
       i++;
@@ -181,7 +181,7 @@ function parseBlocks(content: string): Block[] {
 
     const pl: string[] = [];
     while (i < lines.length && lines[i]!.trim() !== ''
-      && !lines[i]!.startsWith('\`\`\`')
+      && !lines[i]!.startsWith('```')
       && !lines[i]!.match(/^(#{1,6})\s/)
       && !lines[i]!.match(/^(\s*)[-*+]\s/)
       && !lines[i]!.match(/^(\s*)(\d+)\.\s/)

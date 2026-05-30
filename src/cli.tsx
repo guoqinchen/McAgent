@@ -77,7 +77,7 @@ function markOnboardingSeen(): void {
 }
 
 const OnboardingOverlay = memo(function OnboardingOverlay({
-  onDismiss,
+  onDismiss: _onDismiss,
   theme,
 }: {
   onDismiss: () => void;

@@ -11,12 +11,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { MacOSAgent } from '../../agent.js';
-import type {
-  Message,
-  ToolProgress,
-  AgentContext,
-  PermissionRequest,
-} from '../../types/events.js';
+import type { Message, ToolProgress, AgentContext, PermissionRequest } from '../../types/events.js';
 
 // ─── Shared timer hook ──────────────────────────────────────────────────────────
 
@@ -109,7 +104,9 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
         doFlush();
       } else {
         // Use setImmediate as Node.js equivalent of requestAnimationFrame
-        immediateId = setImmediate(() => { doFlush(); });
+        immediateId = setImmediate(() => {
+          doFlush();
+        });
       }
     }
 

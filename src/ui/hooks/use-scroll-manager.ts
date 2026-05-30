@@ -143,9 +143,12 @@ export function useScrollManager(): ScrollState & ScrollActions {
     userScrolledRef.current = false;
   }, []);
 
-  const onContentChange = useCallback((newTotal: number) => {
-    scheduleTotalUpdate(newTotal);
-  }, [scheduleTotalUpdate]);
+  const onContentChange = useCallback(
+    (newTotal: number) => {
+      scheduleTotalUpdate(newTotal);
+    },
+    [scheduleTotalUpdate]
+  );
 
   const reset = useCallback(() => {
     cleanupRef.current();

@@ -182,7 +182,7 @@ export function MessageList({
   streamingText,
   toolCalls,
   toolResults,
-  toolProgress,
+  toolProgress: _toolProgress,
   status,
   errorMessage,
   isLoading,

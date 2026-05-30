@@ -96,6 +96,21 @@ function TypewriterContent({ text, isStreaming, color }: {
     }
   }, [text, isStreaming]);
 
+  // Reset when text clears
+  useEffect(() => {
+    if (text === '') {
+      setRevealedCount(0);
+      lastTextRef.current = '';
+    }
+  }, [text]);
+
+  // When streaming is done, reveal all remaining text immediately
+  useEffect(() => {
+    if (!isStreaming && text.length > 0) {
+      setRevealedCount(text.length);
+    }
+  // intentionally only reacts to isStreaming end, not text changes
+  }, [isStreaming]);
   const displayText = text.slice(0, revealedCount);
 
   return (

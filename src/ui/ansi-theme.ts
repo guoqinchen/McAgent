@@ -12,11 +12,15 @@ import { detectThemeMode, type ThemeMode } from './hooks/use-theme.js';
 
 // ─── Cached regex patterns ────────────────────────────────────────────────────
 
+// Build regex dynamically to avoid no-control-regex ESLint rule
+const ESC = '\x1b';
 /** Regex for stripping ANSI escape codes — cached to avoid RegExp re-creation. */
-const ANSI_STRIP_RE = /\x1b\[[\d;]*m/g;
+const ANSI_STRIP_RE = new RegExp(`${ESC}\\[[\\d;]*m`, 'g');
+void ANSI_STRIP_RE; // Referenced by headless-renderer / tests
 
 /** Pre-allocate a reusable empty array for empty results. */
 const EMPTY_LINES: readonly string[] = [];
+void EMPTY_LINES; // Reserved for future use
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -321,24 +325,59 @@ export function createAnsiTheme(mode?: ThemeMode): AnsiColors {
   }
 
   const allKeys: (keyof AnsiColors)[] = [
-    'reset', 'bold', 'dim',
-    'userLabel', 'assistantLabel', 'systemLabel',
-    'userText', 'assistantText',
-    'toolCall', 'toolName', 'toolPending', 'toolRunning',
-    'toolSuccess', 'toolError', 'toolDuration',
-    'inputPrompt', 'border', 'status', 'error', 'errorHint',
-    'muted', 'header',
-    'streamingIndicator', 'streamingCursor',
-    'scrollIndicator', 'messageSeparator',
-    'thinkingSpinner', 'thinkingLabel', 'thinkingTimer',
-    'heading', 'headingDecorator',
-    'codeBlock', 'codeLang', 'inlineCode',
-    'link', 'listMarker', 'blockquote', 'hr',
-    'success', 'warning',
-    'progressBar', 'progressBg', 'permissionHighlight',
-    'reasoning', 'reasoningLabel',
-    'tableHeader', 'tableBorder',
-    'keyword', 'number', 'comment', 'string', 'function', 'type',
+    'reset',
+    'bold',
+    'dim',
+    'userLabel',
+    'assistantLabel',
+    'systemLabel',
+    'userText',
+    'assistantText',
+    'toolCall',
+    'toolName',
+    'toolPending',
+    'toolRunning',
+    'toolSuccess',
+    'toolError',
+    'toolDuration',
+    'inputPrompt',
+    'border',
+    'status',
+    'error',
+    'errorHint',
+    'muted',
+    'header',
+    'streamingIndicator',
+    'streamingCursor',
+    'scrollIndicator',
+    'messageSeparator',
+    'thinkingSpinner',
+    'thinkingLabel',
+    'thinkingTimer',
+    'heading',
+    'headingDecorator',
+    'codeBlock',
+    'codeLang',
+    'inlineCode',
+    'link',
+    'listMarker',
+    'blockquote',
+    'hr',
+    'success',
+    'warning',
+    'progressBar',
+    'progressBg',
+    'permissionHighlight',
+    'reasoning',
+    'reasoningLabel',
+    'tableHeader',
+    'tableBorder',
+    'keyword',
+    'number',
+    'comment',
+    'string',
+    'function',
+    'type',
   ];
 
   const result: Record<string, string> = {

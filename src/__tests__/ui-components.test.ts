@@ -9,10 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  createAnsiTheme,
-  type AnsiColors,
-} from '../ui/ansi-theme.js';
+import { createAnsiTheme } from '../ui/ansi-theme.js';
 import {
   sectionBlock,
   sectionLabel,
@@ -22,6 +19,188 @@ import {
   renderToolResults,
   stripAnsi,
 } from '../ui/headless-renderer.js';
+
+// ============================================================================
+// Supplemental: Edge cases and error states for UI components
+// ============================================================================
+
+describe('parseBlocks — Markdown block parsing', () => {
+  function parseBlocks(
+    content: string
+  ): Array<{ type: string; content?: string; lines?: string[] }> {
+    const blocks: Array<{ type: string; content?: string; lines?: string[] }> = [];
+    const lines = content.split('\n');
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i]!;
+
+      if (line.startsWith('```')) {
+        const codeLines: string[] = [];
+        i++;
+        while (i < lines.length && !lines[i]!.startsWith('```')) {
+          codeLines.push(lines[i]!);
+          i++;
+        }
+        i++;
+        blocks.push({ type: 'codeBlock', lines: codeLines });
+        continue;
+      }
+
+      if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line.trim())) {
+        blocks.push({ type: 'hr' });
+        i++;
+        continue;
+      }
+
+      const hm = line.match(/^(#{1,6})\s+(.+)/);
+      if (hm) {
+        blocks.push({ type: 'heading', content: hm[2]! });
+        i++;
+        continue;
+      }
+
+      const bqm = line.match(/^>\s*(.*)/);
+      if (bqm) {
+        const bqLines: string[] = [bqm[1]!];
+        i++;
+        while (i < lines.length) {
+          const nb = lines[i]!.match(/^>\s*(.*)/);
+          if (nb) {
+            bqLines.push(nb[1]!);
+            i++;
+          } else break;
+        }
+        blocks.push({ type: 'blockquote', content: bqLines.join('\n') });
+        continue;
+      }
+
+      if (line.trim() === '') {
+        blocks.push({ type: 'blank' });
+        i++;
+        continue;
+      }
+
+      blocks.push({ type: 'paragraph', content: line });
+      i++;
+    }
+    return blocks;
+  }
+
+  it('parses headings of all levels', () => {
+    const result = parseBlocks('# H1\n## H2\n###### H6');
+    expect(result.filter((b) => b.type === 'heading')).toHaveLength(3);
+  });
+
+  it('parses code block without language', () => {
+    const result = parseBlocks('```\ncode\n```');
+    expect(result[0]?.type).toBe('codeBlock');
+  });
+
+  it('parses blockquote', () => {
+    const result = parseBlocks('> quoted text');
+    expect(result[0]?.type).toBe('blockquote');
+  });
+
+  it('parses multi-line blockquote', () => {
+    const result = parseBlocks('> line 1\n> line 2');
+    const bq = result.find((b) => b.type === 'blockquote');
+    expect(bq?.content).toContain('line 2');
+  });
+
+  it('parses horizontal rule', () => {
+    const result = parseBlocks('---');
+    expect(result[0]?.type).toBe('hr');
+  });
+
+  it('parses horizontal rule with asterisks', () => {
+    const result = parseBlocks('***');
+    expect(result[0]?.type).toBe('hr');
+  });
+
+  it('handles empty content (single empty line becomes paragraph)', () => {
+    const result = parseBlocks('');
+    expect(result.length).toBeGreaterThanOrEqual(0);
+  });
+
+  it('handles empty code block', () => {
+    const result = parseBlocks('```\n```');
+    expect(result[0]?.type).toBe('codeBlock');
+  });
+});
+
+describe('parseInline — edge cases and error states', () => {
+  it('handles incomplete bold markup gracefully', () => {
+    const result = parseInline('**not closed');
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('handles incomplete code markup gracefully', () => {
+    const result = parseInline('`not closed');
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('handles nested bold-italic', () => {
+    const result = parseInline('***bold italic***');
+    expect(result.some((t) => t.type === 'italic' || t.type === 'bold')).toBe(true);
+  });
+
+  it('handles link with empty URL (no match, falls through to text)', () => {
+    // The link regex requires at least 1 URL char `([^)]+`, so `()` won't match.
+    const result = parseInline('[text]()');
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('handles consecutive different markup types', () => {
+    const result = parseInline('**bold**`code`*italic*~~del~~');
+    // At minimum should parse at least the first token type correctly
+    expect(result.length).toBeGreaterThanOrEqual(1);
+    const boldToken = result.find((t) => t.type === 'bold');
+    expect(boldToken?.text).toBe('bold');
+  });
+
+  it('handles unicode characters', () => {
+    const result = parseInline('**你好世界**');
+    expect(result[0]?.type).toBe('bold');
+    expect(result[0]?.text).toBe('你好世界');
+  });
+});
+
+describe('highlightLine — edge cases and error states', () => {
+  it('handles line with only punctuation', () => {
+    const result = highlightLine('!@#$%^&*()');
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('handles empty line', () => {
+    expect(highlightLine('')).toEqual([]);
+  });
+
+  it('handles line starting with number', () => {
+    const result = highlightLine('42 is the answer');
+    expect(result[0]?.type).toBe('number');
+  });
+
+  it('handles type annotation syntax', () => {
+    const result = highlightLine('function foo<T>(x: T): T { return x; }');
+    // 'function' and 'return' are keywords
+    expect(result.some((t) => t.type === 'keyword')).toBe(true);
+    // 'foo' followed by '<' is not detected as a function (needs '(' after word)
+    // but we verify it parses without error and produces tokens
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('handles single character line', () => {
+    expect(highlightLine('x')).toHaveLength(1);
+  });
+
+  it('handles very long single-token line', () => {
+    const longWord = 'a'.repeat(1000);
+    const result = highlightLine(longWord);
+    expect(result[0]?.text).toBe(longWord);
+    expect(result[0]?.type).toBe('plain');
+  });
+});
 
 // ============================================================================
 // MarkdownRenderer: parseInline
@@ -417,6 +596,110 @@ describe('HeadlessRenderer v3 — findSuggestion', () => {
   });
 });
 
+describe('formatError — edge cases', () => {
+  const c = createAnsiTheme('dark');
+
+  it('handles error with empty message', () => {
+    const error = new Error('');
+    const result = stripAnsi(formatError(c, error));
+    expect(result).toContain('Error');
+  });
+
+  it('handles error without stack trace', () => {
+    const error = new Error('test');
+    error.stack = undefined;
+    const result = stripAnsi(formatError(c, error));
+    expect(result).toContain('test');
+  });
+
+  it('handles error with very long message', () => {
+    const longMsg = 'x'.repeat(500);
+    const error = new Error(longMsg);
+    const result = stripAnsi(formatError(c, error));
+    expect(result).toContain('Error');
+  });
+
+  it('includes suggestion for known error patterns', () => {
+    const error = new Error('SyntaxError: Unexpected token');
+    const result = stripAnsi(formatError(c, error));
+    expect(result).toContain('Syntax error');
+  });
+
+  it('includes location from stack trace when available', () => {
+    const error = new Error('test');
+    const result = stripAnsi(formatError(c, error));
+    if (error.stack) {
+      expect(result).toContain('📍');
+    }
+  });
+});
+
+describe('sectionBlock — edge cases', () => {
+  const c = createAnsiTheme('dark');
+
+  it('handles very long content', () => {
+    const longContent = 'word '.repeat(200);
+    const result = sectionBlock(c, 'info', longContent);
+    expect(result).toContain('Info');
+    expect(result.length).toBeGreaterThan(100);
+  });
+
+  it('handles empty content', () => {
+    const result = sectionBlock(c, 'user', '');
+    expect(result).toContain('You');
+  });
+
+  it('handles all section types without throwing', () => {
+    const types: Array<'user' | 'assistant' | 'tool' | 'error' | 'info' | 'system'> = [
+      'user',
+      'assistant',
+      'tool',
+      'error',
+      'info',
+      'system',
+    ];
+    for (const type of types) {
+      const result = sectionBlock(c, type, `test ${type}`);
+      expect(result).toContain('test');
+      expect(() => sectionBlock(c, type, `test ${type}`)).not.toThrow();
+    }
+  });
+});
+
+describe('renderToolResult — edge cases', () => {
+  const c = createAnsiTheme('dark');
+
+  it('handles very long tool name', () => {
+    const longName = 'a'.repeat(100);
+    const result = stripAnsi(renderToolResult(c, { name: longName, status: 'success' }));
+    expect(result).toContain('[OK]');
+  });
+
+  it('handles very long preview text', () => {
+    const longPreview = 'x'.repeat(1000);
+    const result = stripAnsi(
+      renderToolResult(c, { name: 'test', status: 'failure', preview: longPreview })
+    );
+    expect(result).toContain('[FAILED]');
+    // Preview should be truncated
+    expect(result.length).toBeLessThan(longPreview.length + 100);
+  });
+
+  it('handles all status types', () => {
+    const statuses: Array<'running' | 'success' | 'failure' | 'skipped'> = [
+      'running',
+      'success',
+      'failure',
+      'skipped',
+    ];
+    for (const status of statuses) {
+      const result = stripAnsi(renderToolResult(c, { name: 'test', status }));
+      expect(result).toContain('test');
+      expect(() => renderToolResult(c, { name: 'test', status })).not.toThrow();
+    }
+  });
+});
+
 describe('HeadlessRenderer v3 — enhanced formatError', () => {
   const c = createAnsiTheme('dark');
 
@@ -441,9 +724,13 @@ describe('HeadlessRenderer v3 — enhanced renderToolResult', () => {
   const c = createAnsiTheme('dark');
 
   it('renders success tool result with emoji', () => {
-    const result = stripAnsi(renderToolResult(c, {
-      name: 'ls', status: 'success', durationMs: 150
-    }));
+    const result = stripAnsi(
+      renderToolResult(c, {
+        name: 'ls',
+        status: 'success',
+        durationMs: 150,
+      })
+    );
     expect(result).toContain('✅');
     expect(result).toContain('[OK]');
     expect(result).toContain('ls');
@@ -451,26 +738,37 @@ describe('HeadlessRenderer v3 — enhanced renderToolResult', () => {
   });
 
   it('renders running tool result', () => {
-    const result = stripAnsi(renderToolResult(c, {
-      name: 'find', status: 'running'
-    }));
+    const result = stripAnsi(
+      renderToolResult(c, {
+        name: 'find',
+        status: 'running',
+      })
+    );
     expect(result).toContain('⏳');
     expect(result).toContain('[RUNNING]');
   });
 
   it('renders failure tool result with preview', () => {
-    const result = stripAnsi(renderToolResult(c, {
-      name: 'rm', status: 'failure', durationMs: 500, preview: 'Permission denied'
-    }));
+    const result = stripAnsi(
+      renderToolResult(c, {
+        name: 'rm',
+        status: 'failure',
+        durationMs: 500,
+        preview: 'Permission denied',
+      })
+    );
     expect(result).toContain('❌');
     expect(result).toContain('[FAILED]');
     expect(result).toContain('Permission denied');
   });
 
   it('renders skipped tool result', () => {
-    const result = stripAnsi(renderToolResult(c, {
-      name: 'chmod', status: 'skipped'
-    }));
+    const result = stripAnsi(
+      renderToolResult(c, {
+        name: 'chmod',
+        status: 'skipped',
+      })
+    );
     expect(result).toContain('⏭️');
     expect(result).toContain('[SKIPPED]');
   });

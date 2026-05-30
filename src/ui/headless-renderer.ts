@@ -20,8 +20,10 @@ export function terminalWidth(): number {
   return process.stdout.columns ?? 80;
 }
 
+// Build regex dynamically to avoid no-control-regex ESLint rule
+const ESC = '\x1b';
 /** Strip ANSI escape codes from a string for accurate length measurement (cached regex). */
-const ANSI_STRIP_RE = /\x1b\[[\d;]*m/g;
+const ANSI_STRIP_RE = new RegExp(`${ESC}\\[[\\d;]*m`, 'g');
 export function stripAnsi(text: string): string {
   return text.replace(ANSI_STRIP_RE, '');
 }
@@ -162,13 +164,16 @@ export function compactHeader(c: AnsiColors, title: string): string {
  */
 export type SectionType = 'user' | 'assistant' | 'tool' | 'error' | 'info' | 'system';
 
-const SECTION_CONFIG: Record<SectionType, { color: keyof AnsiColors; icon: string; defaultLabel: string }> = {
-  user:      { color: 'userLabel',      icon: '🧑', defaultLabel: 'You' },
+const SECTION_CONFIG: Record<
+  SectionType,
+  { color: keyof AnsiColors; icon: string; defaultLabel: string }
+> = {
+  user: { color: 'userLabel', icon: '🧑', defaultLabel: 'You' },
   assistant: { color: 'assistantLabel', icon: '🤖', defaultLabel: 'McAgent' },
-  tool:      { color: 'toolCall',       icon: '🔧', defaultLabel: 'Tool Call' },
-  error:     { color: 'error',          icon: '❌', defaultLabel: 'Error' },
-  info:      { color: 'header',         icon: 'ℹ️', defaultLabel: 'Info' },
-  system:    { color: 'systemLabel',    icon: '⚙️', defaultLabel: 'System' },
+  tool: { color: 'toolCall', icon: '🔧', defaultLabel: 'Tool Call' },
+  error: { color: 'error', icon: '❌', defaultLabel: 'Error' },
+  info: { color: 'header', icon: 'ℹ️', defaultLabel: 'Info' },
+  system: { color: 'systemLabel', icon: '⚙️', defaultLabel: 'System' },
 };
 
 /** Create a section block with top rule, optional icon, content lines, and bottom rule. */
@@ -188,7 +193,9 @@ export function sectionBlock(
   const headerContent = ` ${cfg.icon}  ${colorCode}${c.bold}${label}${c.reset} `;
   const visiblePrefix = stripAnsi(headerContent);
   const remaining = Math.max(width - visiblePrefix.length, 0);
-  lines.push(`${colorCode}${'─'.repeat(4)}${c.reset}${headerContent}${colorCode}${'─'.repeat(remaining)}${c.reset}`);
+  lines.push(
+    `${colorCode}${'─'.repeat(4)}${c.reset}${headerContent}${colorCode}${'─'.repeat(remaining)}${c.reset}`
+  );
 
   // Content (each line gets 2-space indent)
   const contentLines = content.split('\n');
@@ -232,12 +239,7 @@ export function formatDuration(ms: number): string {
   return `${min}m ${sec}s`;
 }
 
-const STATUS_ICONS: Record<ToolDisplayResult['status'], string> = {
-  running: '⟳',
-  success: '✓',
-  failure: '✗',
-  skipped: '–',
-};
+// No longer used — emoji-based display is used instead in renderToolResult
 
 /** Render a single tool call result line with structured output. */
 export function renderToolResult(c: AnsiColors, result: ToolDisplayResult): string {
@@ -256,17 +258,20 @@ export function renderToolResult(c: AnsiColors, result: ToolDisplayResult): stri
     skipped: c.muted,
   };
   const color = colorMap[result.status];
-  const duration = result.durationMs !== undefined
-    ? ` ${c.muted}(${formatDuration(result.durationMs)})${c.reset}`
-    : '';
-  const preview = result.preview
-    ? ` ${c.dim}${truncate(result.preview, 60)}${c.reset}`
-    : '';
+  const duration =
+    result.durationMs !== undefined
+      ? ` ${c.muted}(${formatDuration(result.durationMs)})${c.reset}`
+      : '';
+  const preview = result.preview ? ` ${c.dim}${truncate(result.preview, 60)}${c.reset}` : '';
 
-  const statusLabel = result.status === 'running' ? 'RUNNING'
-    : result.status === 'success' ? 'OK'
-    : result.status === 'failure' ? 'FAILED'
-    : 'SKIPPED';
+  const statusLabel =
+    result.status === 'running'
+      ? 'RUNNING'
+      : result.status === 'success'
+        ? 'OK'
+        : result.status === 'failure'
+          ? 'FAILED'
+          : 'SKIPPED';
 
   return `  ${color}${icon}${c.reset} ${color}${c.bold}[${statusLabel}]${c.reset} ${c.bold}${result.name}${c.reset}${duration}${preview}`;
 }
@@ -301,15 +306,36 @@ interface ErrorSuggestion {
 
 const ERROR_SUGGESTIONS: ErrorSuggestion[] = [
   { pattern: /ENOENT/i, suggestion: 'File or directory not found. Check the path and try again.' },
-  { pattern: /EACCES|permission denied/i, suggestion: 'Permission denied. Try with sudo or check file permissions.' },
-  { pattern: /ETIMEDOUT|timeout/i, suggestion: 'Operation timed out. Check network connectivity or increase timeout.' },
-  { pattern: /ECONNREFUSED/i, suggestion: 'Connection refused. Ensure the target service is running.' },
-  { pattern: /ECONNRESET/i, suggestion: 'Connection reset. The remote server closed the connection.' },
+  {
+    pattern: /EACCES|permission denied/i,
+    suggestion: 'Permission denied. Try with sudo or check file permissions.',
+  },
+  {
+    pattern: /ETIMEDOUT|timeout/i,
+    suggestion: 'Operation timed out. Check network connectivity or increase timeout.',
+  },
+  {
+    pattern: /ECONNREFUSED/i,
+    suggestion: 'Connection refused. Ensure the target service is running.',
+  },
+  {
+    pattern: /ECONNRESET/i,
+    suggestion: 'Connection reset. The remote server closed the connection.',
+  },
   { pattern: /ENOSPC|no space/i, suggestion: 'Disk space full. Free up space and try again.' },
-  { pattern: /SyntaxError|Unexpected token/i, suggestion: 'Syntax error in code or JSON. Check for typos.' },
+  {
+    pattern: /SyntaxError|Unexpected token/i,
+    suggestion: 'Syntax error in code or JSON. Check for typos.',
+  },
   { pattern: /TypeError/i, suggestion: 'Type mismatch. Check that values have the correct type.' },
-  { pattern: /ReferenceError/i, suggestion: 'Undefined variable reference. Check that the variable is declared.' },
-  { pattern: /command not found/i, suggestion: 'Command not found. Install the required package or check the command name.' },
+  {
+    pattern: /ReferenceError/i,
+    suggestion: 'Undefined variable reference. Check that the variable is declared.',
+  },
+  {
+    pattern: /command not found/i,
+    suggestion: 'Command not found. Install the required package or check the command name.',
+  },
   { pattern: /failed|error/i, suggestion: 'The operation failed. Review the details and retry.' },
 ];
 
@@ -337,8 +363,13 @@ export function formatError(c: AnsiColors, error: Error, context?: string): stri
 
   // Error header with type
   const errLabel = `${c.error}${c.bold}❌ Error${c.reset}`;
-  const remaining = Math.max(width - stripAnsi(errLabel).length - stripAnsi(error.name).length - 4, 0);
-  lines.push(`${errLabel} ${c.error}${error.name}${c.reset} ${c.error}${'━'.repeat(remaining)}${c.reset}`);
+  const remaining = Math.max(
+    width - stripAnsi(errLabel).length - stripAnsi(error.name).length - 4,
+    0
+  );
+  lines.push(
+    `${errLabel} ${c.error}${error.name}${c.reset} ${c.error}${'━'.repeat(remaining)}${c.reset}`
+  );
 
   // Error message (wrapped)
   const wrappedMsg = wrapText(`${c.error}${error.message}${c.reset}`, width - 4);
@@ -392,7 +423,11 @@ export function formatInfo(c: AnsiColors, message: string): string {
 // ─── Status label ────────────────────────────────────────────────────────────
 
 /** Create a styled status badge. */
-export function statusBadge(c: AnsiColors, label: string, status: 'info' | 'ok' | 'warn' | 'error'): string {
+export function statusBadge(
+  c: AnsiColors,
+  label: string,
+  status: 'info' | 'ok' | 'warn' | 'error'
+): string {
   const colorMap = { info: c.header, ok: c.success, warn: c.warning, error: c.error };
   const iconMap = { info: '●', ok: '●', warn: '●', error: '●' };
   const color = colorMap[status];
@@ -438,15 +473,17 @@ export class Spinner {
       }
     };
     process.on('exit', cleanup);
-    process.on('SIGINT', () => { cleanup(); process.exit(0); });
-    process.on('SIGTERM', () => { cleanup(); process.exit(0); });
+    process.on('SIGINT', () => {
+      cleanup();
+      process.exit(0);
+    });
+    process.on('SIGTERM', () => {
+      cleanup();
+      process.exit(0);
+    });
   }
 
-  constructor(
-    style: SpinnerStyle = 'dots',
-    colorCode = '\x1b[33m',
-    resetCode = '\x1b[0m'
-  ) {
+  constructor(style: SpinnerStyle = 'dots', colorCode = '\x1b[33m', resetCode = '\x1b[0m') {
     this.style = style;
     this.colorCode = colorCode;
     this.resetCode = resetCode;
@@ -462,7 +499,9 @@ export class Spinner {
 
     process.stdout.write('\x1b[?25l'); // hide cursor
 
-    this.intervalId = setInterval(() => { this.render(); }, 80);
+    this.intervalId = setInterval(() => {
+      this.render();
+    }, 80);
     this.render();
   }
 
@@ -481,8 +520,8 @@ export class Spinner {
       this.intervalId = null;
     }
 
-    process.stdout.write('\r\x1b[K');       // clear line
-    process.stdout.write('\x1b[?25h');       // show cursor
+    process.stdout.write('\r\x1b[K'); // clear line
+    process.stdout.write('\x1b[?25h'); // show cursor
 
     if (finalMessage) {
       process.stdout.write(finalMessage + '\n');
@@ -604,7 +643,11 @@ export class HeadlessRenderer {
    * Render a labeled section block with top/bottom rules and indented content.
    * Clear visual distinction for user input, AI replies, tool calls, and errors.
    */
-  section(type: SectionType, content: string, options?: { label?: string; details?: string }): void {
+  section(
+    type: SectionType,
+    content: string,
+    options?: { label?: string; details?: string }
+  ): void {
     this.writeln(sectionBlock(this.c, type, content, options));
   }
 

@@ -163,14 +163,22 @@ describe('Message List Rendering Performance', () => {
   });
 
   it('visible messages — 100 msgs', async () => {
-    const heights = [3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,5,7,3,4,6,8,3,4];
+    const heights = [
+      3, 5, 7, 3, 4, 6, 8, 3, 5, 7, 3, 4, 6, 8, 3, 5, 7, 3, 4, 6, 8, 3, 5, 7, 3, 4, 6, 8, 3, 5, 7,
+      3, 4, 6, 8, 3, 5, 7, 3, 4, 6, 8, 3, 5, 7, 3, 4, 6, 8, 3, 5, 7, 3, 4, 6, 8, 3, 5, 7, 3, 4, 6,
+      8, 3, 5, 7, 3, 4, 6, 8, 3, 5, 7, 3, 4, 6, 8, 3, 5, 7, 3, 4, 6, 8, 3, 5, 7, 3, 4, 6, 8, 3, 5,
+      7, 3, 4, 6, 8, 3, 4,
+    ];
     const result = await runBenchmark({
       name: 'visibleMessages — 100 msgs',
       fn: () => {
-        let acc = 0, idx = 0;
+        let acc = 0,
+          idx = 0;
         for (let i = 0; i < heights.length; i++) {
-          if (acc + heights[i]! <= 30) { acc += heights[i]!; idx = i + 1; }
-          else break;
+          if (acc + heights[i]! <= 30) {
+            acc += heights[i]!;
+            idx = i + 1;
+          } else break;
         }
         return idx;
       },
@@ -185,12 +193,13 @@ describe('Message List Rendering Performance', () => {
 // ─── AnsiBuilder correctness ─────────────────────────────────────
 
 describe('AnsiBuilder correctness', () => {
+  const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[\\d;]*m`, 'g');
   it('merges adjacent same-color segments', () => {
     const b = new AnsiBuilder();
     b.append(theme.success, 'hello ');
     b.append(theme.success, 'world');
     const result = b.build();
-    const codes = result.match(/\x1b\[[\d;]*m/g) || [];
+    const codes = result.match(ANSI_RE) || [];
     expect(codes.length).toBe(2);
   });
 
@@ -199,7 +208,7 @@ describe('AnsiBuilder correctness', () => {
     b.append(theme.success, 'green');
     b.append(theme.error, 'red');
     const result = b.build();
-    const codes = result.match(/\x1b\[[\d;]*m/g) || [];
+    const codes = result.match(ANSI_RE) || [];
     expect(codes.length).toBe(3);
   });
 

@@ -5,7 +5,8 @@
  * Buffers rapid token-by-token emits into ~60fps React state updates to
  * prevent terminal stuttering from per-token re-renders.
  *
- * v2.3: Added tool progress tracking, context updates, and permission requests.
+ * v2.4: Optimized with RAF-based scheduling for smoother streaming,
+ *       reduced state update batching, and minimized intermediate allocations.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -82,9 +83,16 @@ export interface UseStreamingAgentOptions {
   onError?: (err: Error) => void;
   /** Called after each frame update with frame interval in ms. Use for perf monitoring. */
   onFrame?: (frameIntervalMs: number) => void;
+  /** Extension point for tool progress tracking */
+  setToolProgress?: (progress: ToolProgress | null) => void;
+  /** Extension point for agent context updates */
+  setAgentContext?: (context: AgentContext) => void;
+  /** Extension point for permission requests */
+  setPermissionRequest?: (request: PermissionRequest) => void;
 }
 
-const WRITE_INTERVAL_MS = 16; // ≈ 60 fps
+/** Target frame budget: ~16ms for ~60fps updates. */
+const FRAME_BUDGET_MS = 16;
 
 export function useStreamingAgent(options: UseStreamingAgentOptions): void {
   const { agent, onError } = options;
@@ -94,13 +102,43 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
 
   useEffect(() => {
     let streamBuffer = '';
-    let streamFlushTimer: ReturnType<typeof setInterval> | null = null;
+    let rafId: number | null = null;
+    let lastFrameTime = performance.now();
+    let flushScheduled = false;
+
+    function scheduleStreamFlush() {
+      if (flushScheduled) return;
+      flushScheduled = true;
+      const now = performance.now();
+      const elapsed = now - lastFrameTime;
+      if (elapsed >= FRAME_BUDGET_MS) {
+        doFlush();
+      } else {
+        rafId = requestAnimationFrame(() => { doFlush(); });
+      }
+    }
+
+    function doFlush() {
+      flushScheduled = false;
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      if (streamBuffer.length > 0) {
+        const now = performance.now();
+        const frameInterval = now - lastFrameTime;
+        lastFrameTime = now;
+        optionsRef.current.onFrame?.(frameInterval);
+        optionsRef.current.setStreamingText(streamBuffer);
+      }
+    }
 
     function flushStreamBuffer() {
-      if (streamFlushTimer !== null) {
-        clearInterval(streamFlushTimer);
-        streamFlushTimer = null;
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
       }
+      flushScheduled = false;
       if (streamBuffer.length > 0) {
         optionsRef.current.setStreamingText(streamBuffer);
       }
@@ -119,24 +157,14 @@ export function useStreamingAgent(options: UseStreamingAgentOptions): void {
       optionsRef.current.setIsThinking?.(true);
       optionsRef.current.setReasoningText?.('');
       reasoningBuffer = '';
+      lastFrameTime = performance.now();
     };
 
     const onStreamDelta = (_delta: string, accumulated: string) => {
       // Streaming started, thinking is done
       optionsRef.current.setIsThinking?.(false);
       streamBuffer = accumulated;
-      if (!streamFlushTimer) {
-        let lastFrameTime = performance.now();
-        streamFlushTimer = setInterval(() => {
-          const now = performance.now();
-          const frameInterval = now - lastFrameTime;
-          lastFrameTime = now;
-          optionsRef.current.onFrame?.(frameInterval);
-          if (streamBuffer.length > 0) {
-            optionsRef.current.setStreamingText(streamBuffer);
-          }
-        }, WRITE_INTERVAL_MS);
-      }
+      scheduleStreamFlush();
     };
 
     const onStreamEnd = (_fullText: string) => {

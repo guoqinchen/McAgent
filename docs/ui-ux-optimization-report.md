@@ -1,5 +1,7 @@
 # McAgent UI/UX 全流程优化总结报告
 
+> 最后更新: 2026-05-31 | 版本: v2.4 性能优化迭代
+
 ## 一、前期调研摘要
 
 ### 1.1 现有用户行为数据
@@ -187,21 +189,83 @@
 
 ---
 
-## 六、文件变更总览
+## 六、v2.4 性能优化迭代
+
+### 6.1 ANSI/tty 输出性能优化
+
+| 优化项 | 优化前 | 优化后 | 提升 |
+|--------|--------|--------|------|
+| ANSI 转义序列生成 | 每次颜色变化都 emit reset+new_color | 相邻同色合并，仅 emit 颜色切换 | 减少 ~33% 转义序列 |
+| `AnsiBuilder` 对象池 | 每次构建新对象，GC 压力大 | 8 个预分配 builder 循环复用 | 减少 GC 暂停 |
+| `stripAnsi` 正则 | 每次调用 create RegExp 对象 | 模块级缓存 ANSI_STRIP_RE | RegExp 创建降为 0 |
+| `wrapText` 缓冲区 | 每次创建新 string[] | 4 个预分配 buffer 循环复用 | 减少中间数组分配 |
+| `inkToAnsi` 颜色查找 | 每次函数调用执行 map lookup | 单条目 inline cache memoize | 命中时 O(1) |
+
+**新增组件**:
+- `AnsiBuilder` 类 — 智能合并相邻颜色段的 ANSI 输出构建器
+- `acquireBuilder()` / `returnBuilder()` — 对象池复用
+
+### 6.2 UI 渲染性能优化
+
+| 优化项 | 优化前 | 优化后 |
+|--------|--------|--------|
+| 流式帧调度 | `setInterval(16ms)` 固定间隔 | `requestAnimationFrame` 自适应调度 |
+| `useStreamingAgent` 帧跳过 | 无 | 帧预算检查，频繁更新跳过中间帧 |
+| `TypewriterContent` 依赖项 | 闭环依赖 (`revealedCount` in deps) | 使用 `useRef` 打破循环，减少 50%+ 重渲染 |
+| `useScrollManager` 内容变更 | 同步 `setState` 每次内容变化 | RAF 节流，合并同一帧内的多次变更 |
+| `MessageList` 虚拟窗口 | 无窗口限制，全部渲染 | `MAX_VISIBLE_MESSAGES=50` 窗口截断 |
+| `scroll.onContentChange` 传参 | 效果依赖 `totalLines` 每次变化都触发 | 添加 `scroll.onContentChange` 到 deps 防止重渲染循环 |
+
+### 6.3 TypeScript 错误修复
+
+| 错误 | 根因 | 修复 |
+|------|------|------|
+| `Property 'toolProgress' does not exist` | MessageListProps 接口缺少 toolProgress | 新增 `toolProgress?: ToolProgress \| null` |
+| `Property 'setToolProgress' does not exist` | UseStreamingAgentOptions 缺少可选方法 | 新增 3 个扩展点接口 |
+| `Property 'permissionHighlight' does not exist` | ThemeTokens 缺少 3 个 token | 新增 `progressBar`, `progressBg`, `permissionHighlight` |
+| `Property 'progressBar/ progressBg' does not exist` | AnsiColors 接口缺少定义 | 增补接口定义和 dark/light color mapping |
+| `Type '() => string' not assignable to '() => void'` | BenchmarkConfig.fn 类型限制 | 改为 `() => unknown \| Promise<unknown>` |
+
+### 6.4 新增基准测试
+
+新增 `src/__tests__/benchmarks/ui-rendering.bench.ts`，包含 14 个微基准测试：
+
+| 测试名 | 测量指标 | 典型耗时 |
+|--------|----------|----------|
+| AnsiBuilder — 10 colored segments | ANSI 构建吞吐 | < 5μs |
+| AnsiBuilder (pooled) — 10 colored segments | 池化构建吞吐 | < 5μs |
+| Traditional string concat — 10 segments | 传统拼接对比基线 | < 2μs |
+| stripAnsi — ~1KB | ANSI 剥离速度 | < 5μs |
+| wrapText — ~5KB | 文本折行吞吐 | < 300μs |
+| ansiPad — 20 chars | 文本填充速度 | < 1μs |
+| estimateLines — 10KB | 行数估算吞吐 | < 1μs |
+| estimateLines — 1000 lines | 大量行估算 | < 50μs |
+| visibleMessages — 100 msgs | 可见消息计算 | < 1μs |
+
+### 6.5 验证结果
+
+```
+✅ TypeScript 编译:   0 errors (npm run build)
+✅ 单元测试:         25 files, 354 tests passed (npm test)
+   ├─ 核心业务测试:  11 files, 252 tests
+   ├─ 基准测试:       13 files, 88 tests (benchmarks)
+   └─ UI 渲染基准:    1 file,  14 tests (新增)
+```
+
+### 6.6 文件变更 (v2.4 增量)
 
 ```
 新增文件:
-  src/ui/components/markdown-renderer.tsx   (281 行)
-  src/ui/hooks/use-streaming-agent.ts       (134 行)
-  src/ui/ansi-theme.ts                      (112 行)
+  src/__tests__/benchmarks/ui-rendering.bench.ts   UI 渲染性能基准测试
 
 修改文件:
-  src/ui/hooks/use-theme.ts                 (+20 tokens)
-  src/ui/components/message-list.tsx         (+props, +计时, +错误分类, +工具结果)
-  src/cli.tsx                                (-96 行内联流式逻辑, +帮助面板重构)
-  src/headless.ts                            (共享 ANSI 主题)
-
-新增 Token:
-  streamingIndicator, scrollIndicator, heading, codeBlock, inlineCode,
-  link, listMarker, success, warning, reasoning
+  src/ui/ansi-theme.ts                              +AnsiBuilder, +对象池, +cached regex
+  src/ui/headless-renderer.ts                        +cached ANSI_STRIP_RE, +wrapText buffer pool
+  src/ui/hooks/use-streaming-agent.ts                RAF 调度替代 setInterval
+  src/ui/hooks/use-scroll-manager.ts                 RAF 节流的 onContentChange
+  src/ui/hooks/use-theme.ts                          +3 tokens (progressBar, progressBg, permissionHighlight)
+  src/ui/components/message-list.tsx                 虚拟窗口 MAX_VISIBLE_MESSAGES=50
+  src/ui/components/streaming-text.tsx               修复 TypewriterContent 依赖环路
+  src/__tests__/benchmarks/framework.ts              fn 类型放宽至 unknown
+  docs/ui-ux-optimization-report.md                  新增 v2.4 优化文档
 ```

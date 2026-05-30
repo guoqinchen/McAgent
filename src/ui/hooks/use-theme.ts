@@ -87,6 +87,12 @@ export interface ThemeTokens {
   success: string;
   /** Warning messages */
   warning: string;
+  /** Progress bar fill */
+  progressBar: string;
+  /** Progress bar background */
+  progressBg: string;
+  /** Permission highlight (for permission prompts) */
+  permissionHighlight: string;
   /** Reasoning / thinking text */
   reasoning: string;
   /** Reasoning label */
@@ -149,6 +155,9 @@ const darkTokens: ThemeTokens = {
   hr: 'gray',
   success: 'greenBright',
   warning: 'yellowBright',
+  progressBar: 'green',
+  progressBg: 'gray',
+  permissionHighlight: 'yellow',
   reasoning: 'gray',
   reasoningLabel: 'cyan',
   tableHeader: 'cyanBright',
@@ -199,6 +208,9 @@ const lightTokens: ThemeTokens = {
   hr: 'gray',
   success: 'green',
   warning: 'yellow',
+  progressBar: 'green',
+  progressBg: 'gray',
+  permissionHighlight: 'yellowBright',
   reasoning: 'gray',
   reasoningLabel: 'blue',
   tableHeader: 'blueBright',

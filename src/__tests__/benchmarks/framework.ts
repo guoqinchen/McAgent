@@ -22,7 +22,7 @@ export interface BenchmarkConfig {
   /** Human-readable name for this benchmark. */
   name: string;
   /** The function to benchmark. */
-  fn: () => void | Promise<void>;
+  fn: () => unknown | Promise<unknown>;
   /** Number of timed samples to collect. Default: 50. */
   samples?: number;
   /** Number of warmup iterations (not timed). Default: 5. */

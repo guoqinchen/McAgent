@@ -18,9 +18,29 @@ export function terminalWidth(): number {
   return process.stdout.columns ?? 80;
 }
 
-/** Strip ANSI escape codes from a string for accurate length measurement. */
+/** Strip ANSI escape codes from a string for accurate length measurement (cached regex). */
+const ANSI_STRIP_RE = /\x1b\[[\d;]*m/g;
 export function stripAnsi(text: string): string {
-  return text.replace(/\x1b\[[\d;]*m/g, '');
+  return text.replace(ANSI_STRIP_RE, '');
+}
+
+/**
+ * Pre-allocate result buffer for wrapText to reduce GC pressure.
+ * Using a reusable pool for common cases.
+ */
+const WRAP_RESULT_POOL_SIZE = 4;
+const wrapResultPool: string[][] = [];
+for (let i = 0; i < WRAP_RESULT_POOL_SIZE; i++) {
+  wrapResultPool.push([]);
+}
+let wrapResultIndex = 0;
+
+function acquireResultBuffer(): string[] {
+  const idx = wrapResultIndex;
+  wrapResultIndex = (idx + 1) % WRAP_RESULT_POOL_SIZE;
+  const buf = wrapResultPool[idx]!;
+  buf.length = 0;
+  return buf;
 }
 
 /** Pad or truncate a string to an exact visual width (ANSI-aware). */
@@ -37,7 +57,7 @@ export function ansiPad(text: string, width: number, align: 'left' | 'right' = '
 
 /** Wrap text to fit within a given width, respecting ANSI codes. */
 export function wrapText(text: string, width: number): string[] {
-  const lines: string[] = [];
+  const lines = acquireResultBuffer();
   const paragraphs = text.split('\n');
 
   for (const para of paragraphs) {
@@ -51,7 +71,7 @@ export function wrapText(text: string, width: number): string[] {
       continue;
     }
 
-    // Word-wrap
+    // Word-wrap — single pass with cached visible lengths
     const words = para.split(/(\s+)/);
     let current = '';
     let currentVisible = '';

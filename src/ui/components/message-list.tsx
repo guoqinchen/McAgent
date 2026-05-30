@@ -8,6 +8,7 @@
  * - Integrated ThinkingIndicator, ToolVisualizer, StreamingText
  * - Scroll management with PageUp/PageDown
  * - Elapsed timer for loading states
+ * - Virtual windowing for large message lists (v2.4)
  */
 
 import { useEffect, useState, useMemo, memo } from 'react';
@@ -33,6 +34,8 @@ export interface MessageListProps {
   status: string;
   errorMessage: string;
   isLoading: boolean;
+  /** Tool progress (for long-running operations) */
+  toolProgress?: ToolProgress | null;
   /** Whether the agent is in thinking state */
   isThinking?: boolean;
   /** Reasoning text from DeepSeek reasoning_content */
@@ -151,6 +154,9 @@ function buildToolCallInfos(
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+/** Maximum messages to render at once (virtual windowing). */
+const MAX_VISIBLE_MESSAGES = 50;
+
 export function MessageList({
   messages,
   streamingText,
@@ -168,7 +174,7 @@ export function MessageList({
   const theme = useTheme();
   const [cols] = useState(() => process.stdout.columns || 80);
 
-  // Precompute line heights
+  // Precompute line heights (stable reference via useMemo)
   const msgHeights = useMemo(() => {
     const heights: number[] = [];
     for (const msg of messages) {
@@ -223,12 +229,12 @@ export function MessageList({
     [toolCalls, toolResults],
   );
 
-  // Notify scroll manager
+  // Notify scroll manager (memoized to prevent effect re-run loop)
   useEffect(() => {
     scroll.onContentChange(totalLines);
-  }, [totalLines]);
+  }, [totalLines, scroll.onContentChange]);
 
-  // Compute visible messages
+  // Compute visible messages with virtual windowing
   const { visibleMessages, scrollMsg } = useMemo(() => {
     const offset = scroll.offset;
     let accumulated = 0;
@@ -244,7 +250,18 @@ export function MessageList({
       }
     }
 
-    const visible = messages.slice(startIdx);
+    // Apply virtual windowing: cap visible messages to MAX_VISIBLE_MESSAGES
+    const endIdx = messages.length;
+    const windowStart = startIdx;
+    const windowEnd = endIdx;
+
+    // Only apply windowing if we have more messages than the threshold
+    let visible = messages.slice(windowStart, windowEnd);
+    if (visible.length > MAX_VISIBLE_MESSAGES) {
+      // Show last MAX_VISIBLE_MESSAGES + some context from current offset
+      const contextStart = Math.max(0, visible.length - MAX_VISIBLE_MESSAGES);
+      visible = visible.slice(contextStart);
+    }
 
     const msg =
       offset > 0

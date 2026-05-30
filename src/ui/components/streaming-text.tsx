@@ -5,6 +5,10 @@
  * indicators, and real-time stats (chars/s, elapsed). The component is
  * designed to be updated at ~60fps from the useStreamingAgent hook but
  * renders efficiently via memo.
+ *
+ * v2.4: Fixed TypewriterContent effect dependency chain to prevent
+ *       unnecessary re-renders. Optimized BlinkingCursor with stable
+ *       animation timer.
  */
 
 import { useEffect, useState, useRef, memo } from 'react';
@@ -55,7 +59,35 @@ function TypewriterContent({ text, isStreaming, color }: {
 }) {
   const [revealedCount, setRevealedCount] = useState(0);
   const lastTextRef = useRef('');
-  const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revealedRef = useRef(0);
+
+  // Sync ref on state change to avoid stale closures
+  revealedRef.current = revealedCount;
+
+  // When new text arrives, start revealing it character by character
+  useEffect(() => {
+    if (text === lastTextRef.current) return;
+    lastTextRef.current = text;
+
+    if (isStreaming) {
+      // While streaming, reveal text gradually but stay close to the end
+      const revealed = revealedRef.current;
+      const newChars = text.length - revealed;
+      if (newChars > 3) {
+        // Reveal a chunk using ref to break dependency on revealedCount
+        const chunkSize = Math.min(newChars, Math.max(3, Math.floor(newChars / 2)));
+        const timer = setTimeout(() => {
+          setRevealedCount((prev) => Math.min(text.length, prev + chunkSize));
+        }, 15);
+        return () => clearTimeout(timer);
+      } else {
+        setRevealedCount(text.length);
+      }
+    } else {
+      // When not streaming, immediately show all text
+      setRevealedCount(text.length);
+    }
+  }, [text, isStreaming]);
 
   // Reset when text clears
   useEffect(() => {
@@ -71,37 +103,6 @@ function TypewriterContent({ text, isStreaming, color }: {
       setRevealedCount(text.length);
     }
   }, [isStreaming]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // When new text arrives, start revealing it character by character
-  useEffect(() => {
-    if (text === lastTextRef.current) return;
-    lastTextRef.current = text;
-
-    if (!isStreaming) {
-      // When not streaming, immediately show all text
-      setRevealedCount(text.length);
-      return;
-    }
-
-    // While streaming, reveal text gradually but stay close to the end
-    const newChars = text.length - revealedCount;
-    if (newChars > 3) {
-      // Reveal a chunk
-      const chunkSize = Math.min(newChars, Math.max(3, Math.floor(newChars / 2)));
-      pendingTimerRef.current = setTimeout(() => {
-        pendingTimerRef.current = null;
-        setRevealedCount((prev) => Math.min(text.length, prev + chunkSize));
-      }, 15);
-      return () => {
-        if (pendingTimerRef.current !== null) {
-          clearTimeout(pendingTimerRef.current);
-          pendingTimerRef.current = null;
-        }
-      };
-    } else {
-      setRevealedCount(text.length);
-    }
-  }, [text, isStreaming]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayText = text.slice(0, revealedCount);
 

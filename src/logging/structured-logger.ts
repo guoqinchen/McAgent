@@ -61,6 +61,7 @@ export class ConsoleHandler implements LogHandler {
 }
 
 export class FileHandler implements LogHandler {
+  private static readonly MAX_QUEUE_SIZE = 1000;
   private level: LogLevel;
   private filePath: string;
   private writeQueue: string[] = [];
@@ -84,7 +85,10 @@ export class FileHandler implements LogHandler {
       stack: record.error?.stack,
     });
 
-    // Queue the write — never block the event loop with sync file I/O
+    if (this.writeQueue.length >= FileHandler.MAX_QUEUE_SIZE) {
+      this.writeQueue.shift();
+    }
+
     this.writeQueue.push(logEntry + '\n');
     this.scheduleFlush();
   }

@@ -41,6 +41,9 @@ function validateMessages(raw: unknown): ChatCompletionMessageParam[] {
 }
 
 export class ConversationHistory {
+  private static readonly MAX_MESSAGES = 200;
+  private static readonly MAX_CONTEXT_TOKENS_PER_CALL = 800_000;
+
   /** Stored as the wider ChatCompletionMessageParam so evictMessages works without casting. */
   private messages: ChatCompletionMessageParam[] = [];
   /** Cache for toPlainMessages(). Uses dirty flag for selective invalidation. */
@@ -79,12 +82,20 @@ export class ConversationHistory {
   }
 
   addToolResult(toolCallId: string, content: string): void {
+    const MAX_TOOL_RESULT_CHARS = 100_000;
+    const truncated = content.length > MAX_TOOL_RESULT_CHARS
+      ? content.slice(0, MAX_TOOL_RESULT_CHARS) +
+        `\n… [truncated: ${content.length.toLocaleString()} total chars]`
+      : content;
     this.messages.push({
       role: 'tool',
       tool_call_id: toolCallId,
-      content,
+      content: truncated,
     });
-    // Tool results are not shown in toPlainMessages(), so no cache invalidation needed
+
+    if (this.messages.length > ConversationHistory.MAX_MESSAGES) {
+      this.evictIfNeeded(ConversationHistory.MAX_CONTEXT_TOKENS_PER_CALL);
+    }
   }
 
   addToolWarning(toolCallId: string, warning: string): void {
@@ -104,12 +115,23 @@ export class ConversationHistory {
   // ── Eviction ─────────────────────────────────────────────────────────────
 
   /**
-   * Explicitly trigger context eviction based on token budget.
+   * Explicitly trigger context eviction based on token budget and message count.
    * Mutates internal state if eviction occurs — separated from the
    * getter for clarity.
    */
   evictIfNeeded(maxContextTokens: number = DEFAULT_MAX_CONTEXT_TOKENS): void {
-    if (maxContextTokens <= 0 || this.messages.length === 0) return;
+    if (this.messages.length === 0) return;
+
+    if (this.messages.length > ConversationHistory.MAX_MESSAGES) {
+      const targetSize = Math.floor(ConversationHistory.MAX_MESSAGES * 0.7);
+      while (this.messages.length > targetSize) {
+        this.messages.shift();
+      }
+      this.markCacheDirty();
+      return;
+    }
+
+    if (maxContextTokens <= 0) return;
 
     const withSystem: ChatCompletionMessageParam[] = [
       { role: 'system', content: '' },

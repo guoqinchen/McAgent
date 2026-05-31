@@ -78,9 +78,6 @@ export interface AnsiColors {
   string: string;
   function: string;
   type: string;
-  progressBar: string;
-  progressBg: string;
-  permissionHighlight: string;
   statusBar: string;
 }
 
@@ -255,9 +252,6 @@ export function createAnsiTheme(mode?: ThemeMode): AnsiColors {
           hr: 'gray',
           success: 'green',
           warning: 'yellow',
-          progressBar: 'green',
-          progressBg: 'gray',
-          permissionHighlight: 'yellowBright',
           reasoning: 'gray',
           reasoningLabel: 'blue',
           tableHeader: 'blueBright',
@@ -311,9 +305,6 @@ export function createAnsiTheme(mode?: ThemeMode): AnsiColors {
           hr: 'gray',
           success: 'greenBright',
           warning: 'yellowBright',
-          progressBar: 'greenBright',
-          progressBg: 'gray',
-          permissionHighlight: 'yellow',
           reasoning: 'gray',
           reasoningLabel: 'cyan',
           tableHeader: 'cyanBright',
@@ -376,9 +367,6 @@ export function createAnsiTheme(mode?: ThemeMode): AnsiColors {
     'hr',
     'success',
     'warning',
-    'progressBar',
-    'progressBg',
-    'permissionHighlight',
     'reasoning',
     'reasoningLabel',
     'tableHeader',

@@ -26,6 +26,7 @@ import {
 } from './context-manager.js';
 import { logger } from './logging/structured-logger.js';
 import { metricsCollector } from './monitoring/metrics-collector.js';
+import { MemoryGuard } from './monitoring/memory-guard.js';
 
 // ─── Internal type imports ─────────────────────────────────────────────────
 
@@ -137,6 +138,8 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
   private consecutiveErrors = 0;
   /** Whether dispose() has been called; prevents further use. */
   private disposed = false;
+  /** Cap reasoning_content accumulation to prevent unbounded memory growth */
+  private static readonly MAX_REASONING_CHARS = 50_000;
 
   constructor(config: MacOSAgentConfig) {
     super();
@@ -353,6 +356,8 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
    * `sync` mode skips streaming and uses non-streaming API.
    */
   private async runLoop(sync = false, signal?: AbortSignal): Promise<string> {
+    MemoryGuard.check();
+
     // Filter tools based on permission mode
     const tools = this.buildActiveTools();
 
@@ -442,9 +447,13 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     let reasoningContent = '';
 
     // Handle reasoning content (DeepSeek-specific)
+    // Cap to prevent storing enormous reasoning chains in history
     if (hasReasoning(msg)) {
-      reasoningContent = msg.reasoning_content;
-      this.emit('reasoning:delta', msg.reasoning_content);
+      const raw = msg.reasoning_content;
+      reasoningContent = raw.length > MacOSAgent.MAX_REASONING_CHARS
+        ? raw.slice(-MacOSAgent.MAX_REASONING_CHARS)
+        : raw;
+      this.emit('reasoning:delta', reasoningContent);
     }
 
     const content = msg.content || '';
@@ -493,6 +502,7 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
     const accumulator = new ToolCallAccumulator();
     let streamingContent = '';
     let reasoningContent = '';
+    const MAX_STREAMING_CHARS = 200_000;
     let finished = false;
 
     for await (const chunk of stream) {
@@ -503,13 +513,20 @@ export class MacOSAgent extends EventEmitter<MacOSAgentEvents> {
 
       // Text content
       if (delta.content) {
-        streamingContent += delta.content;
+        const newContent = streamingContent + delta.content;
+        streamingContent = newContent.length > MAX_STREAMING_CHARS
+          ? newContent.slice(-MAX_STREAMING_CHARS)
+          : newContent;
         this.emit('stream:delta', delta.content, streamingContent);
       }
 
       // DeepSeek-specific: reasoning_content in delta
+      // Cap accumulation to prevent unbounded memory growth from long reasoning chains
       if (hasReasoning(delta)) {
-        reasoningContent += delta.reasoning_content;
+        const newContent = reasoningContent + delta.reasoning_content;
+        reasoningContent = newContent.length > MacOSAgent.MAX_REASONING_CHARS
+          ? newContent.slice(-MacOSAgent.MAX_REASONING_CHARS)
+          : newContent;
         this.emit('reasoning:delta', delta.reasoning_content);
       }
 

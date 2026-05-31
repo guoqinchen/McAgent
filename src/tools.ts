@@ -334,14 +334,25 @@ export const diskUsageTool: Tool = {
     const d = typeof depth === 'number' ? Math.min(depth, 3) : 1;
 
     const volumes = await run('df -h | head -20');
-    const usage = await run(`du -shx "${p}" 2>/dev/null || echo "permission denied"`);
+
+    // Try without sudo first; fall back to sudo for protected directories (e.g. /System on macOS)
+    let usage = await run(`du -shx "${p}" 2>/dev/null || echo "permission denied"`);
+    if (usage === 'permission denied' || usage === '') {
+      usage = await run(`sudo du -shx "${p}" 2>/dev/null || echo "permission denied (sudo unavailable)"`);
+    }
 
     let topDirs = '';
     if (d > 0) {
       const n = Math.min(15, Math.max(5, 30 / d));
-      topDirs = await run(
+      let dirs = await run(
         `du -shx "${p}"/* 2>/dev/null | sort -rh | head -${n} || echo "permission denied"`
       );
+      if (dirs === 'permission denied' || dirs === '') {
+        dirs = await run(
+          `sudo du -shx "${p}"/* 2>/dev/null | sort -rh | head -${n} || echo "permission denied (sudo unavailable)"`
+        );
+      }
+      topDirs = dirs;
     }
 
     return { volumes, path: p, totalUsage: usage, topDirectories: topDirs };
@@ -474,7 +485,7 @@ export const readFileTool: Tool = {
       return { error: `File not found: ${p}` };
     }
 
-    const cmd = l ? `tail -n ${l} "${p}"` : `cat "${p}"`;
+    const cmd = l ? `tail -n ${l} "${p}"` : `head -n 500 "${p}"`;
     const content = await run(cmd, 10_000);
     const byteCount = await run(`wc -c < "${p}"`);
     const lineCount = await run(`wc -l < "${p}"`);

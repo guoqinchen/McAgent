@@ -9,7 +9,6 @@ export interface MetricData {
   promptTokens: number;
   completionTokens: number;
   errorTypes: Record<string, number>;
-  /** Render performance metrics (for TUI) */
   render: {
     totalFrames: number;
     slowFrames: number;
@@ -30,7 +29,120 @@ export interface RequestTiming {
   };
 }
 
+class CircularBuffer {
+  private buffer: number[];
+  private head = 0;
+  private tail = 0;
+  private count = 0;
+  private runningSum = 0;
+
+  constructor(private capacity: number) {
+    this.buffer = new Array(capacity);
+  }
+
+  push(value: number): void {
+    if (this.count === this.capacity) {
+      const removed = this.buffer[this.head]!;
+      this.runningSum -= removed;
+      this.head = (this.head + 1) % this.capacity;
+    } else {
+      this.count++;
+    }
+    this.buffer[this.tail] = value;
+    this.runningSum += value;
+    this.tail = (this.tail + 1) % this.capacity;
+  }
+
+  get sum(): number {
+    return this.runningSum;
+  }
+
+  get min(): number {
+    if (this.count === 0) return Infinity;
+    let min = Infinity;
+    for (let i = 0; i < this.count; i++) {
+      const idx = (this.head + i) % this.capacity;
+      const val = this.buffer[idx]!;
+      if (val < min) min = val;
+    }
+    return min;
+  }
+
+  get max(): number {
+    if (this.count === 0) return 0;
+    let max = 0;
+    for (let i = 0; i < this.count; i++) {
+      const idx = (this.head + i) % this.capacity;
+      const val = this.buffer[idx]!;
+      if (val > max) max = val;
+    }
+    return max;
+  }
+
+  get length(): number {
+    return this.count;
+  }
+
+  clear(): void {
+    this.head = 0;
+    this.tail = 0;
+    this.count = 0;
+    this.runningSum = 0;
+  }
+}
+
+class TokenCircularBuffer {
+  private buffer: Array<{ prompt: number; completion: number }>;
+  private head = 0;
+  private tail = 0;
+  private count = 0;
+  private runningPrompt = 0;
+  private runningCompletion = 0;
+
+  constructor(private capacity: number) {
+    this.buffer = new Array(capacity);
+  }
+
+  push(tokens: { prompt: number; completion: number }): void {
+    if (this.count === this.capacity) {
+      const removed = this.buffer[this.head]!;
+      this.runningPrompt -= removed.prompt;
+      this.runningCompletion -= removed.completion;
+      this.head = (this.head + 1) % this.capacity;
+    } else {
+      this.count++;
+    }
+    this.buffer[this.tail] = tokens;
+    this.runningPrompt += tokens.prompt;
+    this.runningCompletion += tokens.completion;
+    this.tail = (this.tail + 1) % this.capacity;
+  }
+
+  get totalPrompt(): number {
+    return this.runningPrompt;
+  }
+
+  get totalCompletion(): number {
+    return this.runningCompletion;
+  }
+
+  get length(): number {
+    return this.count;
+  }
+
+  clear(): void {
+    this.head = 0;
+    this.tail = 0;
+    this.count = 0;
+    this.runningPrompt = 0;
+    this.runningCompletion = 0;
+  }
+}
+
 export class MetricsCollector {
+  private static readonly MAX_ACTIVE_REQUESTS = 100;
+  private static readonly REQUEST_TIMEOUT_MS = 5 * 60 * 1000;
+
   private metrics: MetricData = {
     requests: 0,
     successes: 0,
@@ -51,12 +163,16 @@ export class MetricsCollector {
     },
   };
 
+  private latencyBuffer: CircularBuffer;
+  private tokenBuffer: TokenCircularBuffer;
   private activeRequests = new Map<string, RequestTiming>();
-  private static readonly MAX_ACTIVE_REQUESTS = 100;
-  private static readonly REQUEST_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+  constructor() {
+    this.latencyBuffer = new CircularBuffer(1000);
+    this.tokenBuffer = new TokenCircularBuffer(1000);
+  }
 
   startRequest(requestId: string): void {
-    // Prevent unbounded growth from leaked entries (crashed/aborted requests)
     if (this.activeRequests.size >= MetricsCollector.MAX_ACTIVE_REQUESTS) {
       const oldest = this.activeRequests.keys().next().value;
       if (oldest) this.activeRequests.delete(oldest);
@@ -88,9 +204,8 @@ export class MetricsCollector {
     const latency = timing.endTime! - timing.startTime;
 
     this.metrics.requests++;
-    this.metrics.totalLatency += latency;
-    this.metrics.minLatency = Math.min(this.metrics.minLatency, latency);
-    this.metrics.maxLatency = Math.max(this.metrics.maxLatency, latency);
+    this.latencyBuffer.push(latency);
+    this.metrics.totalLatency = this.latencyBuffer.sum;
 
     if (timing.success) {
       this.metrics.successes++;
@@ -103,17 +218,17 @@ export class MetricsCollector {
     }
 
     if (timing.tokens) {
-      this.metrics.promptTokens += timing.tokens.prompt;
-      this.metrics.completionTokens += timing.tokens.completion;
-      this.metrics.totalTokens += timing.tokens.prompt + timing.tokens.completion;
+      this.tokenBuffer.push(timing.tokens);
+      this.metrics.promptTokens = this.tokenBuffer.totalPrompt;
+      this.metrics.completionTokens = this.tokenBuffer.totalCompletion;
+      this.metrics.totalTokens = this.metrics.promptTokens + this.metrics.completionTokens;
     }
   }
 
   recordToolCall(duration: number, success: boolean, _toolName: string): void {
     this.metrics.requests++;
-    this.metrics.totalLatency += duration;
-    this.metrics.minLatency = Math.min(this.metrics.minLatency, duration);
-    this.metrics.maxLatency = Math.max(this.metrics.maxLatency, duration);
+    this.latencyBuffer.push(duration);
+    this.metrics.totalLatency = this.latencyBuffer.sum;
 
     if (success) {
       this.metrics.successes++;
@@ -123,7 +238,6 @@ export class MetricsCollector {
     }
   }
 
-  /** Track a single render frame for TUI performance monitoring. */
   recordFrame(frameTimeMs: number): void {
     const r = this.metrics.render;
     r.totalFrames++;
@@ -135,7 +249,6 @@ export class MetricsCollector {
     r.avgFrameTimeMs = r.totalFrameTimeMs / r.totalFrames;
   }
 
-  /** Get the slow-frame ratio (frames over 32ms / total frames). */
   getSlowFrameRate(): number {
     const r = this.metrics.render;
     return r.totalFrames > 0 ? r.slowFrames / r.totalFrames : 0;
@@ -154,7 +267,6 @@ export class MetricsCollector {
     totalTokens: number;
     errorBreakdown: Record<string, number>;
   } {
-    // Evict stale active requests (e.g., from crashed/aborted operations)
     const now = Date.now();
     for (const [id, timing] of this.activeRequests) {
       if (now - timing.startTime > MetricsCollector.REQUEST_TIMEOUT_MS) {
@@ -166,14 +278,14 @@ export class MetricsCollector {
       this.metrics.requests > 0 ? (this.metrics.successes / this.metrics.requests) * 100 : 0;
 
     const avgLatency =
-      this.metrics.requests > 0 ? this.metrics.totalLatency / this.metrics.requests : 0;
+      this.latencyBuffer.length > 0 ? this.latencyBuffer.sum / this.latencyBuffer.length : 0;
 
     return {
       requests: this.metrics.requests,
       successRate: Math.round(successRate * 100) / 100,
       avgLatency: Math.round(avgLatency * 100) / 100,
-      minLatency: this.metrics.minLatency === Infinity ? 0 : this.metrics.minLatency,
-      maxLatency: this.metrics.maxLatency,
+      minLatency: this.latencyBuffer.min === Infinity ? 0 : this.latencyBuffer.min,
+      maxLatency: this.latencyBuffer.max,
       totalTokens: this.metrics.totalTokens,
       errorBreakdown: { ...this.metrics.errorTypes },
     };
@@ -200,6 +312,8 @@ export class MetricsCollector {
       },
     };
     this.activeRequests.clear();
+    this.latencyBuffer.clear();
+    this.tokenBuffer.clear();
   }
 
   getActiveRequestCount(): number {
